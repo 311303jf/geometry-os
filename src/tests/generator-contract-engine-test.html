@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Generator Contract Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Generator Contract Engine Test</h1>
+
+  <button id="runTestButton">Run Generator Contract Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { generatorContractEngine } from "../engine/generation/generatorContractEngine.js";
+    import { contentGeneratorRegistry } from "../engine/generation/contentGeneratorRegistry.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        const teacherLessonContract = generatorContractEngine.createContract({
+          key: "TeacherLessonGenerator",
+          name: "Teacher Lesson Generator",
+          responsibility: "Future generator for teacher-facing lesson content.",
+          supportedAssetTypes: ["teacher_lesson"],
+          requiredInputFields: [
+            "lessonModel",
+            "instructionPlan",
+            "instructionSequence",
+            "assetSpecification"
+          ],
+          outputContract: {
+            format: "structured_teacher_lesson",
+            contentGenerated: false
+          }
+        });
+
+        const validationResult =
+          generatorContractEngine.validateContract(teacherLessonContract);
+
+        contentGeneratorRegistry.register(
+          "TeacherLessonGenerator",
+          teacherLessonContract
+        );
+
+        const resolvedGenerator =
+          contentGeneratorRegistry.resolve("TeacherLessonGenerator");
+
+        const result = {
+          sprint: "v0.3.2",
+          test: "Generator Contract Engine",
+          contractValid: validationResult.valid,
+          contractErrors: validationResult.errors,
+          registryCount: contentGeneratorRegistry.list().length,
+          generatorResolved: Boolean(resolvedGenerator),
+          resolvedGenerator
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = `FAIL\n\n${error.message}\n\n${error.stack}`;
+      }
+    });
+  </script>
+</body>
+</html>
