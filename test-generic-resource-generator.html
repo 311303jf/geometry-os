@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Generic Resource Generator Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Generic Resource Generator Test</h1>
+
+  <button id="runTestButton">Run Generic Resource Generator Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "./src/instruction/instructionResourcePlanner.js";
+    import { instructionAssetSpecificationEngine } from "./src/instruction/instructionAssetSpecificationEngine.js";
+    import { contentGenerationOrchestrator } from "./src/engine/generation/contentGenerationOrchestrator.js";
+    import { generationContextEngine } from "./src/engine/generation/generationContextEngine.js";
+    import { generationQueueEngine } from "./src/engine/generation/generationQueueEngine.js";
+    import { genericResourceGenerator } from "./src/engine/generation/generators/genericResourceGenerator.js";
+
+    const output = document.getElementById("output");
+
+    document.getElementById("runTestButton").addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+        const instructionPlan = learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+        const knowledgeGraph = knowledgeGraphEngine.buildGraph(instructionPlan);
+        const dependencyAnalysis = knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+        const instructionSequence = instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions = instructionDecisionEngine.decide({
+          instructionSequence,
+          dependencyAnalysis,
+          knowledgeGraph
+        });
+
+        const resourcePlan = instructionResourcePlanner.buildResourcePlan(instructionDecisions);
+        const assetSpecifications = instructionAssetSpecificationEngine.buildSpecifications(resourcePlan);
+
+        const generationPlan = contentGenerationOrchestrator.buildGenerationPlan(
+          assetSpecifications.specifications
+        );
+
+        const generationContext = generationContextEngine.buildContext({
+          lessonModel,
+          instructionPlan,
+          knowledgeGraph,
+          dependencyAnalysis,
+          instructionSequence,
+          instructionDecisions,
+          resourcePlan,
+          assetSpecifications,
+          generationPlan
+        });
+
+        const generationQueue = generationQueueEngine.buildQueue(generationContext);
+
+        const firstQueueItem = generationQueue.queueItems[0];
+
+        const generatedResource = genericResourceGenerator.generate({
+          generationTask: firstQueueItem.generationTask,
+          generationContext
+        });
+
+        const checks = {
+          generatedResourceExists: !!generatedResource,
+          contentGeneratedTrue: generatedResource.contentGenerated === true,
+          generatorIdCorrect: generatedResource.generatorId === "GenericResourceGenerator",
+          hasAssetType: !!generatedResource.assetType,
+          hasResourceObject: !!generatedResource.resource,
+          hasTitle: !!generatedResource.resource.title,
+          hasSectionsArray: Array.isArray(generatedResource.resource.sections),
+          hasThreeSections: generatedResource.resource.sections.length === 3,
+          hasMetadata: !!generatedResource.metadata
+        };
+
+        output.textContent = JSON.stringify({
+          sprint: "v0.3.7",
+          generator: "Generic Resource Generator",
+          result: Object.values(checks).every(Boolean) ? "PASS" : "FAIL",
+          checks,
+          generatedResource
+        }, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          sprint: "v0.3.7",
+          generator: "Generic Resource Generator",
+          result: "FAIL",
+          error: error.message,
+          stack: error.stack
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>

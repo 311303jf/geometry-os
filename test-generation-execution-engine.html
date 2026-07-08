@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Generation Execution Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Generation Execution Engine Test</h1>
+
+  <button id="runTestButton">Run Generation Execution Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "./src/instruction/instructionResourcePlanner.js";
+    import { instructionAssetSpecificationEngine } from "./src/instruction/instructionAssetSpecificationEngine.js";
+    import { contentGenerationOrchestrator } from "./src/engine/generation/contentGenerationOrchestrator.js";
+    import { generationContextEngine } from "./src/engine/generation/generationContextEngine.js";
+    import { generationQueueEngine } from "./src/engine/generation/generationQueueEngine.js";
+    import { generationExecutionEngine } from "./src/engine/generation/generationExecutionEngine.js";
+
+    const output = document.getElementById("output");
+
+    document.getElementById("runTestButton").addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+        const instructionPlan = learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+        const knowledgeGraph = knowledgeGraphEngine.buildGraph(instructionPlan);
+        const dependencyAnalysis = knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+        const instructionSequence = instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions = instructionDecisionEngine.decide({
+          instructionSequence,
+          dependencyAnalysis,
+          knowledgeGraph
+        });
+
+        const resourcePlan = instructionResourcePlanner.buildResourcePlan(instructionDecisions);
+        const assetSpecifications = instructionAssetSpecificationEngine.buildSpecifications(resourcePlan);
+
+        const generationPlan = contentGenerationOrchestrator.buildGenerationPlan(
+          assetSpecifications.specifications
+        );
+
+        const generationContext = generationContextEngine.buildContext({
+          lessonModel,
+          instructionPlan,
+          knowledgeGraph,
+          dependencyAnalysis,
+          instructionSequence,
+          instructionDecisions,
+          resourcePlan,
+          assetSpecifications,
+          generationPlan
+        });
+
+        const generationQueue = generationQueueEngine.buildQueue(generationContext);
+        const generationExecution = generationExecutionEngine.executeQueue(generationQueue);
+
+        const checks = {
+          executionExists: !!generationExecution,
+          statusIsExecutionReady: generationExecution.status === "execution_ready",
+          contentGeneratedFalse: generationExecution.contentGenerated === false,
+          executionRecordsArray: Array.isArray(generationExecution.executionRecords),
+          executionCountMatchesQueue:
+            generationExecution.totalExecutionRecords === generationQueue.queueItems.length,
+          everyRecordPrepared:
+            generationExecution.executionRecords.every(record => record.status === "execution_prepared"),
+          everyRecordHasExecutionId:
+            generationExecution.executionRecords.every(record => !!record.executionId),
+          everyRecordHasQueueId:
+            generationExecution.executionRecords.every(record => !!record.queueId),
+          everyRecordHasQueueItem:
+            generationExecution.executionRecords.every(record => !!record.queueItem),
+          everyOutputIsNull:
+            generationExecution.executionRecords.every(record => record.output === null)
+        };
+
+        output.textContent = JSON.stringify({
+          sprint: "v0.3.6",
+          engine: "Generation Execution Engine",
+          result: Object.values(checks).every(Boolean) ? "PASS" : "FAIL",
+          checks,
+          generationExecution
+        }, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          sprint: "v0.3.6",
+          engine: "Generation Execution Engine",
+          result: "FAIL",
+          error: error.message,
+          stack: error.stack
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
