@@ -22,7 +22,11 @@
       try {
         output.textContent = "Loading Lesson 1.1 blueprint...";
 
-        const lessonBlueprint = await curriculumLoader.loadLesson("lesson1-1");
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+  course: "geometry",
+  unit: "unit1",
+  lesson: "lesson1-1"
+});
 
         output.textContent = "Building Lesson Model...";
 
