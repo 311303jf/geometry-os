@@ -19,7 +19,7 @@ export class CurriculumEngine {
       course: lessonBlueprint.course,
       unit: lessonBlueprint.unit,
       lesson: lessonBlueprint.lesson,
-      title: lessonBlueprint.title,
+      title: lessonBlueprint.lessonTitle,
 
       concepts: this.extractConcepts(lessonBlueprint),
       prerequisiteSkills: this.extractPrerequisiteSkills(lessonBlueprint),
@@ -46,9 +46,9 @@ export class CurriculumEngine {
       throw new Error("Lesson Blueprint is missing id.");
     }
 
-    if (!blueprint.title) {
-      throw new Error("Lesson Blueprint is missing title.");
-    }
+    if (!blueprint.lessonTitle) {
+  throw new Error("Lesson Blueprint is missing lessonTitle.");
+}
   }
 
   extractConcepts(blueprint) {
@@ -56,8 +56,8 @@ export class CurriculumEngine {
   }
 
   extractPrerequisiteSkills(blueprint) {
-    return blueprint.prerequisiteSkills || [];
-  }
+    return blueprint.requiredSkills || [];
+}
 
   extractMisconceptions(blueprint) {
     return blueprint.misconceptions || [];
@@ -67,16 +67,18 @@ export class CurriculumEngine {
     return blueprint.assessmentTargets || [];
   }
 
-  buildLearningPath(blueprint) {
-    const concepts = this.extractConcepts(blueprint);
+buildLearningPath(blueprint) {
+  const objectives = blueprint.objectives || [];
+  const vocabulary = blueprint.vocabulary || [];
 
-    return concepts.map((concept, index) => ({
-      step: index + 1,
-      concept,
-      instructionalPurpose: "Develop understanding before assessment.",
-      status: "planned"
-    }));
-  }
+  return objectives.map((objective, index) => ({
+    step: index + 1,
+    objective,
+    vocabularySupport: vocabulary,
+    instructionalPurpose: "Develop understanding before assessment.",
+    status: "planned"
+  }));
+}
 
   buildRecoveryPlan(blueprint) {
     const misconceptions = this.extractMisconceptions(blueprint);

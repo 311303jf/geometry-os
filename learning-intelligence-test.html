@@ -2,42 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Geometry OS — Curriculum Engine Test</title>
+  <title>Geometry OS — Learning Intelligence Test</title>
 </head>
 <body>
-  <h1>Geometry OS — Curriculum Engine Test</h1>
+  <h1>Geometry OS — Learning Intelligence Test</h1>
 
-  <button id="runTestButton">Run Curriculum Engine Test</button>
+  <button id="runTestButton">Run Learning Intelligence Test</button>
 
   <pre id="output"></pre>
 
   <script type="module">
     import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
     import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
 
     const button = document.getElementById("runTestButton");
     const output = document.getElementById("output");
 
     button.addEventListener("click", async () => {
       try {
-        output.textContent = "Loading Lesson 1.1 blueprint...";
+        output.textContent = "Loading Lesson 1.1...";
 
         const lessonBlueprint = await curriculumLoader.loadLesson({
-  course: "Geometry",
-  unit: "Unit 1",
-  lesson: "1.1"
-});
-
-        output.textContent = "Building Lesson Model...";
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
 
         const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
 
-        output.textContent = JSON.stringify(lessonModel, null, 2);
+        const instructionPlan =
+          learningIntelligenceEngine.buildInstructionPlan(lessonModel);
 
-        console.log("Curriculum Engine Test PASS:", lessonModel);
+        output.textContent = JSON.stringify(instructionPlan, null, 2);
+
+        console.log("Learning Intelligence Test PASS:", instructionPlan);
       } catch (error) {
         output.textContent = "ERROR:\n" + error.message;
-        console.error("Curriculum Engine Test FAIL:", error);
+        console.error("Learning Intelligence Test FAIL:", error);
       }
     });
   </script>
