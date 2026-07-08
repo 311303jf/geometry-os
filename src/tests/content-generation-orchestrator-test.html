@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Content Generation Orchestrator Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Content Generation Orchestrator Test</h1>
+
+  <button id="runTestButton">Run Content Generation Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "../curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "../curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "../curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "../curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "../knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "../instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "../curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "../instruction/instructionResourcePlanner.js";
+    import { instructionAssetSpecificationEngine } from "../instruction/instructionAssetSpecificationEngine.js";
+    import { contentGenerationOrchestrator } from "../engine/generation/contentGenerationOrchestrator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Running Content Generation Orchestrator Test...";
+
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+        const instructionPlan = learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+        const knowledgeGraph = knowledgeGraphEngine.buildGraph(instructionPlan);
+        const dependencyAnalysis = knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+        const instructionSequence = instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions = instructionDecisionEngine.decide({
+          instructionSequence,
+          dependencyAnalysis,
+          knowledgeGraph
+        });
+
+        const resourcePlan = instructionResourcePlanner.buildResourcePlan(instructionDecisions);
+        const assetSpecifications = instructionAssetSpecificationEngine.buildSpecifications(resourcePlan);
+        const generationPlan = contentGenerationOrchestrator.buildGenerationPlan(assetSpecifications);
+
+        assert(generationPlan, "Generation plan was not created.");
+        assert(generationPlan.lessonId, "Generation plan is missing lessonId.");
+        assert(generationPlan.generationPlanVersion === "v0.3.0", "Incorrect generation plan version.");
+        assert(Array.isArray(generationPlan.generationTasks), "Missing generationTasks array.");
+        assert(generationPlan.totalTasks === generationPlan.generationTasks.length, "totalTasks mismatch.");
+
+        generationPlan.generationTasks.forEach((task, index) => {
+          assert(task.id, `Task ${index + 1} missing id.`);
+          assert(task.assetId, `Task ${index + 1} missing assetId.`);
+          assert(task.resourceType, `Task ${index + 1} missing resourceType.`);
+          assert(task.futureGenerator, `Task ${index + 1} missing futureGenerator.`);
+          assert(task.generationStatus === "queued", `Task ${index + 1} not queued.`);
+          assert(task.outputContract, `Task ${index + 1} missing outputContract.`);
+          assert(Array.isArray(task.outputContract.requiredFields), `Task ${index + 1} missing requiredFields.`);
+        });
+
+        output.textContent =
+          "CONTENT GENERATION ORCHESTRATOR TEST PASS\n\n" +
+          JSON.stringify(generationPlan, null, 2);
+
+      } catch (error) {
+        output.textContent =
+          "CONTENT GENERATION ORCHESTRATOR TEST FAIL\n\n" +
+          error.message +
+          "\n\n" +
+          error.stack;
+      }
+    });
+  </script>
+</body>
+</html>
