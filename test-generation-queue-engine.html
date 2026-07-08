@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Generation Queue Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Generation Queue Engine Test</h1>
+
+  <button id="runTestButton">Run Generation Queue Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "./src/instruction/instructionResourcePlanner.js";
+    import { instructionAssetSpecificationEngine } from "./src/instruction/instructionAssetSpecificationEngine.js";
+    import { contentGenerationOrchestrator } from "./src/engine/generation/contentGenerationOrchestrator.js";
+    import { generationContextEngine } from "./src/engine/generation/generationContextEngine.js";
+    import { generationQueueEngine } from "./src/engine/generation/generationQueueEngine.js";
+
+    const output = document.getElementById("output");
+
+    document.getElementById("runTestButton").addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const instructionPlan =
+          learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+
+        const knowledgeGraph =
+  knowledgeGraphEngine.buildGraph(instructionPlan);
+
+        const dependencyAnalysis =
+          knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+
+        const instructionSequence =
+          instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions =
+          instructionDecisionEngine.decide({
+            instructionSequence,
+            dependencyAnalysis,
+            knowledgeGraph
+          });
+
+        const resourcePlan =
+          instructionResourcePlanner.buildResourcePlan(instructionDecisions);
+
+        const assetSpecifications =
+          instructionAssetSpecificationEngine.buildSpecifications(resourcePlan);
+
+        const generationPlan =
+          contentGenerationOrchestrator.buildGenerationPlan(
+            assetSpecifications.specifications
+          );
+
+        const generationContext =
+          generationContextEngine.buildContext({
+            lessonModel,
+            instructionPlan,
+            knowledgeGraph,
+            dependencyAnalysis,
+            instructionSequence,
+            instructionDecisions,
+            resourcePlan,
+            assetSpecifications,
+            generationPlan
+          });
+
+        const generationQueue =
+          generationQueueEngine.buildQueue(generationContext);
+
+        const checks = {
+          queueExists: !!generationQueue,
+          statusIsQueueReady: generationQueue.status === "queue_ready",
+          contentGeneratedFalse: generationQueue.contentGenerated === false,
+          queueItemsArray: Array.isArray(generationQueue.queueItems),
+          queueCountMatchesGenerationTasks:
+            generationQueue.totalQueuedItems === generationPlan.generationTasks.length,
+          everyItemQueued:
+            generationQueue.queueItems.every(item => item.status === "queued"),
+          everyItemHasQueueId:
+            generationQueue.queueItems.every(item => !!item.queueId),
+          everyItemHasOrder:
+            generationQueue.queueItems.every(item => typeof item.order === "number"),
+          everyItemHasGenerationTask:
+            generationQueue.queueItems.every(item => !!item.generationTask)
+        };
+
+        output.textContent = JSON.stringify({
+          sprint: "v0.3.5",
+          engine: "Generation Queue Engine",
+          result: "PASS",
+          checks,
+          generationQueue
+        }, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          sprint: "v0.3.5",
+          engine: "Generation Queue Engine",
+          result: "FAIL",
+          error: error.message,
+          stack: error.stack
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
