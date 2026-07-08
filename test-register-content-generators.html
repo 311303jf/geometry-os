@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Register Content Generators Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Register Content Generators Test</h1>
+
+  <button id="runTestButton">Run Register Content Generators Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { contentGeneratorRegistry } from "./src/engine/generation/contentGeneratorRegistry.js";
+    import { registerContentGenerators } from "./src/engine/generation/registerContentGenerators.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        const registeredGenerators = registerContentGenerators({
+          registry: contentGeneratorRegistry
+        });
+
+        const bellRingerContract =
+          contentGeneratorRegistry.resolve("bell_ringer_generator");
+
+        const pass =
+          Array.isArray(registeredGenerators) &&
+          contentGeneratorRegistry.has("bell_ringer_generator") &&
+          bellRingerContract &&
+          bellRingerContract.supportedAssetTypes.includes("bell_ringer") &&
+          bellRingerContract.status === "active";
+
+        if (!pass) {
+          throw new Error("Bell Ringer Generator contract was not registered correctly.");
+        }
+
+        output.textContent =
+          "PASS — Register Content Generators v0.3.9\n\n" +
+          JSON.stringify({
+            registeredCount: registeredGenerators.length,
+            bellRingerContract
+          }, null, 2);
+      } catch (error) {
+        output.textContent =
+          "FAIL — Register Content Generators v0.3.9\n\n" +
+          error.message;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
