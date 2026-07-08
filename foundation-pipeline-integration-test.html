@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Foundation Pipeline Integration Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Foundation Pipeline Integration Test</h1>
+
+  <button id="runTestButton">Run Foundation Integration Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "./src/instruction/instructionResourcePlanner.js";
+    import { instructionAssetSpecificationEngine } from "./src/instruction/instructionAssetSpecificationEngine.js";
+    import { foundationContractAuditEngine } from "./src/audit/foundationContractAuditEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    function hasFields(object, fields) {
+      return fields.every(field => Object.prototype.hasOwnProperty.call(object, field));
+    }
+
+    function auditPipelineStructure(items) {
+      const results = items.map(item => ({
+        name: item.name,
+        status:
+          item.value &&
+          typeof item.value === "object" &&
+          hasFields(item.value, item.requiredFields)
+            ? "PASS"
+            : "FAIL",
+        requiredFields: item.requiredFields
+      }));
+
+      return {
+        status: results.every(result => result.status === "PASS") ? "PASS" : "FAIL",
+        results
+      };
+    }
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Running Foundation Pipeline Integration Test...";
+
+        const contractAudit = foundationContractAuditEngine.auditEngineContracts([
+          {
+            engineName: "Curriculum Loader",
+            engine: curriculumLoader,
+            publicMethods: ["loadLesson"]
+          },
+          {
+            engineName: "Curriculum Engine",
+            engine: curriculumEngine,
+            publicMethods: ["buildLessonModel"]
+          },
+          {
+            engineName: "Learning Intelligence Engine",
+            engine: learningIntelligenceEngine,
+            publicMethods: ["buildInstructionPlan"]
+          },
+          {
+            engineName: "Knowledge Graph Engine",
+            engine: knowledgeGraphEngine,
+            publicMethods: ["buildGraph"]
+          },
+          {
+            engineName: "Knowledge Dependency Engine",
+            engine: knowledgeDependencyEngine,
+            publicMethods: ["analyzeDependencies"]
+          },
+          {
+            engineName: "Instruction Sequencing Engine",
+            engine: instructionSequencingEngine,
+            publicMethods: ["buildSequence"]
+          },
+          {
+            engineName: "Instruction Decision Engine",
+            engine: instructionDecisionEngine,
+            publicMethods: ["decide"]
+          },
+          {
+            engineName: "Instruction Resource Planner",
+            engine: instructionResourcePlanner,
+            publicMethods: ["buildResourcePlan"]
+          },
+          {
+            engineName: "Instruction Asset Specification Engine",
+            engine: instructionAssetSpecificationEngine,
+            publicMethods: ["buildSpecifications"]
+          }
+        ]);
+
+        if (contractAudit.status !== "PASS") {
+          output.textContent =
+            "FOUNDATION CONTRACT AUDIT FAIL\n\n" +
+            JSON.stringify(contractAudit, null, 2);
+          return;
+        }
+
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+  course: "Geometry",
+  unit: "Unit 1",
+  lesson: "1.1"
+});
+
+        const lessonModel =
+          curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const instructionPlan =
+          learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+
+        const knowledgeGraph =
+          knowledgeGraphEngine.buildGraph(instructionPlan);
+
+        const dependencyAnalysis =
+          knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+
+        const instructionSequence =
+          instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions =
+          instructionDecisionEngine.decide({
+            instructionSequence,
+            dependencyAnalysis,
+            knowledgeGraph
+          });
+
+        const resourcePlan =
+          instructionResourcePlanner.buildResourcePlan(instructionDecisions);
+
+        const assetSpecifications =
+          instructionAssetSpecificationEngine.buildSpecifications(resourcePlan);
+
+        const pipelineAudit = foundationContractAuditEngine.auditPipelineOutputs([
+          { name: "Lesson Blueprint", value: lessonBlueprint },
+          { name: "Lesson Model", value: lessonModel },
+          { name: "Instruction Plan", value: instructionPlan },
+          { name: "Knowledge Graph", value: knowledgeGraph },
+          { name: "Dependency Analysis", value: dependencyAnalysis },
+          { name: "Instruction Sequence", value: instructionSequence },
+          { name: "Instruction Decisions", value: instructionDecisions },
+          { name: "Resource Plan", value: resourcePlan },
+          { name: "Asset Specifications", value: assetSpecifications }
+        ]);
+
+        const structureAudit = auditPipelineStructure([
+          {
+            name: "Lesson Blueprint",
+            value: lessonBlueprint,
+            requiredFields: ["id", "course", "unit", "lesson"]
+          },
+          {
+            name: "Lesson Model",
+            value: lessonModel,
+            requiredFields: ["id", "course", "unit", "lesson", "learningPath"]
+          },
+          {
+            name: "Instruction Plan",
+            value: instructionPlan,
+            requiredFields: ["lessonId", "instructionalSequence", "assessmentFlow"]
+          },
+          {
+            name: "Knowledge Graph",
+            value: knowledgeGraph,
+            requiredFields: ["lessonId", "nodes", "edges"]
+          },
+          {
+            name: "Dependency Analysis",
+            value: dependencyAnalysis,
+            requiredFields: ["lessonId", "dependencyMap", "instructionalOrder"]
+          },
+          {
+            name: "Instruction Sequence",
+            value: instructionSequence,
+            requiredFields: ["lessonId", "sequence"]
+          },
+          {
+            name: "Instruction Decisions",
+            value: instructionDecisions,
+            requiredFields: ["engine", "version", "totalDecisions", "decisions"]
+          },
+          {
+            name: "Resource Plan",
+            value: resourcePlan,
+            requiredFields: ["lessonId", "resourcePlanVersion", "totalResources", "resources"]
+          },
+          {
+            name: "Asset Specifications",
+            value: assetSpecifications,
+            requiredFields: ["lessonId", "specificationVersion", "totalSpecifications", "specifications"]
+          }
+        ]);
+
+        const report = foundationContractAuditEngine.createAuditReport({
+          contractAudit,
+          pipelineAudit
+        });
+
+        report.structureAudit = structureAudit;
+        report.status =
+          contractAudit.status === "PASS" &&
+          pipelineAudit.status === "PASS" &&
+          structureAudit.status === "PASS"
+            ? "PASS"
+            : "FAIL";
+
+        output.textContent =
+          "FOUNDATION PIPELINE INTEGRATION TEST COMPLETE\n\n" +
+          JSON.stringify(report, null, 2);
+
+      } catch (error) {
+        output.textContent =
+          "FOUNDATION PIPELINE INTEGRATION TEST ERROR\n\n" +
+          error.message +
+          "\n\n" +
+          error.stack;
+      }
+    });
+  </script>
+</body>
+</html>

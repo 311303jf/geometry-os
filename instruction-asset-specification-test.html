@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Instruction Asset Specification Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Instruction Asset Specification Engine Test</h1>
+
+  <button id="runTestButton">Run Instruction Asset Specification Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "./src/instruction/instructionResourcePlanner.js";
+    import { instructionAssetSpecificationEngine } from "./src/instruction/instructionAssetSpecificationEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Running Instruction Asset Specification Engine test...";
+
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel =
+          curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const instructionPlan =
+          learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+
+        const knowledgeGraph =
+          knowledgeGraphEngine.buildGraph(instructionPlan);
+
+        const dependencyAnalysis =
+          knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+
+        const instructionSequence =
+          instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions =
+          instructionDecisionEngine.decide({
+            instructionSequence,
+            dependencyAnalysis,
+            knowledgeGraph
+          });
+
+        const resourcePlan =
+          instructionResourcePlanner.buildResourcePlan(
+            instructionDecisions
+          );
+
+        const assetSpecifications =
+          instructionAssetSpecificationEngine.buildSpecifications(
+            resourcePlan
+          );
+
+        console.log("Asset Specifications:", assetSpecifications);
+
+        const hasSpecifications =
+          Array.isArray(assetSpecifications.specifications);
+
+        const hasAtLeastOneSpecification =
+          assetSpecifications.specifications.length > 0;
+
+        const allSpecificationsHaveRequiredFields =
+          assetSpecifications.specifications.every((specification) =>
+            specification.assetId &&
+            specification.resourceType &&
+            specification.stepTitle &&
+            specification.generationStatus === "pending" &&
+            specification.estimatedDifficulty &&
+            typeof specification.estimatedDuration === "number" &&
+            typeof specification.requiresVisual === "boolean" &&
+            typeof specification.requiresTeacherGuidance === "boolean" &&
+            specification.futureGenerator
+          );
+
+        if (
+          !hasSpecifications ||
+          !hasAtLeastOneSpecification ||
+          !allSpecificationsHaveRequiredFields
+        ) {
+          throw new Error(
+            "Instruction Asset Specification Engine test failed."
+          );
+        }
+
+        output.textContent =
+          "PASS — Instruction Asset Specification Engine generated asset specifications successfully.\n\n" +
+          JSON.stringify(assetSpecifications, null, 2);
+
+      } catch (error) {
+        console.error(error);
+        output.textContent = "FAIL — " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
