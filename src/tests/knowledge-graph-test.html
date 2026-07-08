@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Knowledge Graph Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Knowledge Graph Test</h1>
+
+  <button id="runTestButton">Run Knowledge Graph Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "../curriculum/curriculumLoader.js";
+import { curriculumEngine } from "../curriculum/curriculumEngine.js";
+import { learningIntelligenceEngine } from "../curriculum/learningIntelligenceEngine.js";
+import { knowledgeGraphEngine } from "../curriculum/knowledgeGraphEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Loading Lesson 1.1...";
+
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const instructionPlan =
+          learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+
+        const knowledgeGraph =
+          knowledgeGraphEngine.buildGraph(instructionPlan);
+
+        output.textContent = JSON.stringify(knowledgeGraph, null, 2);
+
+        console.log("Knowledge Graph Test PASS:", knowledgeGraph);
+      } catch (error) {
+        output.textContent = "ERROR:\n" + error.message;
+        console.error("Knowledge Graph Test FAIL:", error);
+      }
+    });
+  </script>
+</body>
+</html>
