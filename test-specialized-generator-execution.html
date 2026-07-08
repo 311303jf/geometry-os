@@ -32,11 +32,17 @@
             lessonModel: {
               lessonId: "Geometry-Unit 1-1.1",
               lessonTitle: "The Language of Geometry",
+              lessonPurpose:
+                "Build precise geometric language for naming and describing basic figures.",
               vocabulary: ["point", "line", "plane"]
             },
             instructionPlan: {
               lessonId: "Geometry-Unit 1-1.1",
-              requiredSkills: ["Identify basic geometric figures"]
+              requiredSkills: ["Identify basic geometric figures"],
+              objectives: [
+                "Identify and name points, lines, and planes.",
+                "Use correct geometric vocabulary in explanations."
+              ]
             }
           },
           queueItems: [
@@ -45,36 +51,63 @@
               order: 1,
               assetType: "bell_ringer",
               generatorId: "bell_ringer_generator"
+            },
+            {
+              queueId: "generation_queue_item_2",
+              order: 2,
+              assetType: "student_notes",
+              generatorId: "student_notes_generator"
             }
           ]
         };
 
         const result = generationExecutionEngine.executeQueue(generationQueue);
 
-        const record = result.executionRecords[0];
+        const bellRingerRecord = result.executionRecords.find(
+          (record) => record.generatorId === "bell_ringer_generator"
+        );
+
+        const studentNotesRecord = result.executionRecords.find(
+          (record) => record.generatorId === "student_notes_generator"
+        );
 
         const pass =
           result.status === "content_generated" &&
           result.contentGenerated === true &&
-          result.generatedCount === 1 &&
-          record.status === "content_generated" &&
-          record.contentGenerated === true &&
-          record.output &&
-          record.output.generatorId === "bell_ringer_generator" &&
-          record.output.assetType === "bell_ringer" &&
-          Array.isArray(record.output.items) &&
-          record.output.items.length === 3;
+          result.generatedCount === 2 &&
+          bellRingerRecord &&
+          bellRingerRecord.status === "content_generated" &&
+          bellRingerRecord.contentGenerated === true &&
+          bellRingerRecord.output &&
+          bellRingerRecord.output.generatorId === "bell_ringer_generator" &&
+          bellRingerRecord.output.assetType === "bell_ringer" &&
+          Array.isArray(bellRingerRecord.output.items) &&
+          bellRingerRecord.output.items.length === 3 &&
+          studentNotesRecord &&
+          studentNotesRecord.status === "content_generated" &&
+          studentNotesRecord.contentGenerated === true &&
+          studentNotesRecord.output &&
+          studentNotesRecord.output.generatorId === "student_notes_generator" &&
+          studentNotesRecord.output.assetType === "student_notes" &&
+          studentNotesRecord.output.content &&
+          studentNotesRecord.output.content.title &&
+          studentNotesRecord.output.content.lessonOverview &&
+          Array.isArray(studentNotesRecord.output.content.learningGoals) &&
+          studentNotesRecord.output.content.prerequisiteReview &&
+          Array.isArray(studentNotesRecord.output.content.guidedNotes) &&
+          Array.isArray(studentNotesRecord.output.content.keyTakeaways) &&
+          studentNotesRecord.output.content.studentReflection;
 
         if (!pass) {
-          throw new Error("Specialized generator execution bridge failed.");
+          throw new Error("Specialized generator execution bridge failed for v0.4.2.");
         }
 
         output.textContent =
-          "PASS — Specialized Generator Execution Bridge v0.4.0\n\n" +
+          "PASS — Student Notes Generator v0.4.2\n\n" +
           JSON.stringify(result, null, 2);
       } catch (error) {
         output.textContent =
-          "FAIL — Specialized Generator Execution Bridge v0.4.0\n\n" +
+          "FAIL — Student Notes Generator v0.4.2\n\n" +
           error.message;
         console.error(error);
       }

@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Register Content Generators v0.4.1
+ * Register Content Generators v0.4.2
  *
  * Responsibility:
  * Register specialized content generator contracts.
@@ -13,6 +13,7 @@
 import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
 import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
 import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.js";
+import { studentNotesGenerator } from "./generators/studentNotesGenerator.js";
 
 export function registerContentGenerators({
   registry = contentGeneratorRegistry
@@ -50,7 +51,7 @@ export function registerContentGenerators({
       generatorVersion: "string",
       assetType: "string",
       lessonId: "string|null",
-      lessonTitle: "string",
+      lessonTitle: "string|null",
       title: "string",
       audience: "string",
       purpose: "string",
@@ -59,6 +60,26 @@ export function registerContentGenerators({
     },
     status: "active",
     generate: teacherPlaybookGenerator.generate.bind(teacherPlaybookGenerator)
+  });
+
+  registry.register("student_notes_generator", {
+    name: "Student Notes Generator",
+    responsibility:
+      "Generate student-facing lesson notes from generation tasks and generation context.",
+    supportedAssetTypes: ["student_notes"],
+    requiredInputFields: ["generationTask", "generationContext"],
+    outputContract: {
+      generatorId: "string",
+      generatorVersion: "string",
+      assetType: "string",
+      executionId: "string",
+      queueId: "string",
+      status: "string",
+      content: "object",
+      metadata: "object"
+    },
+    status: "active",
+    generate: studentNotesGenerator.generate.bind(studentNotesGenerator)
   });
 
   return registry.list();
