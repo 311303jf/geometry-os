@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Instruction Decision Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Instruction Decision Engine Test</h1>
+
+  <button id="runTestButton">Run Instruction Decision Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";    ;
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Running Instruction Decision Engine test...";
+
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+  course: "Geometry",
+  unit: "Unit 1",
+  lesson: "1.1"
+});
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const instructionPlan = learningIntelligenceEngine.buildInstructionPlan(
+  lessonModel
+);
+
+        const knowledgeGraph = knowledgeGraphEngine.buildGraph(
+  instructionPlan
+);
+
+        const dependencyAnalysis =
+  knowledgeDependencyEngine.analyzeDependencies(
+    knowledgeGraph
+  );
+
+        const instructionSequence =
+  instructionSequencingEngine.buildSequence(
+    dependencyAnalysis
+  );
+
+        const instructionDecisions = instructionDecisionEngine.decide({
+          instructionSequence,
+          dependencyAnalysis,
+          knowledgeGraph
+        });
+
+        console.log("Instruction Decisions:", instructionDecisions);
+
+        const hasDecisions = Array.isArray(instructionDecisions.decisions);
+        const hasAtLeastOneDecision = instructionDecisions.decisions.length > 0;
+
+        const allDecisionsHaveRequiredFields =
+          instructionDecisions.decisions.every((decision) =>
+            decision.id &&
+            decision.sequenceStepId &&
+            typeof decision.teachExplicitly === "boolean" &&
+            typeof decision.reviewPrerequisite === "boolean" &&
+            typeof decision.modelExample === "boolean" &&
+            typeof decision.guidedPractice === "boolean" &&
+            typeof decision.independentPractice === "boolean" &&
+            typeof decision.checkForUnderstanding === "boolean" &&
+            decision.recoveryRecommendation &&
+            decision.visualSupportRecommendation &&
+            decision.rationale
+          );
+
+        if (!hasDecisions || !hasAtLeastOneDecision || !allDecisionsHaveRequiredFields) {
+          throw new Error("Instruction Decision Engine test failed.");
+        }
+
+        output.textContent =
+          "PASS — Instruction Decision Engine generated instructional decisions successfully.\n\n" +
+          JSON.stringify(instructionDecisions, null, 2);
+
+      } catch (error) {
+        console.error(error);
+        output.textContent = "FAIL — " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
