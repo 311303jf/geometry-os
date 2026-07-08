@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Register Content Generators v0.3.9
+ * Register Content Generators v0.4.0
  *
  * Responsibility:
  * Register specialized content generator contracts.
@@ -11,6 +11,7 @@
  */
 
 import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
+import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
 
 export function registerContentGenerators({
   registry = contentGeneratorRegistry
@@ -33,7 +34,8 @@ export function registerContentGenerators({
       items: "array",
       metadata: "object"
     },
-    status: "active"
+    status: "active",
+    generate: bellRingerGenerator.generate.bind(bellRingerGenerator)
   });
 
   return registry.list();

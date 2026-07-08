@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Specialized Generator Execution Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Specialized Generator Execution Test</h1>
+
+  <button id="runTestButton">Run Specialized Generator Execution Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { contentGeneratorRegistry } from "./src/engine/generation/contentGeneratorRegistry.js";
+    import { registerContentGenerators } from "./src/engine/generation/registerContentGenerators.js";
+    import { generationExecutionEngine } from "./src/engine/generation/generationExecutionEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        registerContentGenerators({
+          registry: contentGeneratorRegistry
+        });
+
+        const generationQueue = {
+          generationContext: {
+            lessonModel: {
+              lessonId: "Geometry-Unit 1-1.1",
+              lessonTitle: "The Language of Geometry",
+              vocabulary: ["point", "line", "plane"]
+            },
+            instructionPlan: {
+              lessonId: "Geometry-Unit 1-1.1",
+              requiredSkills: ["Identify basic geometric figures"]
+            }
+          },
+          queueItems: [
+            {
+              queueId: "generation_queue_item_1",
+              order: 1,
+              assetType: "bell_ringer",
+              generatorId: "bell_ringer_generator"
+            }
+          ]
+        };
+
+        const result = generationExecutionEngine.executeQueue(generationQueue);
+
+        const record = result.executionRecords[0];
+
+        const pass =
+          result.status === "content_generated" &&
+          result.contentGenerated === true &&
+          result.generatedCount === 1 &&
+          record.status === "content_generated" &&
+          record.contentGenerated === true &&
+          record.output &&
+          record.output.generatorId === "bell_ringer_generator" &&
+          record.output.assetType === "bell_ringer" &&
+          Array.isArray(record.output.items) &&
+          record.output.items.length === 3;
+
+        if (!pass) {
+          throw new Error("Specialized generator execution bridge failed.");
+        }
+
+        output.textContent =
+          "PASS — Specialized Generator Execution Bridge v0.4.0\n\n" +
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent =
+          "FAIL — Specialized Generator Execution Bridge v0.4.0\n\n" +
+          error.message;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,9 +1,9 @@
 /**
  * Geometry OS
- * Content Generator Registry v0.3.2
+ * Content Generator Registry v0.4.0
  *
  * Responsibility:
- * Register and resolve future content generators dynamically.
+ * Register and resolve content generators dynamically.
  *
  * Important:
  * This registry does NOT generate instructional content.
@@ -31,7 +31,8 @@ export class ContentGeneratorRegistry {
       supportedAssetTypes: generatorContract?.supportedAssetTypes || [],
       requiredInputFields: generatorContract?.requiredInputFields || [],
       outputContract: generatorContract?.outputContract || {},
-      status: generatorContract?.status || "registered_placeholder"
+      status: generatorContract?.status || "registered_placeholder",
+      generate: generatorContract?.generate || null
     });
 
     this.generators.set(generatorKey, contract);

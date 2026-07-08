@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Generator Contract Engine v0.3.2
+ * Generator Contract Engine v0.4.0
  *
  * Responsibility:
  * Define and validate the universal contract required by all future
@@ -19,7 +19,8 @@ export class GeneratorContractEngine {
     supportedAssetTypes = [],
     requiredInputFields = [],
     outputContract = {},
-    status = "contract_defined"
+    status = "contract_defined",
+    generate = null
   } = {}) {
     const contract = {
       key,
@@ -29,7 +30,7 @@ export class GeneratorContractEngine {
       requiredInputFields,
       outputContract,
       status,
-      generate: null
+      generate
     };
 
     this.validateContract(contract);
@@ -66,6 +67,13 @@ export class GeneratorContractEngine {
 
     if (!("generate" in contract)) {
       errors.push("Generator contract must include generate property.");
+    }
+
+    if (
+      contract.generate !== null &&
+      typeof contract.generate !== "function"
+    ) {
+      errors.push("Generator contract generate property must be null or a function.");
     }
 
     return {
