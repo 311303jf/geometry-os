@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Register Content Generators v0.4.2
+ * Register Content Generators v0.4.4
  *
  * Responsibility:
  * Register specialized content generator contracts.
@@ -10,11 +10,12 @@
  * This file does NOT publish resources.
  */
 
-import { guidedPracticeGenerator } from "./generators/guidedPracticeGenerator.js";
 import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
 import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
 import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.js";
 import { studentNotesGenerator } from "./generators/studentNotesGenerator.js";
+import { guidedPracticeGenerator } from "./generators/guidedPracticeGenerator.js";
+import { independentPracticeGenerator } from "./generators/independentPracticeGenerator.js";
 
 export function registerContentGenerators({
   registry = contentGeneratorRegistry
@@ -83,7 +84,7 @@ export function registerContentGenerators({
     generate: studentNotesGenerator.generate.bind(studentNotesGenerator)
   });
 
-    registry.register("guided_practice_generator", {
+  registry.register("guided_practice_generator", {
     name: "Guided Practice Generator",
     responsibility:
       "Generate guided practice resources from generation tasks and generation context.",
@@ -103,6 +104,28 @@ export function registerContentGenerators({
     },
     status: "active",
     generate: guidedPracticeGenerator.generate.bind(guidedPracticeGenerator)
+  });
+
+  registry.register("independent_practice_generator", {
+    name: "Independent Practice Generator",
+    responsibility:
+      "Generate independent practice resources from generation tasks and generation context.",
+    supportedAssetTypes: ["independent_practice"],
+    requiredInputFields: ["generationTask", "generationContext"],
+    outputContract: {
+      generatorId: "string",
+      generatorVersion: "string",
+      assetType: "string",
+      lessonId: "string|null",
+      title: "string",
+      purpose: "object",
+      studentFacingInstructions: "array",
+      practiceStructure: "object",
+      assessmentContract: "object",
+      metadata: "object"
+    },
+    status: "active",
+    generate: independentPracticeGenerator.generate.bind(independentPracticeGenerator)
   });
 
   return registry.list();
