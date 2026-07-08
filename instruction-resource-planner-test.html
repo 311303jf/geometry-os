@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Instruction Resource Planner Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Instruction Resource Planner Test</h1>
+
+  <button id="runTestButton">Run Instruction Resource Planner Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { learningIntelligenceEngine } from "./src/curriculum/learningIntelligenceEngine.js";
+    import { knowledgeGraphEngine } from "./src/curriculum/knowledgeGraphEngine.js";
+    import { knowledgeDependencyEngine } from "./src/knowledge/knowledgeDependencyEngine.js";
+    import { instructionSequencingEngine } from "./src/instruction/instructionSequencingEngine.js";
+    import { instructionDecisionEngine } from "./src/curriculum/instructionDecisionEngine.js";
+    import { instructionResourcePlanner } from "./src/instruction/instructionResourcePlanner.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Running Instruction Resource Planner test...";
+
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel =
+          curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const instructionPlan =
+          learningIntelligenceEngine.buildInstructionPlan(lessonModel);
+
+        const knowledgeGraph =
+          knowledgeGraphEngine.buildGraph(instructionPlan);
+
+        const dependencyAnalysis =
+          knowledgeDependencyEngine.analyzeDependencies(knowledgeGraph);
+
+        const instructionSequence =
+          instructionSequencingEngine.buildSequence(dependencyAnalysis);
+
+        const instructionDecisions =
+          instructionDecisionEngine.decide({
+            instructionSequence,
+            dependencyAnalysis,
+            knowledgeGraph
+          });
+
+        const resourcePlan =
+          instructionResourcePlanner.buildResourcePlan(
+            instructionDecisions
+          );
+
+        console.log("Resource Plan:", resourcePlan);
+
+        const hasResources = Array.isArray(resourcePlan.resources);
+        const hasAtLeastOneResource = resourcePlan.resources.length > 0;
+
+        const allResourcesHaveRequiredFields =
+          resourcePlan.resources.every((resource) =>
+            resource.id &&
+            resource.decisionId &&
+            resource.sequenceStepId &&
+            resource.stepTitle &&
+            resource.resourceType &&
+            resource.purpose &&
+            resource.status === "planned"
+          );
+
+        if (!hasResources || !hasAtLeastOneResource || !allResourcesHaveRequiredFields) {
+          throw new Error("Instruction Resource Planner test failed.");
+        }
+
+        output.textContent =
+          "PASS — Instruction Resource Planner generated a resource plan successfully.\n\n" +
+          JSON.stringify(resourcePlan, null, 2);
+
+      } catch (error) {
+        console.error(error);
+        output.textContent = "FAIL — " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
