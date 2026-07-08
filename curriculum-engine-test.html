@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Curriculum Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Curriculum Engine Test</h1>
+
+  <button id="runTestButton">Run Curriculum Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        output.textContent = "Loading Lesson 1.1 blueprint...";
+
+        const lessonBlueprint = await curriculumLoader.loadLesson("lesson1-1");
+
+        output.textContent = "Building Lesson Model...";
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        output.textContent = JSON.stringify(lessonModel, null, 2);
+
+        console.log("Curriculum Engine Test PASS:", lessonModel);
+      } catch (error) {
+        output.textContent = "ERROR:\n" + error.message;
+        console.error("Curriculum Engine Test FAIL:", error);
+      }
+    });
+  </script>
+</body>
+</html>
