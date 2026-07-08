@@ -10,6 +10,7 @@
  * This file does NOT publish resources.
  */
 
+import { guidedPracticeGenerator } from "./generators/guidedPracticeGenerator.js";
 import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
 import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
 import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.js";
@@ -80,6 +81,28 @@ export function registerContentGenerators({
     },
     status: "active",
     generate: studentNotesGenerator.generate.bind(studentNotesGenerator)
+  });
+
+    registry.register("guided_practice_generator", {
+    name: "Guided Practice Generator",
+    responsibility:
+      "Generate guided practice resources from generation tasks and generation context.",
+    supportedAssetTypes: ["guided_practice"],
+    requiredInputFields: ["generationTask", "generationContext"],
+    outputContract: {
+      generatorId: "string",
+      generatorVersion: "string",
+      assetType: "string",
+      lessonId: "string|null",
+      lessonTitle: "string|null",
+      title: "string",
+      purpose: "string",
+      format: "object",
+      sections: "array",
+      metadata: "object"
+    },
+    status: "active",
+    generate: guidedPracticeGenerator.generate.bind(guidedPracticeGenerator)
   });
 
   return registry.list();

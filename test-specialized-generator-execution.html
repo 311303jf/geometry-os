@@ -57,6 +57,12 @@
               order: 2,
               assetType: "student_notes",
               generatorId: "student_notes_generator"
+            },
+            {
+              queueId: "generation_queue_item_3",
+              order: 3,
+              assetType: "guided_practice",
+              generatorId: "guided_practice_generator"
             }
           ]
         };
@@ -71,10 +77,14 @@
           (record) => record.generatorId === "student_notes_generator"
         );
 
+        const guidedPracticeRecord = result.executionRecords.find(
+          (record) => record.generatorId === "guided_practice_generator"
+        );
+
         const pass =
           result.status === "content_generated" &&
           result.contentGenerated === true &&
-          result.generatedCount === 2 &&
+          result.generatedCount === 3 &&
           bellRingerRecord &&
           bellRingerRecord.status === "content_generated" &&
           bellRingerRecord.contentGenerated === true &&
@@ -96,18 +106,29 @@
           studentNotesRecord.output.content.prerequisiteReview &&
           Array.isArray(studentNotesRecord.output.content.guidedNotes) &&
           Array.isArray(studentNotesRecord.output.content.keyTakeaways) &&
-          studentNotesRecord.output.content.studentReflection;
+          studentNotesRecord.output.content.studentReflection &&
+          guidedPracticeRecord &&
+          guidedPracticeRecord.status === "content_generated" &&
+          guidedPracticeRecord.contentGenerated === true &&
+          guidedPracticeRecord.output &&
+          guidedPracticeRecord.output.generatorId === "guided_practice_generator" &&
+          guidedPracticeRecord.output.assetType === "guided_practice" &&
+          guidedPracticeRecord.output.title &&
+          guidedPracticeRecord.output.purpose &&
+          guidedPracticeRecord.output.format &&
+          Array.isArray(guidedPracticeRecord.output.sections) &&
+          guidedPracticeRecord.output.sections.length > 0;
 
         if (!pass) {
-          throw new Error("Specialized generator execution bridge failed for v0.4.2.");
+          throw new Error("Specialized generator execution bridge failed for v0.4.3.");
         }
 
         output.textContent =
-          "PASS — Student Notes Generator v0.4.2\n\n" +
+          "PASS — Guided Practice Generator v0.4.3\n\n" +
           JSON.stringify(result, null, 2);
       } catch (error) {
         output.textContent =
-          "FAIL — Student Notes Generator v0.4.2\n\n" +
+          "FAIL — Guided Practice Generator v0.4.3\n\n" +
           error.message;
         console.error(error);
       }
