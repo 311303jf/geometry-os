@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Math Teacher OS Core Test</title>
+</head>
+<body>
+  <h1>Math Teacher OS — Core Runtime Test</h1>
+
+  <button id="runBtn">Run Lesson Orchestrator</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      lessonOrchestrator
+    } from "./src/core/lessonOrchestrator.js";
+
+    const button = document.getElementById("runBtn");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      const result = lessonOrchestrator.generateLesson({
+        course: "Geometry",
+        unit: "Unit 1",
+        lesson: "1.1",
+        resourceTypes: [
+          "Bell Ringer",
+          "Guided Practice",
+          "Independent Practice",
+          "Homework",
+          "Exit Ticket",
+          "Quiz"
+        ]
+      });
+
+      output.textContent = JSON.stringify(result, null, 2);
+    });
+  </script>
+</body>
+</html>
