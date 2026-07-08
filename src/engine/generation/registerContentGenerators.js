@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Register Content Generators v0.4.0
+ * Register Content Generators v0.4.1
  *
  * Responsibility:
  * Register specialized content generator contracts.
@@ -12,6 +12,7 @@
 
 import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
 import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
+import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.js";
 
 export function registerContentGenerators({
   registry = contentGeneratorRegistry
@@ -36,6 +37,28 @@ export function registerContentGenerators({
     },
     status: "active",
     generate: bellRingerGenerator.generate.bind(bellRingerGenerator)
+  });
+
+  registry.register("teacher_playbook_generator", {
+    name: "Teacher Playbook Generator",
+    responsibility:
+      "Generate teacher-facing lesson playbooks from generation tasks and generation context.",
+    supportedAssetTypes: ["teacher_playbook"],
+    requiredInputFields: ["generationTask", "generationContext"],
+    outputContract: {
+      generatorId: "string",
+      generatorVersion: "string",
+      assetType: "string",
+      lessonId: "string|null",
+      lessonTitle: "string",
+      title: "string",
+      audience: "string",
+      purpose: "string",
+      sections: "array",
+      metadata: "object"
+    },
+    status: "active",
+    generate: teacherPlaybookGenerator.generate.bind(teacherPlaybookGenerator)
   });
 
   return registry.list();

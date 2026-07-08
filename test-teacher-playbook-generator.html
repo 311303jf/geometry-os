@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Teacher Playbook Generator Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Teacher Playbook Generator Test</h1>
+
+  <button id="runTestButton">Run Teacher Playbook Generator Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { contentGeneratorRegistry } from "./src/engine/generation/contentGeneratorRegistry.js";
+    import { registerContentGenerators } from "./src/engine/generation/registerContentGenerators.js";
+    import { generationExecutionEngine } from "./src/engine/generation/generationExecutionEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        registerContentGenerators({
+          registry: contentGeneratorRegistry
+        });
+
+        const generationQueue = {
+          generationContext: {
+            lessonModel: {
+              lessonId: "Geometry-Unit 1-1.1",
+              course: "Geometry",
+              unit: "Unit 1",
+              lesson: "1.1",
+              lessonTitle: "The Language of Geometry",
+              standardTag: "Geometry Foundations",
+              lessonPurpose: "Introduce precise geometry language.",
+              objectives: ["Identify and name basic geometric figures."],
+              vocabulary: ["point", "line", "plane", "ray", "segment"],
+              requiredSkills: ["Recognize basic figures"],
+              misconceptions: ["Students may confuse a line with a segment."],
+              assessmentTargets: ["Students can identify points, lines, and planes."]
+            },
+            instructionPlan: {
+              lessonId: "Geometry-Unit 1-1.1",
+              objectives: ["Use geometry vocabulary correctly."],
+              requiredSkills: ["Identify basic geometric figures"]
+            },
+            instructionSequence: {
+              sequence: [
+                "Activate prior knowledge",
+                "Introduce vocabulary",
+                "Model examples",
+                "Guide practice",
+                "Check understanding"
+              ]
+            },
+            instructionDecisions: {
+              decisions: [
+                "Use visual examples before abstract notation.",
+                "Pause if students confuse lines and segments."
+              ]
+            }
+          },
+          queueItems: [
+            {
+              queueId: "generation_queue_item_1",
+              order: 1,
+              assetType: "teacher_playbook",
+              generatorId: "teacher_playbook_generator"
+            }
+          ]
+        };
+
+        const result = generationExecutionEngine.executeQueue(generationQueue);
+        const record = result.executionRecords[0];
+
+        const pass =
+          result.status === "content_generated" &&
+          result.contentGenerated === true &&
+          result.generatedCount === 1 &&
+          record.output &&
+          record.output.generatorId === "teacher_playbook_generator" &&
+          record.output.assetType === "teacher_playbook" &&
+          record.output.audience === "teacher" &&
+          Array.isArray(record.output.sections) &&
+          record.output.sections.length === 6;
+
+        if (!pass) {
+          throw new Error("Teacher Playbook Generator failed.");
+        }
+
+        output.textContent =
+          "PASS — Teacher Playbook Generator v0.4.1\n\n" +
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent =
+          "FAIL — Teacher Playbook Generator v0.4.1\n\n" +
+          error.message;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
