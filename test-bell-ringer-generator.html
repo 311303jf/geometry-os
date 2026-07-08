@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Bell Ringer Generator Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Bell Ringer Generator Test</h1>
+
+  <button id="runTestButton">Run Bell Ringer Generator Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { bellRingerGenerator } from "./src/engine/generation/generators/bellRingerGenerator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const generationTask = {
+          assetType: "bell_ringer",
+          generatorId: "bell_ringer_generator"
+        };
+
+        const generationContext = {
+          lessonModel: {
+            lessonId: "Geometry-Unit 1-1.1",
+            lessonTitle: "The Language of Geometry",
+            vocabulary: ["point", "line", "plane"]
+          },
+          instructionPlan: {
+            lessonId: "Geometry-Unit 1-1.1",
+            requiredSkills: ["Identify basic geometric figures"]
+          }
+        };
+
+        const result = bellRingerGenerator.generate({
+          generationTask,
+          generationContext
+        });
+
+        output.textContent =
+          "PASS — Bell Ringer Generator v0.3.8\n\n" +
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent =
+          "FAIL — Bell Ringer Generator v0.3.8\n\n" +
+          error.message;
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
