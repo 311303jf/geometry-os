@@ -1,0 +1,98 @@
+{
+  "course": "Geometry",
+  "unit": "Unit 1",
+  "unitTitle": "Foundations of Geometry",
+  "lesson": "1.1",
+  "lessonTitle": "The Language of Geometry",
+  "standardTag": "MA.912.GR.1.1",
+  "lessonPurpose": "Students learn the basic language, notation, and undefined terms used to describe geometric figures.",
+  "objectives": [
+    "Identify points, lines, planes, rays, segments, and angles.",
+    "Use correct geometric notation.",
+    "Recognize point, line, and plane as undefined terms.",
+    "Distinguish between collinear and coplanar points."
+  ],
+  "vocabulary": [
+    "point",
+    "line",
+    "plane",
+    "ray",
+    "segment",
+    "angle",
+    "vertex",
+    "endpoint",
+    "collinear",
+    "coplanar",
+    "undefined term"
+  ],
+  "requiredSkills": [
+    "Recognize basic geometric figures.",
+    "Interpret basic diagrams.",
+    "Read and use geometric vocabulary.",
+    "Connect notation to geometric meaning."
+  ],
+  "misconceptions": [
+    {
+      "id": "M-1-1-001",
+      "description": "Students may confuse a ray with a segment.",
+      "recoveryFocus": "Emphasize that a ray has one endpoint and extends forever in one direction."
+    },
+    {
+      "id": "M-1-1-002",
+      "description": "Students may confuse a line with a segment.",
+      "recoveryFocus": "Emphasize that a line extends forever in both directions, while a segment has two endpoints."
+    },
+    {
+      "id": "M-1-1-003",
+      "description": "Students may think collinear and coplanar mean the same thing.",
+      "recoveryFocus": "Collinear means on the same line. Coplanar means on the same plane."
+    },
+    {
+      "id": "M-1-1-004",
+      "description": "Students may treat geometric notation as decoration instead of meaning.",
+      "recoveryFocus": "Connect each notation format to the object it represents."
+    }
+  ],
+  "assessmentTargets": [
+    {
+      "skillTag": "undefined_terms",
+      "description": "Identify point, line, and plane as undefined terms.",
+      "difficulty": "DOK 1"
+    },
+    {
+      "skillTag": "basic_figures",
+      "description": "Identify basic geometric figures from descriptions.",
+      "difficulty": "DOK 1"
+    },
+    {
+      "skillTag": "geometric_notation",
+      "description": "Match geometric notation to its correct meaning.",
+      "difficulty": "DOK 2"
+    },
+    {
+      "skillTag": "collinear_coplanar",
+      "description": "Distinguish between collinear and coplanar relationships.",
+      "difficulty": "DOK 2"
+    }
+  ],
+  "resourceTypes": [
+    "Teacher Playbook",
+    "Student Notes",
+    "Bell Ringer",
+    "Guided Practice",
+    "Independent Practice",
+    "Homework",
+    "Exit Ticket",
+    "Quiz",
+    "Recovery"
+  ],
+  "certificationRequirements": {
+    "multipleChoiceOnly": true,
+    "choicesPerQuestion": 4,
+    "oneCorrectAnswer": true,
+    "requiresFeedback": true,
+    "requiresSkillTag": true,
+    "requiresStandardTag": true,
+    "requiresRecoveryMapping": true
+  }
+}
