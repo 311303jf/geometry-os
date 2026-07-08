@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Content Generator Registry Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Content Generator Registry Test</h1>
+
+  <button id="runTestButton">Run Content Generator Registry Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { contentGeneratorRegistry } from "../engine/generation/contentGeneratorRegistry.js";
+    import { contentGenerationOrchestrator } from "../engine/generation/contentGenerationOrchestrator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        contentGeneratorRegistry.register("TeacherLessonGenerator", {
+          name: "Teacher Lesson Generator",
+          responsibility: "Future generator for teacher-facing lesson content.",
+          status: "registered_placeholder",
+          supportedAssetTypes: ["teacher_lesson"],
+          outputContract: {
+            format: "structured_teacher_lesson"
+          }
+        });
+
+        contentGeneratorRegistry.register("StudentNotesGenerator", {
+          name: "Student Notes Generator",
+          responsibility: "Future generator for student-facing notes.",
+          status: "registered_placeholder",
+          supportedAssetTypes: ["student_notes"],
+          outputContract: {
+            format: "structured_student_notes"
+          }
+        });
+
+        const assetSpecifications = [
+          {
+            assetType: "teacher_lesson",
+            futureGenerator: "TeacherLessonGenerator",
+            requiredFields: ["lessonTitle", "objectives", "instructionSequence"],
+            outputContract: {
+              format: "teacher_lesson_contract"
+            },
+            estimatedDifficulty: "medium",
+            estimatedDuration: "short"
+          },
+          {
+            assetType: "student_notes",
+            futureGenerator: "StudentNotesGenerator",
+            requiredFields: ["vocabulary", "workedExamples", "studentPractice"],
+            outputContract: {
+              format: "student_notes_contract"
+            },
+            estimatedDifficulty: "medium",
+            estimatedDuration: "short"
+          }
+        ];
+
+        const generationPlan =
+          contentGenerationOrchestrator.buildGenerationPlan(assetSpecifications);
+
+        const result = {
+          sprint: "v0.3.1",
+          test: "Content Generator Registry",
+          registryCount: contentGeneratorRegistry.list().length,
+          teacherGeneratorResolved:
+            contentGeneratorRegistry.has("TeacherLessonGenerator"),
+          studentNotesGeneratorResolved:
+            contentGeneratorRegistry.has("StudentNotesGenerator"),
+          generationPlan
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = `FAIL\n\n${error.message}\n\n${error.stack}`;
+      }
+    });
+  </script>
+</body>
+</html>
