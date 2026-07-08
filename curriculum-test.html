@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geometry OS - Curriculum Loader Test</title>
+
+  <style>
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      margin:40px;
+      background:#f4f6f8;
+    }
+
+    h1{
+      color:#1f3b5b;
+    }
+
+    button{
+      padding:12px 20px;
+      font-size:16px;
+      cursor:pointer;
+      margin-bottom:20px;
+    }
+
+    pre{
+      background:white;
+      padding:20px;
+      border-radius:8px;
+      border:1px solid #ddd;
+      overflow:auto;
+      max-height:600px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Geometry OS Curriculum Loader Test</h1>
+
+<button id="loadLesson">
+    Load Lesson 1.1 Blueprint
+</button>
+
+<pre id="output">
+Waiting...
+</pre>
+
+<script type="module">
+
+import { curriculumLoader }
+from "./src/curriculum/curriculumLoader.js";
+
+const output=document.getElementById("output");
+
+document
+.getElementById("loadLesson")
+.addEventListener("click",async()=>{
+
+    try{
+
+        const blueprint=
+        await curriculumLoader.loadLesson({
+
+            course:"Geometry",
+            unit:"Unit 1",
+            lesson:"1.1"
+
+        });
+
+        output.textContent=
+        JSON.stringify(blueprint,null,2);
+
+    }
+
+    catch(error){
+
+        output.textContent=
+        error.stack;
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
