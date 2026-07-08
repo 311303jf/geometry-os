@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Content Generation Orchestrator v0.3.1
+ * Content Generation Orchestrator v0.3.3
  *
  * Responsibility:
  * Convert asset specifications into a generation plan.
@@ -8,14 +8,14 @@
  * Important:
  * This engine does NOT generate instructional content yet.
  * It only prepares generation tasks and resolves future generators
- * through the Content Generator Registry.
+ * through the Generator Discovery Engine.
  */
 
-import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
+import { generatorDiscoveryEngine } from "./generatorDiscoveryEngine.js";
 
 export class ContentGenerationOrchestrator {
-  constructor({ registry = contentGeneratorRegistry } = {}) {
-    this.registry = registry;
+  constructor({ discoveryEngine = generatorDiscoveryEngine } = {}) {
+    this.discoveryEngine = discoveryEngine;
   }
 
   buildGenerationPlan(assetSpecifications = []) {
@@ -24,20 +24,32 @@ export class ContentGenerationOrchestrator {
     }
 
     const generationTasks = assetSpecifications.map((specification, index) => {
-      const futureGenerator = this.resolveFutureGenerator(specification);
-      const registeredGenerator = this.registry.resolve(futureGenerator);
+      const assetType =
+        specification.assetType ||
+        specification.type ||
+        "unknown_asset";
+
+      const resolvedGenerator =
+        this.discoveryEngine.resolvePrimaryGenerator(assetType);
+
+      const futureGenerator =
+        specification.futureGenerator ||
+        specification.generator ||
+        specification.generatorKey ||
+        resolvedGenerator?.key ||
+        `${assetType}Generator`;
 
       return {
         id: `generation-task-${index + 1}`,
-        assetType: specification.assetType || specification.type || "unknown_asset",
+        assetType,
         futureGenerator,
-        generatorRegistered: Boolean(registeredGenerator),
-        generatorContract: registeredGenerator
+        generatorRegistered: Boolean(resolvedGenerator),
+        generatorContract: resolvedGenerator
           ? {
-              key: registeredGenerator.key,
-              name: registeredGenerator.name,
-              responsibility: registeredGenerator.responsibility,
-              status: registeredGenerator.status
+              key: resolvedGenerator.key,
+              name: resolvedGenerator.name,
+              responsibility: resolvedGenerator.responsibility,
+              status: resolvedGenerator.status
             }
           : null,
         outputContract: specification.outputContract || {},
@@ -52,18 +64,9 @@ export class ContentGenerationOrchestrator {
       status: "generation_plan_created",
       contentGenerated: false,
       totalGenerationTasks: generationTasks.length,
-      registeredGeneratorsAvailable: this.registry.list().length,
+      registeredGeneratorsAvailable: this.discoveryEngine.discoverAll().length,
       generationTasks
     };
-  }
-
-  resolveFutureGenerator(specification = {}) {
-    return (
-      specification.futureGenerator ||
-      specification.generator ||
-      specification.generatorKey ||
-      `${specification.assetType || specification.type || "unknown"}Generator`
-    );
   }
 }
 

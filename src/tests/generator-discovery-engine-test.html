@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Generator Discovery Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Generator Discovery Engine Test</h1>
+
+  <button id="runTestButton">Run Generator Discovery Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { contentGeneratorRegistry } from "../engine/generation/contentGeneratorRegistry.js";
+    import { generatorDiscoveryEngine } from "../engine/generation/generatorDiscoveryEngine.js";
+    import { contentGenerationOrchestrator } from "../engine/generation/contentGenerationOrchestrator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        contentGeneratorRegistry.register("TeacherLessonGenerator", {
+          name: "Teacher Lesson Generator",
+          responsibility: "Future generator for teacher-facing lesson content.",
+          supportedAssetTypes: ["teacher_lesson"],
+          requiredInputFields: [
+            "lessonModel",
+            "instructionPlan",
+            "instructionSequence",
+            "assetSpecification"
+          ],
+          outputContract: {
+            format: "structured_teacher_lesson",
+            contentGenerated: false
+          }
+        });
+
+        contentGeneratorRegistry.register("StudentNotesGenerator", {
+          name: "Student Notes Generator",
+          responsibility: "Future generator for student-facing notes.",
+          supportedAssetTypes: ["student_notes"],
+          requiredInputFields: [
+            "lessonModel",
+            "vocabulary",
+            "workedExamples",
+            "assetSpecification"
+          ],
+          outputContract: {
+            format: "structured_student_notes",
+            contentGenerated: false
+          }
+        });
+
+        const assetSpecifications = [
+          {
+            assetType: "teacher_lesson",
+            requiredFields: ["lessonTitle", "objectives", "instructionSequence"],
+            outputContract: {
+              format: "teacher_lesson_contract"
+            },
+            estimatedDifficulty: "medium",
+            estimatedDuration: "short"
+          },
+          {
+            assetType: "student_notes",
+            requiredFields: ["vocabulary", "workedExamples", "studentPractice"],
+            outputContract: {
+              format: "student_notes_contract"
+            },
+            estimatedDifficulty: "medium",
+            estimatedDuration: "short"
+          },
+          {
+            assetType: "quiz",
+            requiredFields: ["assessmentTargets", "answerKey"],
+            outputContract: {
+              format: "quiz_contract"
+            },
+            estimatedDifficulty: "high",
+            estimatedDuration: "medium"
+          }
+        ];
+
+        const discoveredGenerators = generatorDiscoveryEngine.discoverAll();
+        const teacherLessonMatches =
+          generatorDiscoveryEngine.findByAssetType("teacher_lesson");
+        const quizMatches =
+          generatorDiscoveryEngine.findByAssetType("quiz");
+
+        const coverageAudit =
+          generatorDiscoveryEngine.auditAssetCoverage(assetSpecifications);
+
+        const generationPlan =
+          contentGenerationOrchestrator.buildGenerationPlan(assetSpecifications);
+
+        const result = {
+          sprint: "v0.3.3",
+          test: "Generator Discovery Engine",
+          discoveredGeneratorCount: discoveredGenerators.length,
+          teacherLessonMatchCount: teacherLessonMatches.length,
+          quizMatchCount: quizMatches.length,
+          coverageAudit,
+          generationPlan
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = `FAIL\n\n${error.message}\n\n${error.stack}`;
+      }
+    });
+  </script>
+</body>
+</html>
