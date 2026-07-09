@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Publisher Readiness Validator Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Publisher Readiness Validator Test</h1>
+
+  <button id="runTestButton">Run Publisher Readiness Validator Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { contentGeneratorRegistry } from "./src/engine/generation/contentGeneratorRegistry.js";
+    import { registerContentGenerators } from "./src/engine/generation/registerContentGenerators.js";
+    import { generationExecutionEngine } from "./src/engine/generation/generationExecutionEngine.js";
+    import { contentAssemblyEngine } from "./src/engine/generation/contentAssemblyEngine.js";
+    import { lessonPackageValidator } from "./src/engine/generation/lessonPackageValidator.js";
+    import { lessonPackageExportContractEngine } from "./src/engine/generation/lessonPackageExportContractEngine.js";
+    import { publisherReadinessValidator } from "./src/engine/generation/publisherReadinessValidator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        contentGeneratorRegistry.clear();
+
+        const registeredGenerators = registerContentGenerators({
+          registry: contentGeneratorRegistry
+        });
+
+        const generationContext = {
+          lessonId: "Geometry-Unit 1-1.1",
+          lesson: {
+            id: "Geometry-Unit 1-1.1",
+            lessonId: "Geometry-Unit 1-1.1",
+            course: "Geometry",
+            unit: "Unit 1",
+            lesson: "1.1",
+            lessonTitle: "The Language of Geometry"
+          }
+        };
+
+        const generationQueue = {
+          generationContext,
+          queueItems: [
+            { queueId: "queue_01", order: 1, assetType: "bell_ringer", generatorId: "bell_ringer_generator", generationContext },
+            { queueId: "queue_02", order: 2, assetType: "teacher_playbook", generatorId: "teacher_playbook_generator", generationContext },
+            { queueId: "queue_03", order: 3, assetType: "student_notes", generatorId: "student_notes_generator", generationContext },
+            { queueId: "queue_04", order: 4, assetType: "guided_practice", generatorId: "guided_practice_generator", generationContext },
+            { queueId: "queue_05", order: 5, assetType: "independent_practice", generatorId: "independent_practice_generator", generationContext },
+            { queueId: "queue_06", order: 6, assetType: "homework", generatorId: "homework_generator", generationContext },
+            { queueId: "queue_07", order: 7, assetType: "exit_ticket", generatorId: "exit_ticket_generator", generationContext },
+            { queueId: "queue_08", order: 8, assetType: "quiz", generatorId: "quiz_generator", generationContext },
+            { queueId: "queue_09", order: 9, assetType: "recovery", generatorId: "recovery_generator", generationContext }
+          ]
+        };
+
+        const executionResult =
+          generationExecutionEngine.executeQueue(generationQueue);
+
+        const contentPackage =
+          contentAssemblyEngine.assemble(executionResult);
+
+        const validationReport =
+          lessonPackageValidator.validate(contentPackage);
+
+        const exportContract =
+          lessonPackageExportContractEngine.buildExportContract({
+            contentPackage,
+            validationReport
+          });
+
+        const publisherReadinessReport =
+          publisherReadinessValidator.validate(exportContract);
+
+        const result = {
+          test: "Publisher Readiness Validator v0.5.3",
+
+          registeredGenerators: registeredGenerators.length,
+
+          executionResultStatus: executionResult.status,
+          generatedCount: executionResult.generatedCount,
+
+          contentPackageStatus: contentPackage.status,
+          totalSections: contentPackage.totalSections,
+
+          validationStatus: validationReport.status,
+          validationValid: validationReport.valid,
+          validationErrorCount: validationReport.errorCount,
+
+          exportContractStatus: exportContract.status,
+          exportContractVersion: exportContract.exportContractVersion,
+          exportSectionCount: exportContract.sections.length,
+
+          publisherReadinessStatus: publisherReadinessReport.status,
+          publisherReadinessValid: publisherReadinessReport.valid,
+          publisherReadinessErrorCount: publisherReadinessReport.errorCount,
+          publisherReadinessWarningCount: publisherReadinessReport.warningCount,
+
+          readinessSummary: publisherReadinessReport.readinessSummary,
+
+          pass:
+            registeredGenerators.length === 9 &&
+            executionResult.status === "content_generated" &&
+            executionResult.generatedCount === 9 &&
+            contentPackage.status === "content_package_assembled" &&
+            contentPackage.totalSections === 9 &&
+            validationReport.valid === true &&
+            validationReport.errorCount === 0 &&
+            exportContract.status === "export_contract_prepared" &&
+            exportContract.exportContractVersion === "v0.5.2" &&
+            exportContract.sections.length === 9 &&
+            publisherReadinessReport.status === "publisher_readiness_valid" &&
+            publisherReadinessReport.valid === true &&
+            publisherReadinessReport.errorCount === 0,
+
+          publisherReadinessReport
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Publisher Readiness Validator v0.5.3",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
