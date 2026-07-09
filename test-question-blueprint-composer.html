@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Geometry OS — Question Blueprint Composer Test</title>
+</head>
+
+<body>
+<h1>Geometry OS — Question Blueprint Composer Test</h1>
+
+<button id="runTestButton">Run Question Blueprint Composer Test</button>
+
+<pre id="output"></pre>
+
+<script type="module">
+import { questionBlueprintComposer }
+from "./src/engine/generation/composition/questionBlueprintComposer.js";
+
+const button = document.getElementById("runTestButton");
+const output = document.getElementById("output");
+
+button.addEventListener("click", () => {
+  try {
+    const generationContext = {
+      lessonModel: {
+        lessonId: "Geometry-1.1",
+        lesson: "1.1",
+        lessonTitle: "The Language of Geometry",
+        standardTag: "MA.912.GR.1",
+        assessmentTargets: [
+          "Identify basic geometric figures.",
+          "Use correct notation.",
+          "Explain the difference between a line, ray, and segment."
+        ],
+        misconceptions: [
+          "Confusing lines, rays, and segments.",
+          "Naming a ray in the wrong order.",
+          "Ignoring arrows and endpoints."
+        ]
+      }
+    };
+
+    const result =
+      questionBlueprintComposer.composeBlueprints(
+        generationContext,
+        {
+          resourceType: "independent_practice",
+          count: 6
+        }
+      );
+
+    const blueprintIds =
+      result.blueprints.map((blueprint) => blueprint.blueprintId);
+
+    const problemTypes =
+      result.blueprints.map((blueprint) => blueprint.problemType);
+
+    const dokLevels =
+      result.blueprints.map((blueprint) => blueprint.dokLevel);
+
+    const difficulties =
+      result.blueprints.map((blueprint) => blueprint.difficulty);
+
+    const answerFormats =
+      result.blueprints.map((blueprint) => blueprint.answerFormat);
+
+    output.textContent = JSON.stringify({
+      test: "Question Blueprint Composer v0.7.6",
+
+      status:
+        result.status,
+
+      composerVersion:
+        result.metadata.composerVersion,
+
+      lessonId:
+        result.lesson.lessonId,
+
+      resourceType:
+        result.resourceType,
+
+      blueprintCount:
+        result.blueprintCount,
+
+      blueprintIds,
+      problemTypes,
+      dokLevels,
+      difficulties,
+      answerFormats,
+
+      hasClassification:
+        problemTypes.includes("classification"),
+
+      hasGeometricNotation:
+        problemTypes.includes("geometric_notation"),
+
+      hasCompareAndContrast:
+        problemTypes.includes("compare_and_contrast"),
+
+      allMultipleChoice:
+        answerFormats.every((format) => format === "multiple_choice"),
+
+      allFourChoices:
+        result.blueprints.every((blueprint) => blueprint.choiceCount === 4),
+
+      allOneCorrectAnswer:
+        result.blueprints.every((blueprint) => blueprint.correctAnswerCount === 1),
+
+      pass:
+        result.status === "question_blueprints_composed" &&
+        result.metadata.composerVersion === "v0.7.6" &&
+        result.lesson.lessonId === "Geometry-1.1" &&
+        result.resourceType === "independent_practice" &&
+        result.blueprintCount === 6 &&
+        problemTypes.includes("classification") &&
+        problemTypes.includes("geometric_notation") &&
+        problemTypes.includes("compare_and_contrast") &&
+        answerFormats.every((format) => format === "multiple_choice") &&
+        result.blueprints.every((blueprint) => blueprint.choiceCount === 4) &&
+        result.blueprints.every((blueprint) => blueprint.correctAnswerCount === 1)
+    }, null, 2);
+  } catch (error) {
+    output.textContent = JSON.stringify({
+      test: "Question Blueprint Composer v0.7.6",
+      pass: false,
+      error: error.message
+    }, null, 2);
+  }
+});
+</script>
+</body>
+</html>
