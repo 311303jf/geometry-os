@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Geometry Concept Lookup Contract Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Concept Lookup Contract Test</h1>
+
+  <button id="runTestButton">Run Geometry Concept Lookup Contract Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { geometryConceptLookupContract } from "./src/geometry/knowledge/geometryConceptLookupContract.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const validation = geometryConceptLookupContract.validateContract();
+
+        const concepts = geometryConceptLookupContract.listConcepts();
+        const conceptIds = geometryConceptLookupContract.listConceptIds();
+        const categories = geometryConceptLookupContract.listCategories();
+
+        const pointConcept = geometryConceptLookupContract.getConceptById("points");
+        const missingConcept = geometryConceptLookupContract.getConceptById("missing_concept");
+
+        const triangleProblemTypeMatches =
+          geometryConceptLookupContract.findByProblemType("classify_triangle");
+
+        const vertexVocabularyMatches =
+          geometryConceptLookupContract.findByVocabularyTerm("vertex");
+
+        const geometryDomainMatches =
+          geometryConceptLookupContract.findByFloridaBestDomain("MA.912.GR");
+
+        const foundationalGeometryMatches =
+          geometryConceptLookupContract.findByCategory("foundational_geometry");
+
+        const normalizedConceptIsProtectedCopy = (() => {
+          const firstPointLookup = geometryConceptLookupContract.getConceptById("points");
+          firstPointLookup.vocabulary.push("mutated_test_value");
+
+          const secondPointLookup = geometryConceptLookupContract.getConceptById("points");
+
+          return !secondPointLookup.vocabulary.includes("mutated_test_value");
+        })();
+
+        const result = {
+          test: "Geometry Concept Lookup Contract v1.0.2",
+          contractVersion: validation.contractVersion,
+          conceptCount: validation.conceptCount,
+          categoryCount: validation.categoryCount,
+          listConceptsReturnsArray: Array.isArray(concepts),
+          listConceptIdsReturnsArray: Array.isArray(conceptIds),
+          listCategoriesReturnsArray: Array.isArray(categories),
+          pointsConceptFound: Boolean(pointConcept),
+          missingConceptReturnsNull: missingConcept === null,
+          triangleProblemTypeMapped:
+            triangleProblemTypeMatches.some((concept) => concept.conceptId === "triangles"),
+          vertexVocabularyMapped:
+            vertexVocabularyMatches.some((concept) => concept.conceptId === "angles"),
+          floridaBestGeometryConceptCount: geometryDomainMatches.length,
+          foundationalGeometryConceptCount: foundationalGeometryMatches.length,
+          normalizedConceptIsProtectedCopy,
+          validationPassed: validation.valid,
+          validationErrors: validation.errors,
+          pass:
+            validation.valid === true &&
+            validation.contractVersion === "v1.0.2" &&
+            validation.conceptCount === 16 &&
+            validation.categoryCount === 6 &&
+            Array.isArray(concepts) === true &&
+            Array.isArray(conceptIds) === true &&
+            Array.isArray(categories) === true &&
+            Boolean(pointConcept) === true &&
+            missingConcept === null &&
+            triangleProblemTypeMatches.some((concept) => concept.conceptId === "triangles") &&
+            vertexVocabularyMatches.some((concept) => concept.conceptId === "angles") &&
+            geometryDomainMatches.length === 16 &&
+            foundationalGeometryMatches.length === 5 &&
+            normalizedConceptIsProtectedCopy === true
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Geometry Concept Lookup Contract v1.0.2",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
