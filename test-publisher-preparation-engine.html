@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Publisher Preparation Engine Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Publisher Preparation Engine Test</h1>
+
+  <button id="runTestButton">Run Publisher Preparation Engine Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { publisherRegistry } from "./src/engine/publishing/publisherRegistry.js";
+    import { registerPublishers } from "./src/engine/publishing/registerPublishers.js";
+    import { publisherPreparationEngine } from "./src/engine/publishing/publisherPreparationEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        publisherRegistry.clear();
+
+        registerPublishers({
+          registry: publisherRegistry
+        });
+
+        const normalizedExportContract = {
+          status: "publisher_readiness_valid",
+          lessonId: "Geometry-1.1",
+          lessonTitle: "The Language of Geometry",
+          sections: [
+            {
+              sectionId: "bell_ringer",
+              status: "content_generated"
+            },
+            {
+              sectionId: "teacher_playbook",
+              status: "content_generated"
+            }
+          ]
+        };
+
+        const preparationResult = publisherPreparationEngine.prepare(
+          normalizedExportContract
+        );
+
+        const preparedTargets = preparationResult.preparedPublisherContracts.map(
+          (contract) => contract.target
+        );
+
+        const preparedStatuses = preparationResult.preparedPublisherContracts.map(
+          (contract) => contract.status
+        );
+
+        const result = {
+          test: "Publisher Preparation Engine v0.6.2",
+          registryCount: publisherRegistry.count(),
+          preparationStatus: preparationResult.status,
+          preparedPublisherCount: preparationResult.preparedPublisherCount,
+          preparedTargets,
+          preparedStatuses,
+          hasGoogleDocsContract: preparedTargets.includes("google_docs"),
+          hasGoogleClassroomContract: preparedTargets.includes("google_classroom"),
+          hasPdfContract: preparedTargets.includes("pdf"),
+          hasHtmlContract: preparedTargets.includes("html"),
+          hasJsonApiContract: preparedTargets.includes("json_api"),
+          allContractsPrepared: preparedStatuses.every(
+            (status) => status === "publisher_contract_prepared"
+          ),
+          engineVersion: preparationResult.metadata.engineVersion,
+          pass:
+            publisherRegistry.count() === 5 &&
+            preparationResult.status === "publisher_preparation_complete" &&
+            preparationResult.preparedPublisherCount === 5 &&
+            preparedTargets.includes("google_docs") &&
+            preparedTargets.includes("google_classroom") &&
+            preparedTargets.includes("pdf") &&
+            preparedTargets.includes("html") &&
+            preparedTargets.includes("json_api") &&
+            preparedStatuses.every(
+              (status) => status === "publisher_contract_prepared"
+            ) &&
+            preparationResult.metadata.engineVersion === "v0.6.2"
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          test: "Publisher Preparation Engine v0.6.2",
+          pass: false,
+          error: error.message
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
