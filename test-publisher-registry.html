@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Publisher Registry Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Publisher Registry Test</h1>
+
+  <button id="runTestButton">Run Publisher Registry Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { publisherRegistry } from "./src/engine/publishing/publisherRegistry.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        publisherRegistry.clear();
+
+        const googleDocsPublisher = publisherRegistry.register(
+          "google_docs_publisher",
+          {
+            publisherId: "google_docs_publisher",
+            publisherName: "Google Docs Publisher",
+            publisherVersion: "v0.6.0-test",
+            publisherType: "document",
+            prepare: () => {
+              return {
+                status: "publisher_prepare_test_ready"
+              };
+            }
+          }
+        );
+
+        const googleClassroomPublisher = publisherRegistry.register(
+          "google_classroom_publisher",
+          {
+            publisherId: "google_classroom_publisher",
+            publisherName: "Google Classroom Publisher",
+            publisherVersion: "v0.6.0-test",
+            publisherType: "assignment_resources",
+            prepare: () => {
+              return {
+                status: "publisher_prepare_test_ready"
+              };
+            }
+          }
+        );
+
+        const pdfPublisher = publisherRegistry.register(
+          "pdf_publisher",
+          {
+            publisherId: "pdf_publisher",
+            publisherName: "PDF Publisher",
+            publisherVersion: "v0.6.0-test",
+            publisherType: "printable_packet",
+            prepare: () => {
+              return {
+                status: "publisher_prepare_test_ready"
+              };
+            }
+          }
+        );
+
+        const htmlPublisher = publisherRegistry.register(
+          "html_publisher",
+          {
+            publisherId: "html_publisher",
+            publisherName: "HTML Publisher",
+            publisherVersion: "v0.6.0-test",
+            publisherType: "web_lesson_package",
+            prepare: () => {
+              return {
+                status: "publisher_prepare_test_ready"
+              };
+            }
+          }
+        );
+
+        const jsonApiPublisher = publisherRegistry.register(
+          "json_api_publisher",
+          {
+            publisherId: "json_api_publisher",
+            publisherName: "JSON API Publisher",
+            publisherVersion: "v0.6.0-test",
+            publisherType: "structured_json",
+            prepare: () => {
+              return {
+                status: "publisher_prepare_test_ready"
+              };
+            }
+          }
+        );
+
+        const registeredPublishers = publisherRegistry.list();
+
+        const result = {
+          test: "Publisher Registry v0.6.0",
+
+          registeredCount: publisherRegistry.count(),
+
+          hasGoogleDocsPublisher:
+            publisherRegistry.has("google_docs_publisher"),
+
+          hasGoogleClassroomPublisher:
+            publisherRegistry.has("google_classroom_publisher"),
+
+          hasPdfPublisher:
+            publisherRegistry.has("pdf_publisher"),
+
+          hasHtmlPublisher:
+            publisherRegistry.has("html_publisher"),
+
+          hasJsonApiPublisher:
+            publisherRegistry.has("json_api_publisher"),
+
+          retrievedGoogleDocsPublisher:
+            publisherRegistry.get("google_docs_publisher").publisherName,
+
+          registeredPublishers,
+
+          prepareSmokeTest: {
+            googleDocs: googleDocsPublisher.prepare().status,
+            googleClassroom: googleClassroomPublisher.prepare().status,
+            pdf: pdfPublisher.prepare().status,
+            html: htmlPublisher.prepare().status,
+            jsonApi: jsonApiPublisher.prepare().status
+          },
+
+          pass:
+            publisherRegistry.count() === 5 &&
+            publisherRegistry.has("google_docs_publisher") &&
+            publisherRegistry.has("google_classroom_publisher") &&
+            publisherRegistry.has("pdf_publisher") &&
+            publisherRegistry.has("html_publisher") &&
+            publisherRegistry.has("json_api_publisher") &&
+            publisherRegistry.get("google_docs_publisher").publisherName === "Google Docs Publisher" &&
+            registeredPublishers.length === 5 &&
+            googleDocsPublisher.prepare().status === "publisher_prepare_test_ready" &&
+            googleClassroomPublisher.prepare().status === "publisher_prepare_test_ready" &&
+            pdfPublisher.prepare().status === "publisher_prepare_test_ready" &&
+            htmlPublisher.prepare().status === "publisher_prepare_test_ready" &&
+            jsonApiPublisher.prepare().status === "publisher_prepare_test_ready"
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Publisher Registry v0.6.0",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
