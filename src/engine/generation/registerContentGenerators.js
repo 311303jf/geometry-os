@@ -15,6 +15,7 @@ import { independentPracticeGenerator } from "./generators/IndependentPracticeGe
 import { homeworkGenerator } from "./generators/HomeworkGenerator.js";
 import { exitTicketGenerator } from "./generators/ExitTicketGenerator.js";
 import { quizGenerator } from "./generators/QuizGenerator.js";
+import { recoveryGenerator } from "./generators/RecoveryGenerator.js";
 
 export function registerContentGenerators({ registry }) {
   if (!registry) {
@@ -84,6 +85,12 @@ export function registerContentGenerators({ registry }) {
     assetType: "quiz",
     generate: quizGenerator.generate.bind(quizGenerator)
   });
-
+  registry.register("recovery_generator", {
+  generatorId: "recovery_generator",
+  generatorName: "Recovery Generator",
+  generatorVersion: recoveryGenerator.version,
+  assetType: "recovery",
+  generate: recoveryGenerator.generate.bind(recoveryGenerator)
+});
   return registry.list();
 }

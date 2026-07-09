@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Geometry OS — Specialized Generator Execution Test</title>
+  <title>Geometry OS — Content Assembly Engine Test</title>
 </head>
 <body>
-  <h1>Geometry OS — Specialized Generator Execution Test</h1>
+  <h1>Geometry OS — Content Assembly Engine Test</h1>
 
-  <button id="runTestButton">Run Specialized Generator Execution Test</button>
+  <button id="runTestButton">Run Content Assembly Engine Test</button>
 
   <pre id="output"></pre>
 
@@ -15,6 +15,7 @@
     import { contentGeneratorRegistry } from "./src/engine/generation/contentGeneratorRegistry.js";
     import { registerContentGenerators } from "./src/engine/generation/registerContentGenerators.js";
     import { generationExecutionEngine } from "./src/engine/generation/generationExecutionEngine.js";
+    import { contentAssemblyEngine } from "./src/engine/generation/contentAssemblyEngine.js";
 
     const button = document.getElementById("runTestButton");
     const output = document.getElementById("output");
@@ -118,57 +119,65 @@
           ]
         };
 
-        const result = generationExecutionEngine.executeQueue(generationQueue);
+        const executionResult =
+          generationExecutionEngine.executeQueue(generationQueue);
 
-        const requiredGeneratorIds = [
-          "bell_ringer_generator",
-          "teacher_playbook_generator",
-          "student_notes_generator",
-          "guided_practice_generator",
-          "independent_practice_generator",
-          "homework_generator",
-          "exit_ticket_generator",
-          "quiz_generator",
-          "recovery_generator"
+        const contentPackage =
+          contentAssemblyEngine.assemble(executionResult);
+
+        const requiredAssetTypes = [
+          "bell_ringer",
+          "teacher_playbook",
+          "student_notes",
+          "guided_practice",
+          "independent_practice",
+          "homework",
+          "exit_ticket",
+          "quiz",
+          "recovery"
         ];
 
-        const missingGenerators = requiredGeneratorIds.filter((generatorId) => {
-          return !result.executionRecords.some(
-            (record) =>
-              record.generatorId === generatorId &&
-              record.status === "content_generated" &&
-              record.contentGenerated === true &&
-              record.output
+        const missingSections = requiredAssetTypes.filter((assetType) => {
+          return !contentPackage.sections.some(
+            (section) =>
+              section.assetType === assetType &&
+              section.contentGenerated === true &&
+              section.content
           );
         });
 
         if (
-          result.status !== "content_generated" ||
-          result.contentGenerated !== true ||
-          result.totalExecutionRecords !== 9 ||
-          result.generatedCount !== 9 ||
           registeredGenerators.length !== 9 ||
-          missingGenerators.length > 0
+          executionResult.status !== "content_generated" ||
+          executionResult.contentGenerated !== true ||
+          executionResult.totalExecutionRecords !== 9 ||
+          executionResult.generatedCount !== 9 ||
+          contentPackage.status !== "content_package_assembled" ||
+          contentPackage.contentAssembled !== true ||
+          contentPackage.totalSections !== 9 ||
+          contentPackage.sections.length !== 9 ||
+          missingSections.length > 0
         ) {
           throw new Error(
-            "Specialized generator execution bridge failed for v0.4.8. Missing: " +
-              missingGenerators.join(", ")
+            "Content Assembly Engine failed for v0.5.0. Missing sections: " +
+              missingSections.join(", ")
           );
         }
 
         output.textContent =
-          "PASS — Recovery Generator v0.4.8\n\n" +
+          "PASS — Content Assembly Engine v0.5.0\n\n" +
           JSON.stringify(
             {
               registeredGenerators,
-              ...result
+              executionResult,
+              contentPackage
             },
             null,
             2
           );
       } catch (error) {
         output.textContent =
-          "FAIL — Recovery Generator v0.4.8\n\n" +
+          "FAIL — Content Assembly Engine v0.5.0\n\n" +
           error.message;
         console.error(error);
       }
