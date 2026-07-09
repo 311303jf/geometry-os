@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Geometry Problem Type Registry Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Problem Type Registry Test</h1>
+
+  <button id="runTestButton">Run Geometry Problem Type Registry Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { geometryProblemTypeRegistry } from "./src/geometry/problemTypes/geometryProblemTypeRegistry.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const validation = geometryProblemTypeRegistry.validate();
+
+        const problemTypes = geometryProblemTypeRegistry.listProblemTypes();
+        const problemTypeIds = geometryProblemTypeRegistry.listProblemTypeIds();
+        const families = geometryProblemTypeRegistry.listFamilies();
+
+        const classifyTriangle = geometryProblemTypeRegistry.getProblemType("classify_triangle");
+        const missingProblemType = geometryProblemTypeRegistry.getProblemType("missing_problem_type");
+
+        const angleProblemTypes =
+          geometryProblemTypeRegistry.getProblemTypesByConcept("angles");
+
+        const foundationalIdentificationTypes =
+          geometryProblemTypeRegistry.getProblemTypesByFamily("foundational_identification");
+
+        const figureRequiredTypes =
+          geometryProblemTypeRegistry.getProblemTypesRequiringFigure();
+
+        const noFigureRequiredTypes =
+          geometryProblemTypeRegistry.getProblemTypesNotRequiringFigure();
+
+        const result = {
+          test: "Geometry Problem Type Registry Foundation v1.0.3",
+          registryVersion: validation.registryVersion,
+          problemTypeCount: validation.problemTypeCount,
+          familyCount: validation.familyCount,
+          listProblemTypesReturnsArray: Array.isArray(problemTypes),
+          listProblemTypeIdsReturnsArray: Array.isArray(problemTypeIds),
+          listFamiliesReturnsArray: Array.isArray(families),
+          classifyTriangleFound: Boolean(classifyTriangle),
+          classifyTriangleConceptId: classifyTriangle ? classifyTriangle.conceptId : null,
+          missingProblemTypeReturnsNull: missingProblemType === null,
+          angleProblemTypeCount: angleProblemTypes.length,
+          foundationalIdentificationCount: foundationalIdentificationTypes.length,
+          figureRequiredCount: figureRequiredTypes.length,
+          noFigureRequiredCount: noFigureRequiredTypes.length,
+          validationPassed: validation.valid,
+          validationErrors: validation.errors,
+          pass:
+            validation.valid === true &&
+            validation.registryVersion === "v1.0.3" &&
+            validation.problemTypeCount === 22 &&
+            validation.familyCount >= 10 &&
+            Array.isArray(problemTypes) === true &&
+            Array.isArray(problemTypeIds) === true &&
+            Array.isArray(families) === true &&
+            Boolean(classifyTriangle) === true &&
+            classifyTriangle.conceptId === "triangles" &&
+            missingProblemType === null &&
+            angleProblemTypes.length === 3 &&
+            foundationalIdentificationTypes.length === 5 &&
+            figureRequiredTypes.length > 0 &&
+            noFigureRequiredTypes.length > 0
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Geometry Problem Type Registry Foundation v1.0.3",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
