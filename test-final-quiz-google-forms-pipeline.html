@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Final Quiz Google Forms Pipeline Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Final Quiz Google Forms Pipeline Test</h1>
+
+  <button id="runTestButton">Run Final Quiz Google Forms Pipeline Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { finalQuizGoogleFormsPipeline } from "./src/engine/generation/export/finalQuizGoogleFormsPipeline.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const pipelineResult = finalQuizGoogleFormsPipeline.build({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "quiz",
+          count: 20
+        });
+
+        const payload = pipelineResult.googleFormsPayload;
+        const items = payload.form.items || [];
+        const answerKey = payload.answerKey || [];
+
+        const allItemsMultipleChoice = items.every(
+          (item) => item.type === "multiple_choice"
+        );
+
+        const allItemsHaveFourChoices = items.every(
+          (item) =>
+            Array.isArray(item.choices) &&
+            item.choices.length === 4
+        );
+
+        const allAnswerKeysMapped = answerKey.every(
+          (key) =>
+            Boolean(key.itemId) &&
+            Boolean(key.correctChoice) &&
+            Boolean(key.correctAnswer)
+        );
+
+        const result = {
+          test: "Final Quiz Google Forms Pipeline v0.9.6",
+          pipelineVersion: pipelineResult.pipelineVersion,
+          lessonId: pipelineResult.lessonId,
+          resourceType: pipelineResult.resourceType,
+          exportTarget: pipelineResult.exportTarget,
+          finalQuizResourceBuilderVersion:
+            pipelineResult.metadata.finalQuizResourceBuilderVersion,
+          exportContractVersion:
+            pipelineResult.metadata.exportContractVersion,
+          googleFormsExportAdapterVersion:
+            pipelineResult.metadata.googleFormsExportAdapterVersion,
+          finalQuestionCount:
+            pipelineResult.metadata.finalQuestionCount,
+          contractQuestionCount:
+            pipelineResult.metadata.contractQuestionCount,
+          payloadItemCount:
+            pipelineResult.metadata.payloadItemCount,
+          answerKeyCount:
+            pipelineResult.metadata.answerKeyCount,
+          allItemsMultipleChoice,
+          allItemsHaveFourChoices,
+          allAnswerKeysMapped,
+          callsGoogleApi: pipelineResult.metadata.callsGoogleApi,
+          publishesResource: pipelineResult.metadata.publishesResource,
+          readyForPublishing: pipelineResult.metadata.readyForPublishing
+        };
+
+        result.pass =
+          result.test === "Final Quiz Google Forms Pipeline v0.9.6" &&
+          result.pipelineVersion === "v0.9.6" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.resourceType === "quiz" &&
+          result.exportTarget === "google_forms" &&
+          result.finalQuizResourceBuilderVersion === "v0.9.3" &&
+          result.exportContractVersion === "v0.9.4" &&
+          result.googleFormsExportAdapterVersion === "v0.9.5" &&
+          result.finalQuestionCount === 20 &&
+          result.contractQuestionCount === 20 &&
+          result.payloadItemCount === 20 &&
+          result.answerKeyCount === 20 &&
+          result.allItemsMultipleChoice === true &&
+          result.allItemsHaveFourChoices === true &&
+          result.allAnswerKeysMapped === true &&
+          result.callsGoogleApi === false &&
+          result.publishesResource === false &&
+          result.readyForPublishing === true;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
