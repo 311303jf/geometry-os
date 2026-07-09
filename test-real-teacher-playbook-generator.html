@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Real Teacher Playbook Generator Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Real Teacher Playbook Generator Test</h1>
+
+  <button id="runTestButton">Run Real Teacher Playbook Generator Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { teacherPlaybookGenerator } from "./src/engine/generation/generators/teacherPlaybookGenerator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const result = teacherPlaybookGenerator.generate({
+          generationContext: {
+            lessonModel: {
+              lessonId: "Geometry-1.1",
+              lesson: "1.1",
+              lessonTitle: "The Language of Geometry"
+            }
+          }
+        });
+
+        const sections = result.content.sections || [];
+        const sectionIds = sections.map((section) => section.sectionId);
+
+        const testResult = {
+          test: "Real Teacher Playbook Generator v0.7.0",
+          status: result.status,
+          generatorId: result.generatorId,
+          generatorVersion: result.generatorVersion,
+          assetType: result.assetType,
+          lessonId: result.lessonId,
+          lessonTitle: result.lessonTitle,
+          sectionCount: sections.length,
+          sectionIds,
+          hasLessonOverview: sectionIds.includes("lesson_overview"),
+          hasLearningObjectives: sectionIds.includes("learning_objectives"),
+          hasVocabulary: sectionIds.includes("vocabulary"),
+          hasMisconceptions: sectionIds.includes("common_misconceptions"),
+          hasLessonFlow: sectionIds.includes("lesson_flow"),
+          hasInstructionScript: sectionIds.includes("direct_instruction_script"),
+          hasDifferentiation: sectionIds.includes("differentiation"),
+          pass:
+            result.status === "content_generated" &&
+            result.generatorId === "teacher_playbook_generator" &&
+            result.generatorVersion === "v0.7.0" &&
+            result.assetType === "teacher_playbook" &&
+            result.lessonId === "Geometry-1.1" &&
+            sections.length >= 8 &&
+            sectionIds.includes("lesson_overview") &&
+            sectionIds.includes("learning_objectives") &&
+            sectionIds.includes("vocabulary") &&
+            sectionIds.includes("common_misconceptions") &&
+            sectionIds.includes("lesson_flow") &&
+            sectionIds.includes("direct_instruction_script") &&
+            sectionIds.includes("differentiation")
+        };
+
+        output.textContent = JSON.stringify(testResult, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          test: "Real Teacher Playbook Generator v0.7.0",
+          pass: false,
+          error: error.message
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
