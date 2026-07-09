@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Geometry OS — Guided Practice Composer Test</title>
+</head>
+
+<body>
+<h1>Geometry OS — Guided Practice Composer Test</h1>
+
+<button id="runTestButton">Run Guided Practice Composer Test</button>
+
+<pre id="output"></pre>
+
+<script type="module">
+import { guidedPracticeGenerator }
+from "./src/engine/generation/generators/guidedPracticeGenerator.js";
+
+const button = document.getElementById("runTestButton");
+const output = document.getElementById("output");
+
+button.addEventListener("click", () => {
+  try {
+    const result = guidedPracticeGenerator.generate({
+      generationContext: {
+        lessonModel: {
+          lessonId: "Geometry-1.1",
+          lesson: "1.1",
+          lessonTitle: "The Language of Geometry",
+          standardTag: "MA.912.GR.1"
+        }
+      }
+    });
+
+    const ids = result.content.sections.map((section) => section.sectionId);
+    const guidedProblemsSection = result.content.sections.find(
+      (section) => section.sectionId === "guided_problems"
+    );
+
+    const guidedProblemCount = Array.isArray(guidedProblemsSection.body)
+      ? guidedProblemsSection.body.length
+      : 0;
+
+    output.textContent = JSON.stringify({
+      test: "Guided Practice Composer v0.7.4",
+      status: result.status,
+      generatorId: result.generatorId,
+      generatorVersion: result.generatorVersion,
+      assetType: result.assetType,
+      lessonId: result.lessonId,
+      sectionCount: result.content.sections.length,
+      sectionIds: ids,
+      guidedProblemCount,
+      hasPracticePurpose: ids.includes("practice_purpose"),
+      hasTeacherModel: ids.includes("teacher_model"),
+      hasGuidedProblems: ids.includes("guided_problems"),
+      hasTurnAndTalk: ids.includes("turn_and_talk"),
+      hasQuickCheck: ids.includes("quick_check"),
+      composerVersion: result.content.metadata.composerVersion,
+      pass:
+        result.status === "content_generated" &&
+        result.generatorId === "guided_practice_generator" &&
+        result.generatorVersion === "v0.7.4" &&
+        result.assetType === "guided_practice" &&
+        result.lessonId === "Geometry-1.1" &&
+        result.content.metadata.composerVersion === "v0.7.4" &&
+        result.content.sections.length === 5 &&
+        ids.includes("practice_purpose") &&
+        ids.includes("teacher_model") &&
+        ids.includes("guided_problems") &&
+        ids.includes("turn_and_talk") &&
+        ids.includes("quick_check") &&
+        guidedProblemCount === 3
+    }, null, 2);
+  } catch (error) {
+    output.textContent = JSON.stringify({
+      test: "Guided Practice Composer v0.7.4",
+      pass: false,
+      error: error.message
+    }, null, 2);
+  }
+});
+</script>
+</body>
+</html>
