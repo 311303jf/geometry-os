@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Final Quiz Resource Builder Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Final Quiz Resource Builder Test</h1>
+
+  <button id="runTestButton">Run Final Quiz Resource Builder Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { finalQuizResourceBuilder } from "./src/engine/generation/questions/finalQuizResourceBuilder.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const finalQuizResource = finalQuizResourceBuilder.build({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "quiz",
+          count: 20
+        });
+
+        const sections = finalQuizResource.sections || [];
+
+        const finalQuestionsSection = sections.find(
+          (section) => section.sectionId === "final_questions"
+        );
+
+        const finalQuestions = finalQuestionsSection?.content || [];
+
+        const allMultipleChoice = finalQuestions.every(
+          (question) => question.answerFormat === "multiple_choice"
+        );
+
+        const allFourChoices = finalQuestions.every(
+          (question) =>
+            Array.isArray(question.choices) &&
+            question.choices.length === 4
+        );
+
+        const allOneCorrectChoice = finalQuestions.every(
+          (question) =>
+            question.choices.filter((choice) => choice.isCorrect === true)
+              .length === 1
+        );
+
+        const result = {
+          test: "Final Quiz Resource Builder v0.9.3",
+          builderVersion: finalQuizResource.builderVersion,
+          assetType: finalQuizResource.assetType,
+          lessonId: finalQuizResource.lessonId,
+          sectionCount: sections.length,
+          hasFinalQuestions: Boolean(finalQuestionsSection),
+          finalQuestionCount: finalQuestions.length,
+          blueprintCount: finalQuizResource.metadata.blueprintCount,
+          sourceComposerVersion: finalQuizResource.metadata.sourceComposerVersion,
+          sourceGeneratorVersion: finalQuizResource.metadata.sourceGeneratorVersion,
+          finalQuestionBuilderVersion:
+            finalQuizResource.metadata.finalQuestionBuilderVersion,
+          factoryVersion: finalQuizResource.metadata.factoryVersion,
+          qualityGateVersion: finalQuizResource.metadata.qualityGateVersion,
+          qualityGateApplied: finalQuizResource.metadata.qualityGateApplied,
+          pipelinePass: finalQuizResource.metadata.pass,
+          allMultipleChoice,
+          allFourChoices,
+          allOneCorrectChoice
+        };
+
+        result.pass =
+          result.test === "Final Quiz Resource Builder v0.9.3" &&
+          result.builderVersion === "v0.9.3" &&
+          result.assetType === "quiz" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.sectionCount === 6 &&
+          result.hasFinalQuestions === true &&
+          result.finalQuestionCount === 20 &&
+          result.blueprintCount === 20 &&
+          result.sourceComposerVersion === "v0.8.0" &&
+          result.sourceGeneratorVersion === "v0.8.0" &&
+          result.finalQuestionBuilderVersion === "v0.9.2" &&
+          result.factoryVersion === "v0.9.0" &&
+          result.qualityGateVersion === "v0.9.1" &&
+          result.qualityGateApplied === true &&
+          result.pipelinePass === true &&
+          result.allMultipleChoice === true &&
+          result.allFourChoices === true &&
+          result.allOneCorrectChoice === true;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
