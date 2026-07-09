@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Geometry Knowledge Library Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Knowledge Library Test</h1>
+
+  <button id="runTestButton">Run Geometry Knowledge Library Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { geometryKnowledgeLibrary } from "./src/geometry/knowledge/geometryKnowledgeLibrary.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const validation = geometryKnowledgeLibrary.validate();
+
+        const concepts = geometryKnowledgeLibrary.listConcepts();
+        const categories = geometryKnowledgeLibrary.listCategories();
+
+        const requiredConceptIds = [
+          "points",
+          "lines",
+          "segments",
+          "rays",
+          "planes",
+          "angles",
+          "angle_relationships",
+          "polygons",
+          "triangles",
+          "circles",
+          "coordinate_geometry",
+          "transformations",
+          "congruence",
+          "similarity",
+          "proof",
+          "measurement"
+        ];
+
+        const allRequiredConceptsPresent = requiredConceptIds.every((conceptId) =>
+          geometryKnowledgeLibrary.hasConcept(conceptId)
+        );
+
+        const pointsConcept = geometryKnowledgeLibrary.getConcept("points");
+        const linesConcept = geometryKnowledgeLibrary.getConcept("lines");
+        const classifyTriangleConcepts =
+          geometryKnowledgeLibrary.getConceptsByProblemType("classify_triangle");
+
+        const result = {
+          test: "Geometry Knowledge Library Foundation v1.0.0",
+          libraryVersion: validation.libraryVersion,
+          conceptCount: validation.conceptCount,
+          categoryCount: validation.categoryCount,
+          hasConceptsArray: Array.isArray(concepts),
+          hasCategoriesArray: Array.isArray(categories),
+          allRequiredConceptsPresent,
+          pointsConceptFound: Boolean(pointsConcept),
+          linesConceptFound: Boolean(linesConcept),
+          classifyTriangleMapped:
+            classifyTriangleConcepts.some((concept) => concept.conceptId === "triangles"),
+          validationPassed: validation.valid,
+          validationErrors: validation.errors,
+          pass:
+            validation.valid === true &&
+            validation.conceptCount === 16 &&
+            validation.categoryCount >= 5 &&
+            allRequiredConceptsPresent === true &&
+            Boolean(pointsConcept) === true &&
+            Boolean(linesConcept) === true &&
+            classifyTriangleConcepts.some((concept) => concept.conceptId === "triangles")
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Geometry Knowledge Library Foundation v1.0.0",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
