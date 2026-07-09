@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Homework Composer Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Homework Composer Test</h1>
+
+  <button id="runTestButton">Run Homework Composer Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { homeworkGenerator } from "./src/engine/generation/generators/homeworkGenerator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const generatedResource = homeworkGenerator.generate({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "homework",
+          count: 12
+        });
+
+        const sections = generatedResource.sections || [];
+
+        const questionBlueprintSection = sections.find(
+          (section) => section.sectionId === "question_blueprints"
+        );
+
+        const questionBlueprints = questionBlueprintSection?.content || [];
+
+        const allMultipleChoice = questionBlueprints.every(
+          (blueprint) => blueprint.answerFormat === "multiple_choice"
+        );
+
+        const allFourChoices = questionBlueprints.every(
+          (blueprint) => blueprint.choiceCount === 4
+        );
+
+        const allOneCorrectAnswer = questionBlueprints.every(
+          (blueprint) => blueprint.correctAnswerCount === 1
+        );
+
+        const result = {
+          test: "Homework Composer v0.7.8",
+          generatorVersion: generatedResource.generatorVersion,
+          composerVersion: generatedResource.metadata?.composerVersion,
+          assetType: generatedResource.assetType,
+          lessonId: generatedResource.lessonId,
+          sectionCount: sections.length,
+          blueprintCount: questionBlueprints.length,
+          allMultipleChoice,
+          allFourChoices,
+          allOneCorrectAnswer,
+          hasHomeworkDirections: sections.some(
+            (section) => section.sectionId === "homework_directions"
+          ),
+          hasQuestionBlueprints: sections.some(
+            (section) => section.sectionId === "question_blueprints"
+          ),
+          hasAssessmentTargets: sections.some(
+            (section) => section.sectionId === "assessment_targets"
+          ),
+          hasMisconceptionFocus: sections.some(
+            (section) => section.sectionId === "misconception_focus"
+          ),
+          hasCompletionCriteria: sections.some(
+            (section) => section.sectionId === "completion_criteria"
+          )
+        };
+
+        result.pass =
+          result.test === "Homework Composer v0.7.8" &&
+          result.generatorVersion === "v0.7.8" &&
+          result.composerVersion === "v0.7.8" &&
+          result.assetType === "homework" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.sectionCount === 5 &&
+          result.blueprintCount === 12 &&
+          result.allMultipleChoice === true &&
+          result.allFourChoices === true &&
+          result.allOneCorrectAnswer === true &&
+          result.hasHomeworkDirections === true &&
+          result.hasQuestionBlueprints === true &&
+          result.hasAssessmentTargets === true &&
+          result.hasMisconceptionFocus === true &&
+          result.hasCompletionCriteria === true;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
