@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Publisher Preparation Engine v0.6.2
+ * Publisher Preparation Engine v0.6.3
  *
  * Responsibility:
  * Prepare publisher contracts from a normalized export contract.
@@ -9,14 +9,18 @@
  * This engine does NOT publish content.
  * It does NOT write files.
  * It does NOT call Google APIs.
- * It only calls registered publishers' prepare() methods.
  */
 
 import { publisherRegistry } from "./publisherRegistry.js";
+import { publisherContractBuilder } from "./publisherContractBuilder.js";
 
 export class PublisherPreparationEngine {
-  constructor({ registry = publisherRegistry } = {}) {
+  constructor({
+    registry = publisherRegistry,
+    contractBuilder = publisherContractBuilder
+  } = {}) {
     this.registry = registry;
+    this.contractBuilder = contractBuilder;
   }
 
   prepare(normalizedExportContract = {}) {
@@ -32,6 +36,10 @@ export class PublisherPreparationEngine {
       throw new Error("Publisher Preparation Engine requires registry.get().");
     }
 
+    if (!this.contractBuilder || typeof this.contractBuilder.buildContract !== "function") {
+      throw new Error("Publisher Preparation Engine requires a valid publisher contract builder.");
+    }
+
     const registeredPublisherSummaries = this.registry.list();
 
     if (!Array.isArray(registeredPublisherSummaries)) {
@@ -45,15 +53,10 @@ export class PublisherPreparationEngine {
 
       const publisher = this.registry.get(publisherSummary.publisherKey);
 
-      if (!publisher.publisherId) {
-        throw new Error("Publisher Preparation Engine found publisher missing publisherId.");
-      }
-
-      if (typeof publisher.prepare !== "function") {
-        throw new Error(`Publisher ${publisher.publisherId} is missing prepare().`);
-      }
-
-      return publisher.prepare(normalizedExportContract);
+      return this.contractBuilder.buildContract({
+        publisher,
+        normalizedExportContract
+      });
     });
 
     return {
@@ -61,7 +64,7 @@ export class PublisherPreparationEngine {
       preparedPublisherCount: preparedPublisherContracts.length,
       preparedPublisherContracts,
       metadata: {
-        engineVersion: "v0.6.2",
+        engineVersion: "v0.6.3",
         generatedBy: "PublisherPreparationEngine",
         generatedAt: new Date().toISOString()
       }

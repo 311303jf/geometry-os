@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Publisher Contract Builder Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Publisher Contract Builder Test</h1>
+
+  <button id="runTestButton">Run Publisher Contract Builder Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { publisherRegistry } from "./src/engine/publishing/publisherRegistry.js";
+    import { registerPublishers } from "./src/engine/publishing/registerPublishers.js";
+    import { publisherPreparationEngine } from "./src/engine/publishing/publisherPreparationEngine.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        publisherRegistry.clear();
+
+        registerPublishers({
+          registry: publisherRegistry
+        });
+
+        const normalizedExportContract = {
+          status: "publisher_readiness_valid",
+          lessonId: "Geometry-1.1",
+          lessonTitle: "The Language of Geometry",
+          sections: [
+            {
+              sectionId: "bell_ringer",
+              status: "content_generated"
+            },
+            {
+              sectionId: "teacher_playbook",
+              status: "content_generated"
+            },
+            {
+              sectionId: "student_notes",
+              status: "content_generated"
+            }
+          ]
+        };
+
+        const preparationResult = publisherPreparationEngine.prepare(
+          normalizedExportContract
+        );
+
+        const contracts = preparationResult.preparedPublisherContracts;
+
+        const targets = contracts.map((contract) => contract.target);
+        const statuses = contracts.map((contract) => contract.contractStatus);
+        const lessonIds = contracts.map((contract) => contract.lesson.lessonId);
+        const engineVersions = contracts.map((contract) => contract.metadata.engineVersion);
+
+        const result = {
+          test: "Publisher Contract Builder v0.6.3",
+          preparationStatus: preparationResult.status,
+          preparationEngineVersion: preparationResult.metadata.engineVersion,
+          preparedPublisherCount: preparationResult.preparedPublisherCount,
+
+          targets,
+          statuses,
+          lessonIds,
+          engineVersions,
+
+          hasGoogleDocsContract: targets.includes("google_docs"),
+          hasGoogleClassroomContract: targets.includes("google_classroom"),
+          hasPdfContract: targets.includes("pdf"),
+          hasHtmlContract: targets.includes("html"),
+          hasJsonApiContract: targets.includes("json_api"),
+
+          allContractsBuilt: statuses.every(
+            (status) => status === "publisher_contract_built"
+          ),
+
+          allLessonIdsCorrect: lessonIds.every(
+            (lessonId) => lessonId === "Geometry-1.1"
+          ),
+
+          allBuilderVersionsCorrect: engineVersions.every(
+            (version) => version === "v0.6.3"
+          ),
+
+          pass:
+            preparationResult.status === "publisher_preparation_complete" &&
+            preparationResult.metadata.engineVersion === "v0.6.3" &&
+            preparationResult.preparedPublisherCount === 5 &&
+            targets.includes("google_docs") &&
+            targets.includes("google_classroom") &&
+            targets.includes("pdf") &&
+            targets.includes("html") &&
+            targets.includes("json_api") &&
+            statuses.every((status) => status === "publisher_contract_built") &&
+            lessonIds.every((lessonId) => lessonId === "Geometry-1.1") &&
+            engineVersions.every((version) => version === "v0.6.3")
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          test: "Publisher Contract Builder v0.6.3",
+          pass: false,
+          error: error.message
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
