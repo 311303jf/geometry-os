@@ -1,20 +1,26 @@
 /**
  * Geometry OS
- * Guided Practice Composer v0.7.4
+ * Guided Practice Composer v0.7.5
  *
  * Responsibility:
- * Compose classroom-ready Guided Practice using shared lesson data.
+ * Compose classroom-ready Guided Practice using shared lesson data and instructional activities.
  */
 
 import { lessonDataResolver } from "../composition/lessonDataResolver.js";
+import { instructionalActivityComposer } from "../composition/instructionalActivityComposer.js";
 
 export class GuidedPracticeComposer {
-  constructor({ resolver = lessonDataResolver } = {}) {
+  constructor({
+    resolver = lessonDataResolver,
+    activityComposer = instructionalActivityComposer
+  } = {}) {
     this.resolver = resolver;
+    this.activityComposer = activityComposer;
   }
 
   compose(generationContext = {}) {
     const lesson = this.resolver.resolve(generationContext);
+    const activitySet = this.activityComposer.composeActivities(generationContext);
 
     return {
       documentTitle: `Guided Practice — ${lesson.lessonTitle}`,
@@ -30,14 +36,14 @@ export class GuidedPracticeComposer {
 
       sections: [
         this.buildPracticePurpose(lesson),
-        this.buildTeacherModel(),
+        this.buildActivitySequence(activitySet.activities),
         this.buildGuidedProblems(),
-        this.buildTurnAndTalk(),
+        this.buildTeacherPrompts(activitySet.activities),
         this.buildQuickCheck()
       ],
 
       metadata: {
-        composerVersion: "v0.7.4",
+        composerVersion: "v0.7.5",
         generatedBy: "GuidedPracticeComposer",
         generatedAt: new Date().toISOString()
       }
@@ -55,15 +61,17 @@ export class GuidedPracticeComposer {
     };
   }
 
-  buildTeacherModel() {
+  buildActivitySequence(activities = []) {
     return {
-      sectionId: "teacher_model",
-      title: "Teacher Model",
-      body: [
-        "Model how to inspect the diagram before choosing an answer.",
-        "Point out arrows, endpoints, labels, and shared vertices.",
-        "Ask students to name the figure and explain the evidence."
-      ]
+      sectionId: "activity_sequence",
+      title: "Instructional Activity Sequence",
+      body: activities.map((activity) => ({
+        activityId: activity.activityId,
+        title: activity.title,
+        purpose: activity.purpose,
+        supportLevel: activity.supportLevel,
+        dokLevel: activity.dokLevel
+      }))
     };
   }
 
@@ -94,14 +102,11 @@ export class GuidedPracticeComposer {
     };
   }
 
-  buildTurnAndTalk() {
+  buildTeacherPrompts(activities = []) {
     return {
-      sectionId: "turn_and_talk",
-      title: "Turn and Talk",
-      body: [
-        "Explain to your partner how a line, ray, and segment are different.",
-        "Use the words endpoint, arrow, and extends forever in your explanation."
-      ]
+      sectionId: "teacher_prompts",
+      title: "Teacher Prompts",
+      body: activities.map((activity) => activity.teacherMove)
     };
   }
 

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Geometry OS — Instructional Activity Composer Test</title>
+</head>
+
+<body>
+<h1>Geometry OS — Instructional Activity Composer Test</h1>
+
+<button id="runTestButton">Run Instructional Activity Composer Test</button>
+
+<pre id="output"></pre>
+
+<script type="module">
+import { instructionalActivityComposer }
+from "./src/engine/generation/composition/instructionalActivityComposer.js";
+
+import { guidedPracticeGenerator }
+from "./src/engine/generation/generators/guidedPracticeGenerator.js";
+
+const button = document.getElementById("runTestButton");
+const output = document.getElementById("output");
+
+button.addEventListener("click", () => {
+  try {
+    const generationContext = {
+      lessonModel: {
+        lessonId: "Geometry-1.1",
+        lesson: "1.1",
+        lessonTitle: "The Language of Geometry",
+        standardTag: "MA.912.GR.1"
+      }
+    };
+
+    const activitySet =
+      instructionalActivityComposer.composeActivities(generationContext);
+
+    const guidedPractice =
+      guidedPracticeGenerator.generate({ generationContext });
+
+    const activityIds =
+      activitySet.activities.map((activity) => activity.activityId);
+
+    const guidedSectionIds =
+      guidedPractice.content.sections.map((section) => section.sectionId);
+
+    const activitySequenceSection =
+      guidedPractice.content.sections.find(
+        (section) => section.sectionId === "activity_sequence"
+      );
+
+    const activitySequenceCount =
+      Array.isArray(activitySequenceSection.body)
+        ? activitySequenceSection.body.length
+        : 0;
+
+    output.textContent = JSON.stringify({
+      test: "Instructional Activity Composer v0.7.5",
+
+      activityComposerVersion:
+        activitySet.metadata.composerVersion,
+
+      activityCount:
+        activitySet.activities.length,
+
+      activityIds,
+
+      hasLaunchActivity:
+        activityIds.includes("launch_activity"),
+
+      hasTeacherModelActivity:
+        activityIds.includes("teacher_model_activity"),
+
+      hasGuidedPracticeActivity:
+        activityIds.includes("guided_practice_activity"),
+
+      hasPartnerTalkActivity:
+        activityIds.includes("partner_talk_activity"),
+
+      hasIndependentCheckActivity:
+        activityIds.includes("independent_check_activity"),
+
+      hasExitReflectionActivity:
+        activityIds.includes("exit_reflection_activity"),
+
+      guidedPracticeGeneratorVersion:
+        guidedPractice.generatorVersion,
+
+      guidedPracticeComposerVersion:
+        guidedPractice.content.metadata.composerVersion,
+
+      guidedPracticeSectionCount:
+        guidedPractice.content.sections.length,
+
+      guidedPracticeSectionIds:
+        guidedSectionIds,
+
+      hasActivitySequence:
+        guidedSectionIds.includes("activity_sequence"),
+
+      activitySequenceCount,
+
+      pass:
+        activitySet.metadata.composerVersion === "v0.7.5" &&
+        activitySet.activities.length === 6 &&
+        activityIds.includes("launch_activity") &&
+        activityIds.includes("teacher_model_activity") &&
+        activityIds.includes("guided_practice_activity") &&
+        activityIds.includes("partner_talk_activity") &&
+        activityIds.includes("independent_check_activity") &&
+        activityIds.includes("exit_reflection_activity") &&
+        guidedPractice.generatorVersion === "v0.7.5" &&
+        guidedPractice.content.metadata.composerVersion === "v0.7.5" &&
+        guidedPractice.content.sections.length === 5 &&
+        guidedSectionIds.includes("activity_sequence") &&
+        activitySequenceCount === 6
+    }, null, 2);
+  } catch (error) {
+    output.textContent = JSON.stringify({
+      test: "Instructional Activity Composer v0.7.5",
+      pass: false,
+      error: error.message
+    }, null, 2);
+  }
+});
+</script>
+</body>
+</html>

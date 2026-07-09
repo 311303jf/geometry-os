@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Guided Practice Generator v0.7.4
+ * Guided Practice Generator v0.7.5
  */
 
 import { guidedPracticeComposer } from "../composers/guidedPracticeComposer.js";
@@ -9,7 +9,7 @@ export class GuidedPracticeGenerator {
   constructor({ composer = guidedPracticeComposer } = {}) {
     this.generatorId = "guided_practice_generator";
     this.generatorName = "Guided Practice Generator";
-    this.generatorVersion = "v0.7.4";
+    this.generatorVersion = "v0.7.5";
     this.assetType = "guided_practice";
     this.composer = composer;
   }
