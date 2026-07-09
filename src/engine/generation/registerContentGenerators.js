@@ -1,153 +1,89 @@
 /**
  * Geometry OS
- * Register Content Generators v0.4.4
+ * Register Content Generators v0.4.7
  *
  * Responsibility:
- * Register specialized content generator contracts.
- *
- * This file does NOT generate content.
- * This file does NOT execute generators.
- * This file does NOT publish resources.
+ * Register all specialized content generators with the
+ * Content Generator Registry.
  */
 
-import { contentGeneratorRegistry } from "./contentGeneratorRegistry.js";
-import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
-import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.js";
-import { studentNotesGenerator } from "./generators/studentNotesGenerator.js";
-import { guidedPracticeGenerator } from "./generators/guidedPracticeGenerator.js";
-import { independentPracticeGenerator } from "./generators/independentPracticeGenerator.js";
-import { homeworkGenerator } from "./generators/homeworkGenerator.js";
+import { bellRingerGenerator } from "./generators/BellRingerGenerator.js";
+import { teacherPlaybookGenerator } from "./generators/TeacherPlaybookGenerator.js";
+import { studentNotesGenerator } from "./generators/StudentNotesGenerator.js";
+import { guidedPracticeGenerator } from "./generators/GuidedPracticeGenerator.js";
+import { independentPracticeGenerator } from "./generators/IndependentPracticeGenerator.js";
+import { homeworkGenerator } from "./generators/HomeworkGenerator.js";
+import { exitTicketGenerator } from "./generators/ExitTicketGenerator.js";
+import { quizGenerator } from "./generators/QuizGenerator.js";
 
-export function registerContentGenerators({
-  registry = contentGeneratorRegistry
-} = {}) {
+export function registerContentGenerators({ registry }) {
+  if (!registry) {
+    throw new Error("registerContentGenerators requires a registry.");
+  }
+
   registry.register("bell_ringer_generator", {
-    name: "Bell Ringer Generator",
-    responsibility:
-      "Generate Bell Ringer resources from generation tasks and generation context.",
-    supportedAssetTypes: ["bell_ringer"],
-    requiredInputFields: ["generationTask", "generationContext"],
-    outputContract: {
-      generatorId: "string",
-      generatorVersion: "string",
-      assetType: "string",
-      lessonId: "string|null",
-      lessonTitle: "string|null",
-      title: "string",
-      purpose: "string",
-      format: "object",
-      items: "array",
-      metadata: "object"
-    },
-    status: "active",
+    generatorId: "bell_ringer_generator",
+    generatorName: "Bell Ringer Generator",
+    generatorVersion: bellRingerGenerator.version,
+    assetType: "bell_ringer",
     generate: bellRingerGenerator.generate.bind(bellRingerGenerator)
   });
 
   registry.register("teacher_playbook_generator", {
-    name: "Teacher Playbook Generator",
-    responsibility:
-      "Generate teacher-facing lesson playbooks from generation tasks and generation context.",
-    supportedAssetTypes: ["teacher_playbook"],
-    requiredInputFields: ["generationTask", "generationContext"],
-    outputContract: {
-      generatorId: "string",
-      generatorVersion: "string",
-      assetType: "string",
-      lessonId: "string|null",
-      lessonTitle: "string|null",
-      title: "string",
-      audience: "string",
-      purpose: "string",
-      sections: "array",
-      metadata: "object"
-    },
-    status: "active",
+    generatorId: "teacher_playbook_generator",
+    generatorName: "Teacher Playbook Generator",
+    generatorVersion: teacherPlaybookGenerator.version,
+    assetType: "teacher_playbook",
     generate: teacherPlaybookGenerator.generate.bind(teacherPlaybookGenerator)
   });
 
   registry.register("student_notes_generator", {
-    name: "Student Notes Generator",
-    responsibility:
-      "Generate student-facing lesson notes from generation tasks and generation context.",
-    supportedAssetTypes: ["student_notes"],
-    requiredInputFields: ["generationTask", "generationContext"],
-    outputContract: {
-      generatorId: "string",
-      generatorVersion: "string",
-      assetType: "string",
-      executionId: "string",
-      queueId: "string",
-      status: "string",
-      content: "object",
-      metadata: "object"
-    },
-    status: "active",
+    generatorId: "student_notes_generator",
+    generatorName: "Student Notes Generator",
+    generatorVersion: studentNotesGenerator.version,
+    assetType: "student_notes",
     generate: studentNotesGenerator.generate.bind(studentNotesGenerator)
   });
 
   registry.register("guided_practice_generator", {
-    name: "Guided Practice Generator",
-    responsibility:
-      "Generate guided practice resources from generation tasks and generation context.",
-    supportedAssetTypes: ["guided_practice"],
-    requiredInputFields: ["generationTask", "generationContext"],
-    outputContract: {
-      generatorId: "string",
-      generatorVersion: "string",
-      assetType: "string",
-      lessonId: "string|null",
-      lessonTitle: "string|null",
-      title: "string",
-      purpose: "string",
-      format: "object",
-      sections: "array",
-      metadata: "object"
-    },
-    status: "active",
+    generatorId: "guided_practice_generator",
+    generatorName: "Guided Practice Generator",
+    generatorVersion: guidedPracticeGenerator.version,
+    assetType: "guided_practice",
     generate: guidedPracticeGenerator.generate.bind(guidedPracticeGenerator)
   });
 
   registry.register("independent_practice_generator", {
-    name: "Independent Practice Generator",
-    responsibility:
-      "Generate independent practice resources from generation tasks and generation context.",
-    supportedAssetTypes: ["independent_practice"],
-    requiredInputFields: ["generationTask", "generationContext"],
-    outputContract: {
-      generatorId: "string",
-      generatorVersion: "string",
-      assetType: "string",
-      lessonId: "string|null",
-      title: "string",
-      purpose: "object",
-      studentFacingInstructions: "array",
-      practiceStructure: "object",
-      assessmentContract: "object",
-      metadata: "object"
-    },
-    status: "active",
+    generatorId: "independent_practice_generator",
+    generatorName: "Independent Practice Generator",
+    generatorVersion: independentPracticeGenerator.version,
+    assetType: "independent_practice",
     generate: independentPracticeGenerator.generate.bind(independentPracticeGenerator)
   });
+
   registry.register("homework_generator", {
-    name: "Homework Generator",
-    responsibility:
-      "Generate homework resources from generation tasks and generation context.",
-    supportedAssetTypes: ["homework"],
-    requiredInputFields: ["generationTask", "generationContext"],
-    outputContract: {
-      generatorId: "string",
-      generatorVersion: "string",
-      assetType: "string",
-      lessonId: "string|null",
-      title: "string",
-      purpose: "object",
-      studentFacingInstructions: "array",
-      homeworkStructure: "object",
-      assessmentContract: "object",
-      metadata: "object"
-    },
-    status: "active",
+    generatorId: "homework_generator",
+    generatorName: "Homework Generator",
+    generatorVersion: homeworkGenerator.version,
+    assetType: "homework",
     generate: homeworkGenerator.generate.bind(homeworkGenerator)
   });
+
+  registry.register("exit_ticket_generator", {
+    generatorId: "exit_ticket_generator",
+    generatorName: "Exit Ticket Generator",
+    generatorVersion: exitTicketGenerator.version,
+    assetType: "exit_ticket",
+    generate: exitTicketGenerator.generate.bind(exitTicketGenerator)
+  });
+
+  registry.register("quiz_generator", {
+    generatorId: "quiz_generator",
+    generatorName: "Quiz Generator",
+    generatorVersion: quizGenerator.version,
+    assetType: "quiz",
+    generate: quizGenerator.generate.bind(quizGenerator)
+  });
+
   return registry.list();
 }

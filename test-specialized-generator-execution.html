@@ -27,33 +27,39 @@
           registry: contentGeneratorRegistry
         });
 
-        const generationQueue = {
-          generationContext: {
-            lessonId: "Geometry-Unit 1-1.1",
-            lesson: {
-              id: "Geometry-Unit 1-1.1",
-              course: "Geometry",
-              unit: "Unit 1",
-              lesson: "1.1",
-              lessonTitle: "The Language of Geometry",
-              objectives: [
-                "Identify and name basic geometric figures.",
-                "Use correct notation for points, lines, segments, rays, and angles."
-              ]
-            },
-            instructionPlan: {
-              objectives: [
-                "Identify and name basic geometric figures.",
-                "Use correct notation for points, lines, segments, rays, and angles."
-              ]
-            },
-            knowledgeGraph: { metadata: { graphVersion: "v0.2.3" } },
-            dependencyAnalysis: {
-              summary: "Dependencies analyzed for Geometry Unit 1 Lesson 1.1."
-            },
-            instructionSequence: { metadata: { sequenceVersion: "v0.2.6" } },
-            instructionDecisions: { metadata: { decisionVersion: "v0.2.7" } }
+        const generationContext = {
+          lessonId: "Geometry-Unit 1-1.1",
+          lesson: {
+            id: "Geometry-Unit 1-1.1",
+            course: "Geometry",
+            unit: "Unit 1",
+            lesson: "1.1",
+            lessonTitle: "The Language of Geometry",
+            objectives: [
+              "Identify and name basic geometric figures.",
+              "Use correct notation for points, lines, segments, rays, and angles."
+            ],
+            assessmentTargets: [
+              "Identify points, lines, segments, rays, and angles.",
+              "Use correct geometric notation."
+            ]
           },
+          instructionPlan: {
+            objectives: [
+              "Identify and name basic geometric figures.",
+              "Use correct notation for points, lines, segments, rays, and angles."
+            ]
+          },
+          knowledgeGraph: { metadata: { graphVersion: "v0.2.3" } },
+          dependencyAnalysis: {
+            summary: "Dependencies analyzed for Geometry Unit 1 Lesson 1.1."
+          },
+          instructionSequence: { metadata: { sequenceVersion: "v0.2.6" } },
+          instructionDecisions: { metadata: { decisionVersion: "v0.2.7" } }
+        };
+
+        const generationQueue = {
+          generationContext,
           queueItems: [
             {
               queueId: "generation_queue_item_1",
@@ -90,6 +96,18 @@
               order: 6,
               assetType: "homework",
               generatorId: "homework_generator"
+            },
+            {
+              queueId: "generation_queue_item_7",
+              order: 7,
+              assetType: "exit_ticket",
+              generatorId: "exit_ticket_generator"
+            },
+            {
+              queueId: "generation_queue_item_8",
+              order: 8,
+              assetType: "quiz",
+              generatorId: "quiz_generator"
             }
           ]
         };
@@ -102,7 +120,9 @@
           "student_notes_generator",
           "guided_practice_generator",
           "independent_practice_generator",
-          "homework_generator"
+          "homework_generator",
+          "exit_ticket_generator",
+          "quiz_generator"
         ];
 
         const missingGenerators = requiredGeneratorIds.filter((generatorId) => {
@@ -118,18 +138,19 @@
         if (
           result.status !== "content_generated" ||
           result.contentGenerated !== true ||
-          result.totalExecutionRecords !== 6 ||
-          result.generatedCount !== 6 ||
+          result.totalExecutionRecords !== 8 ||
+          result.generatedCount !== 8 ||
+          registeredGenerators.length !== 8 ||
           missingGenerators.length > 0
         ) {
           throw new Error(
-            "Specialized generator execution bridge failed for v0.4.5. Missing: " +
+            "Specialized generator execution bridge failed for v0.4.7. Missing: " +
               missingGenerators.join(", ")
           );
         }
 
         output.textContent =
-          "PASS — Homework Generator v0.4.5\n\n" +
+          "PASS — Quiz Generator v0.4.7\n\n" +
           JSON.stringify(
             {
               registeredGenerators,
@@ -140,7 +161,7 @@
           );
       } catch (error) {
         output.textContent =
-          "FAIL — Homework Generator v0.4.5\n\n" +
+          "FAIL — Quiz Generator v0.4.7\n\n" +
           error.message;
         console.error(error);
       }
