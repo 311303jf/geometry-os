@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Lesson Composition Library Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Lesson Composition Library Test</h1>
+
+  <button id="runTestButton">Run Lesson Composition Library Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { lessonDataResolver } from "./src/engine/generation/composition/lessonDataResolver.js";
+    import { lessonOverviewBuilder } from "./src/engine/generation/composition/lessonOverviewBuilder.js";
+    import { learningObjectivesBuilder } from "./src/engine/generation/composition/learningObjectivesBuilder.js";
+    import { vocabularyBuilder } from "./src/engine/generation/composition/vocabularyBuilder.js";
+    import { misconceptionsBuilder } from "./src/engine/generation/composition/misconceptionsBuilder.js";
+    import { teacherPlaybookGenerator } from "./src/engine/generation/generators/teacherPlaybookGenerator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const generationContext = {
+          lessonModel: {
+            lessonId: "Geometry-1.1",
+            lesson: "1.1",
+            lessonTitle: "The Language of Geometry",
+            standardTag: "MA.912.GR.1",
+            lessonPurpose: "Introduce students to the language, symbols, and diagrams used in Geometry.",
+            objectives: [
+              "Identify points, lines, planes, segments, rays, and angles.",
+              "Use correct notation for basic geometric figures."
+            ],
+            vocabulary: [
+              "Point",
+              "Line",
+              "Plane",
+              "Segment",
+              "Ray"
+            ],
+            misconceptions: [
+              "Confusing lines, rays, and segments.",
+              "Naming a ray in the wrong order."
+            ]
+          }
+        };
+
+        const lesson = lessonDataResolver.resolve(generationContext);
+
+        const overview = lessonOverviewBuilder.build(lesson);
+        const objectives = learningObjectivesBuilder.build(lesson);
+        const vocabulary = vocabularyBuilder.build(lesson);
+        const misconceptions = misconceptionsBuilder.build(lesson);
+
+        const playbook = teacherPlaybookGenerator.generate({
+          generationContext
+        });
+
+        const sectionIds = playbook.content.sections.map(
+          (section) => section.sectionId
+        );
+
+        const result = {
+          test: "Lesson Composition Library v0.7.2",
+          lessonId: lesson.lessonId,
+          lessonTitle: lesson.lessonTitle,
+          standardTag: lesson.standardTag,
+
+          overviewSectionId: overview.sectionId,
+          objectivesCount: objectives.body.length,
+          vocabularyCount: vocabulary.body.length,
+          misconceptionsCount: misconceptions.body.length,
+
+          generatorVersion: playbook.generatorVersion,
+          composerVersion: playbook.content.metadata.composerVersion,
+          sectionCount: playbook.content.sections.length,
+          sectionIds,
+
+          hasSharedOverview: sectionIds.includes("lesson_overview"),
+          hasSharedObjectives: sectionIds.includes("learning_objectives"),
+          hasSharedVocabulary: sectionIds.includes("essential_vocabulary"),
+          hasSharedMisconceptions: sectionIds.includes("common_misconceptions"),
+
+          pass:
+            lesson.lessonId === "Geometry-1.1" &&
+            lesson.lessonTitle === "The Language of Geometry" &&
+            lesson.standardTag === "MA.912.GR.1" &&
+            overview.sectionId === "lesson_overview" &&
+            objectives.body.length === 2 &&
+            vocabulary.body.length === 5 &&
+            misconceptions.body.length === 2 &&
+            playbook.generatorVersion === "v0.7.2" &&
+            playbook.content.metadata.composerVersion === "v0.7.2" &&
+            playbook.content.sections.length === 11 &&
+            sectionIds.includes("lesson_overview") &&
+            sectionIds.includes("learning_objectives") &&
+            sectionIds.includes("essential_vocabulary") &&
+            sectionIds.includes("common_misconceptions")
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          test: "Lesson Composition Library v0.7.2",
+          pass: false,
+          error: error.message
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>

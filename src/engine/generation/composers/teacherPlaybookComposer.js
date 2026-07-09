@@ -1,23 +1,38 @@
 /**
  * Geometry OS
- * Teacher Playbook Composer v0.7.1
+ * Teacher Playbook Composer v0.7.2
  *
  * Responsibility:
- * Compose a classroom-ready Teacher Playbook using real generation context.
- *
- * Important:
- * This composer does NOT publish.
- * It does NOT write files.
- * It only transforms lesson context into structured teacher-facing content.
+ * Compose a classroom-ready Teacher Playbook using shared lesson composition builders.
  */
 
+import { lessonDataResolver } from "../composition/lessonDataResolver.js";
+import { lessonOverviewBuilder } from "../composition/lessonOverviewBuilder.js";
+import { learningObjectivesBuilder } from "../composition/learningObjectivesBuilder.js";
+import { vocabularyBuilder } from "../composition/vocabularyBuilder.js";
+import { misconceptionsBuilder } from "../composition/misconceptionsBuilder.js";
+
 export class TeacherPlaybookComposer {
+  constructor({
+    resolver = lessonDataResolver,
+    overviewBuilder = lessonOverviewBuilder,
+    objectivesBuilder = learningObjectivesBuilder,
+    vocabBuilder = vocabularyBuilder,
+    misconceptionBuilder = misconceptionsBuilder
+  } = {}) {
+    this.resolver = resolver;
+    this.overviewBuilder = overviewBuilder;
+    this.objectivesBuilder = objectivesBuilder;
+    this.vocabBuilder = vocabBuilder;
+    this.misconceptionBuilder = misconceptionBuilder;
+  }
+
   compose(generationContext = {}) {
     if (!generationContext || typeof generationContext !== "object") {
       throw new Error("Teacher Playbook Composer requires a generation context object.");
     }
 
-    const lesson = this.resolveLesson(generationContext);
+    const lesson = this.resolver.resolve(generationContext);
 
     return {
       documentTitle: `Geometry Lesson ${lesson.lessonNumber} — ${lesson.lessonTitle}`,
@@ -30,141 +45,28 @@ export class TeacherPlaybookComposer {
         lessonPurpose: lesson.lessonPurpose
       },
       sections: [
-        this.buildLessonOverview(lesson),
-        this.buildLearningObjectives(lesson),
-        this.buildEssentialVocabulary(lesson),
+        this.overviewBuilder.build(lesson),
+        this.objectivesBuilder.build(lesson),
+        this.vocabBuilder.build(lesson),
         this.buildPrerequisiteSkills(lesson),
-        this.buildCommonMisconceptions(lesson),
-        this.buildInstructionalFlow(lesson),
-        this.buildTeacherMoves(lesson),
+        this.misconceptionBuilder.build(lesson),
+        this.buildInstructionalFlow(),
+        this.buildTeacherMoves(),
         this.buildChecksForUnderstanding(lesson),
-        this.buildDifferentiationSupports(lesson),
-        this.buildAssessmentGuidance(lesson),
-        this.buildClosure(lesson)
+        this.buildDifferentiationSupports(),
+        this.buildAssessmentGuidance(),
+        this.buildClosure()
       ],
       metadata: {
-        composerVersion: "v0.7.1",
+        composerVersion: "v0.7.2",
         generatedBy: "TeacherPlaybookComposer",
         generatedAt: new Date().toISOString()
       }
     };
   }
 
-  resolveLesson(context = {}) {
-    const lessonModel =
-      context.lessonModel ||
-      context.lesson ||
-      context.curriculumLesson ||
-      {};
-
-    return {
-      lessonId:
-        lessonModel.lessonId ||
-        lessonModel.id ||
-        context.lessonId ||
-        "Geometry-1.1",
-
-      lessonNumber:
-        lessonModel.lesson ||
-        lessonModel.lessonNumber ||
-        context.lessonNumber ||
-        "1.1",
-
-      lessonTitle:
-        lessonModel.lessonTitle ||
-        lessonModel.title ||
-        context.lessonTitle ||
-        "The Language of Geometry",
-
-      standardTag:
-        lessonModel.standardTag ||
-        context.standardTag ||
-        "Geometry",
-
-      lessonPurpose:
-        lessonModel.lessonPurpose ||
-        context.lessonPurpose ||
-        "Build foundational geometric language and notation.",
-
-      objectives:
-        Array.isArray(lessonModel.objectives)
-          ? lessonModel.objectives
-          : [],
-
-      vocabulary:
-        Array.isArray(lessonModel.vocabulary)
-          ? lessonModel.vocabulary
-          : [],
-
-      requiredSkills:
-        Array.isArray(lessonModel.requiredSkills)
-          ? lessonModel.requiredSkills
-          : [],
-
-      misconceptions:
-        Array.isArray(lessonModel.misconceptions)
-          ? lessonModel.misconceptions
-          : [],
-
-      assessmentTargets:
-        Array.isArray(lessonModel.assessmentTargets)
-          ? lessonModel.assessmentTargets
-          : []
-    };
-  }
-
-  buildLessonOverview(lesson) {
-    return {
-      sectionId: "lesson_overview",
-      title: "Lesson Overview",
-      body: [
-        `This lesson focuses on ${lesson.lessonTitle}.`,
-        lesson.lessonPurpose,
-        `Standard focus: ${lesson.standardTag}.`,
-        "The goal is to help students connect diagrams, vocabulary, notation, and precise mathematical language."
-      ]
-    };
-  }
-
-  buildLearningObjectives(lesson) {
-    const objectives = lesson.objectives.length
-      ? lesson.objectives
-      : [
-          "Students will identify and describe basic geometric figures.",
-          "Students will use correct geometric vocabulary and notation.",
-          "Students will interpret diagrams using precise mathematical language."
-        ];
-
-    return {
-      sectionId: "learning_objectives",
-      title: "Learning Objectives",
-      body: objectives
-    };
-  }
-
-  buildEssentialVocabulary(lesson) {
-    const vocabulary = lesson.vocabulary.length
-      ? lesson.vocabulary
-      : [
-          "Point",
-          "Line",
-          "Plane",
-          "Segment",
-          "Ray",
-          "Angle",
-          "Endpoint",
-          "Vertex"
-        ];
-
-    return {
-      sectionId: "essential_vocabulary",
-      title: "Essential Vocabulary",
-      body: vocabulary.map((term) => `${term}`)
-    };
-  }
-
   buildPrerequisiteSkills(lesson) {
-    const requiredSkills = lesson.requiredSkills.length
+    const requiredSkills = Array.isArray(lesson.requiredSkills) && lesson.requiredSkills.length
       ? lesson.requiredSkills
       : [
           "Read and interpret simple diagrams.",
@@ -179,24 +81,7 @@ export class TeacherPlaybookComposer {
     };
   }
 
-  buildCommonMisconceptions(lesson) {
-    const misconceptions = lesson.misconceptions.length
-      ? lesson.misconceptions
-      : [
-          "Students may confuse a line, segment, and ray.",
-          "Students may reverse ray notation.",
-          "Students may ignore arrows or endpoints in diagrams.",
-          "Students may use informal language instead of geometric notation."
-        ];
-
-    return {
-      sectionId: "common_misconceptions",
-      title: "Common Misconceptions",
-      body: misconceptions
-    };
-  }
-
-  buildInstructionalFlow(lesson) {
+  buildInstructionalFlow() {
     return {
       sectionId: "instructional_flow",
       title: "Suggested Instructional Flow",
@@ -211,7 +96,7 @@ export class TeacherPlaybookComposer {
     };
   }
 
-  buildTeacherMoves(lesson) {
+  buildTeacherMoves() {
     return {
       sectionId: "teacher_moves",
       title: "High-Impact Teacher Moves",
@@ -226,7 +111,7 @@ export class TeacherPlaybookComposer {
   }
 
   buildChecksForUnderstanding(lesson) {
-    const assessmentTargets = lesson.assessmentTargets.length
+    const assessmentTargets = Array.isArray(lesson.assessmentTargets) && lesson.assessmentTargets.length
       ? lesson.assessmentTargets
       : [
           "Identify geometric figures from diagrams.",
@@ -243,7 +128,7 @@ export class TeacherPlaybookComposer {
     };
   }
 
-  buildDifferentiationSupports(lesson) {
+  buildDifferentiationSupports() {
     return {
       sectionId: "differentiation_supports",
       title: "Differentiation Supports",
@@ -256,7 +141,7 @@ export class TeacherPlaybookComposer {
     };
   }
 
-  buildAssessmentGuidance(lesson) {
+  buildAssessmentGuidance() {
     return {
       sectionId: "assessment_guidance",
       title: "Assessment Guidance",
@@ -268,7 +153,7 @@ export class TeacherPlaybookComposer {
     };
   }
 
-  buildClosure(lesson) {
+  buildClosure() {
     return {
       sectionId: "closure",
       title: "Closure",
