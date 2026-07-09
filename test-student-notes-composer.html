@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Geometry OS — Student Notes Composer Test</title>
+</head>
+
+<body>
+
+<h1>Geometry OS — Student Notes Composer Test</h1>
+
+<button id="runTestButton">
+Run Student Notes Composer Test
+</button>
+
+<pre id="output"></pre>
+
+<script type="module">
+
+import { studentNotesGenerator }
+from "./src/engine/generation/generators/studentNotesGenerator.js";
+
+const button = document.getElementById("runTestButton");
+const output = document.getElementById("output");
+
+button.addEventListener("click",()=>{
+
+const result = studentNotesGenerator.generate({
+
+generationContext:{
+lessonModel:{
+lessonId:"Geometry-1.1",
+lesson:"1.1",
+lessonTitle:"The Language of Geometry",
+standardTag:"MA.912.GR.1",
+
+objectives:[
+"Identify geometric figures.",
+"Use proper notation."
+],
+
+vocabulary:[
+"Point",
+"Line",
+"Plane",
+"Segment",
+"Ray"
+]
+}
+}
+
+});
+
+const ids =
+result.content.sections.map(s=>s.sectionId);
+
+output.textContent =
+JSON.stringify({
+
+test:"Student Notes Composer v0.7.3",
+
+generatorVersion:
+result.generatorVersion,
+
+composerVersion:
+result.content.metadata.composerVersion,
+
+lessonId:
+result.lessonId,
+
+sectionCount:
+result.content.sections.length,
+
+sectionIds:ids,
+
+hasVocabulary:
+ids.includes("essential_vocabulary"),
+
+hasExamples:
+ids.includes("worked_examples"),
+
+hasSummary:
+ids.includes("lesson_summary"),
+
+pass:
+result.generatorVersion==="v0.7.3" &&
+result.content.metadata.composerVersion==="v0.7.3" &&
+ids.includes("essential_vocabulary") &&
+ids.includes("worked_examples") &&
+ids.includes("lesson_summary") &&
+result.content.sections.length===6
+
+},null,2);
+
+});
+
+</script>
+
+</body>
+</html>
