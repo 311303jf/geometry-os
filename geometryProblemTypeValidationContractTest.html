@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Geometry Problem Type Validation Contract Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Problem Type Validation Contract Test</h1>
+
+  <button id="runTestButton">Run Geometry Problem Type Validation Contract Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { geometryProblemTypeValidationContract } from "./src/geometry/problemTypes/geometryProblemTypeValidationContract.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const validation = geometryProblemTypeValidationContract.validateRegistry();
+
+        const problemTypesWithConcepts =
+          geometryProblemTypeValidationContract.getProblemTypesWithConcepts();
+
+        const disconnectedProblemTypes =
+          geometryProblemTypeValidationContract.getDisconnectedProblemTypes();
+
+        const classifyTriangleWithConcept =
+          problemTypesWithConcepts.find((problemType) =>
+            problemType.problemTypeId === "classify_triangle"
+          );
+
+        const invalidProblemTypeValidation =
+          geometryProblemTypeValidationContract.validateProblemType({
+            problemTypeId: "invalid_problem_type",
+            conceptId: "missing_concept",
+            family: "test_family",
+            description: "Invalid test problem type.",
+            expectedAnswerFormat: "test_format",
+            requiresFigure: false
+          });
+
+        const result = {
+          test: "Geometry Problem Type Validation Contract v1.0.4",
+          validationContractVersion: validation.validationContractVersion,
+          registryVersion: validation.registryVersion,
+          problemTypeCount: validation.problemTypeCount,
+          familyCount: validation.familyCount,
+          conceptConnectionCount: validation.conceptConnectionCount,
+          problemTypesWithConceptsReturnsArray: Array.isArray(problemTypesWithConcepts),
+          disconnectedProblemTypeCount: disconnectedProblemTypes.length,
+          classifyTriangleConceptConnected:
+            Boolean(classifyTriangleWithConcept) &&
+            Boolean(classifyTriangleWithConcept.concept) &&
+            classifyTriangleWithConcept.concept.conceptId === "triangles",
+          invalidProblemTypeRejected: invalidProblemTypeValidation.valid === false,
+          invalidProblemTypeErrorCount: invalidProblemTypeValidation.errors.length,
+          validationPassed: validation.valid,
+          validationErrors: validation.errors,
+          pass:
+            validation.valid === true &&
+            validation.validationContractVersion === "v1.0.4" &&
+            validation.registryVersion === "v1.0.3" &&
+            validation.problemTypeCount === 22 &&
+            validation.familyCount === 11 &&
+            validation.conceptConnectionCount === 22 &&
+            Array.isArray(problemTypesWithConcepts) === true &&
+            disconnectedProblemTypes.length === 0 &&
+            Boolean(classifyTriangleWithConcept) === true &&
+            Boolean(classifyTriangleWithConcept.concept) === true &&
+            classifyTriangleWithConcept.concept.conceptId === "triangles" &&
+            invalidProblemTypeValidation.valid === false &&
+            invalidProblemTypeValidation.errors.length > 0
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Geometry Problem Type Validation Contract v1.0.4",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
