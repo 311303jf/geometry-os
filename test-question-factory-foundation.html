@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Question Factory Foundation Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Question Factory Foundation Test</h1>
+
+  <button id="runTestButton">Run Question Factory Foundation Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { quizGenerator } from "./src/engine/generation/generators/quizGenerator.js";
+    import { questionFactory } from "./src/engine/generation/questions/questionFactory.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const quizResource = quizGenerator.generate({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "quiz",
+          count: 20
+        });
+
+        const questionBlueprintSection = quizResource.sections.find(
+          (section) => section.sectionId === "question_blueprints"
+        );
+
+        const questionBlueprints = questionBlueprintSection?.content || [];
+
+        const questionFactoryResult = questionFactory.buildQuestions({
+          lessonModel,
+          questionBlueprints,
+          resourceType: "quiz"
+        });
+
+        const questions = questionFactoryResult.questions || [];
+
+        const allQuestionsCreated =
+          questions.length === questionBlueprints.length;
+
+        const allMultipleChoice = questions.every(
+          (question) => question.answerFormat === "multiple_choice"
+        );
+
+        const allFourChoices = questions.every(
+          (question) =>
+            Array.isArray(question.choices) &&
+            question.choices.length === 4
+        );
+
+        const allOneCorrectChoice = questions.every(
+          (question) =>
+            question.choices.filter((choice) => choice.isCorrect === true)
+              .length === 1
+        );
+
+        const allHaveBlueprintId = questions.every(
+          (question) => Boolean(question.blueprintId)
+        );
+
+        const allHavePrompts = questions.every(
+          (question) => Boolean(question.prompt)
+        );
+
+        const allHaveCorrectAnswer = questions.every(
+          (question) => Boolean(question.correctAnswer)
+        );
+
+        const result = {
+          test: "Question Factory Foundation v0.9.0",
+          factoryVersion: questionFactoryResult.factoryVersion,
+          lessonId: questionFactoryResult.lessonId,
+          resourceType: questionFactoryResult.resourceType,
+          blueprintCount: questionBlueprints.length,
+          questionCount: questions.length,
+          allQuestionsCreated,
+          allMultipleChoice,
+          allFourChoices,
+          allOneCorrectChoice,
+          allHaveBlueprintId,
+          allHavePrompts,
+          allHaveCorrectAnswer,
+          qualityGateApplied: questionFactoryResult.metadata.qualityGateApplied
+        };
+
+        result.pass =
+          result.test === "Question Factory Foundation v0.9.0" &&
+          result.factoryVersion === "v0.9.0" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.resourceType === "quiz" &&
+          result.blueprintCount === 20 &&
+          result.questionCount === 20 &&
+          result.allQuestionsCreated === true &&
+          result.allMultipleChoice === true &&
+          result.allFourChoices === true &&
+          result.allOneCorrectChoice === true &&
+          result.allHaveBlueprintId === true &&
+          result.allHavePrompts === true &&
+          result.allHaveCorrectAnswer === true &&
+          result.qualityGateApplied === false;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
