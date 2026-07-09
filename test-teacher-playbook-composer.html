@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Teacher Playbook Composer Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Teacher Playbook Composer Test</h1>
+
+  <button id="runTestButton">Run Teacher Playbook Composer Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { teacherPlaybookGenerator } from "./src/engine/generation/generators/teacherPlaybookGenerator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const result = teacherPlaybookGenerator.generate({
+          generationContext: {
+            lessonModel: {
+              lessonId: "Geometry-1.1",
+              lesson: "1.1",
+              lessonTitle: "The Language of Geometry",
+              standardTag: "MA.912.GR.1",
+              lessonPurpose: "Introduce students to the language, symbols, and diagrams used in Geometry.",
+              objectives: [
+                "Identify points, lines, planes, segments, rays, and angles.",
+                "Use correct notation for basic geometric figures.",
+                "Interpret diagrams using precise geometric vocabulary."
+              ],
+              vocabulary: [
+                "Point",
+                "Line",
+                "Plane",
+                "Segment",
+                "Ray",
+                "Angle",
+                "Endpoint",
+                "Vertex"
+              ],
+              requiredSkills: [
+                "Read labeled diagrams.",
+                "Identify symbols and labels.",
+                "Use academic vocabulary in context."
+              ],
+              misconceptions: [
+                "Confusing lines, rays, and segments.",
+                "Naming a ray in the wrong order.",
+                "Ignoring arrows and endpoints."
+              ],
+              assessmentTargets: [
+                "Identify basic geometric figures.",
+                "Use correct notation.",
+                "Explain the difference between a line, ray, and segment."
+              ]
+            }
+          }
+        });
+
+        const sections = result.content.sections || [];
+        const sectionIds = sections.map((section) => section.sectionId);
+
+        const testResult = {
+          test: "Teacher Playbook Composer v0.7.1",
+          status: result.status,
+          generatorId: result.generatorId,
+          generatorVersion: result.generatorVersion,
+          assetType: result.assetType,
+          lessonId: result.lessonId,
+          lessonTitle: result.lessonTitle,
+          composerVersion: result.content.metadata.composerVersion,
+          standardTag: result.content.lesson.standardTag,
+          sectionCount: sections.length,
+          sectionIds,
+          hasLessonOverview: sectionIds.includes("lesson_overview"),
+          hasLearningObjectives: sectionIds.includes("learning_objectives"),
+          hasEssentialVocabulary: sectionIds.includes("essential_vocabulary"),
+          hasPrerequisiteSkills: sectionIds.includes("prerequisite_skills"),
+          hasCommonMisconceptions: sectionIds.includes("common_misconceptions"),
+          hasInstructionalFlow: sectionIds.includes("instructional_flow"),
+          hasTeacherMoves: sectionIds.includes("teacher_moves"),
+          hasChecksForUnderstanding: sectionIds.includes("checks_for_understanding"),
+          hasDifferentiationSupports: sectionIds.includes("differentiation_supports"),
+          hasAssessmentGuidance: sectionIds.includes("assessment_guidance"),
+          hasClosure: sectionIds.includes("closure"),
+          pass:
+            result.status === "content_generated" &&
+            result.generatorId === "teacher_playbook_generator" &&
+            result.generatorVersion === "v0.7.1" &&
+            result.assetType === "teacher_playbook" &&
+            result.lessonId === "Geometry-1.1" &&
+            result.content.metadata.composerVersion === "v0.7.1" &&
+            result.content.lesson.standardTag === "MA.912.GR.1" &&
+            sections.length === 11 &&
+            sectionIds.includes("lesson_overview") &&
+            sectionIds.includes("learning_objectives") &&
+            sectionIds.includes("essential_vocabulary") &&
+            sectionIds.includes("prerequisite_skills") &&
+            sectionIds.includes("common_misconceptions") &&
+            sectionIds.includes("instructional_flow") &&
+            sectionIds.includes("teacher_moves") &&
+            sectionIds.includes("checks_for_understanding") &&
+            sectionIds.includes("differentiation_supports") &&
+            sectionIds.includes("assessment_guidance") &&
+            sectionIds.includes("closure")
+        };
+
+        output.textContent = JSON.stringify(testResult, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify({
+          test: "Teacher Playbook Composer v0.7.1",
+          pass: false,
+          error: error.message
+        }, null, 2);
+      }
+    });
+  </script>
+</body>
+</html>
