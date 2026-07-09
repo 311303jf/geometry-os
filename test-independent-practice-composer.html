@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Independent Practice Composer Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Independent Practice Composer Test</h1>
+
+  <button id="runTestButton">Run Independent Practice Composer Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { independentPracticeGenerator } from "./src/engine/generation/generators/independentPracticeGenerator.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const generatedResource = independentPracticeGenerator.generate({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "independent_practice",
+          count: 15
+        });
+
+        const sections = generatedResource.sections || [];
+
+        const questionBlueprintSection = sections.find(
+          (section) => section.sectionId === "question_blueprints"
+        );
+
+        const questionBlueprints = questionBlueprintSection?.content || [];
+
+        const allMultipleChoice = questionBlueprints.every(
+          (blueprint) => blueprint.answerFormat === "multiple_choice"
+        );
+
+        const allFourChoices = questionBlueprints.every(
+          (blueprint) => blueprint.choiceCount === 4
+        );
+
+        const allOneCorrectAnswer = questionBlueprints.every(
+          (blueprint) => blueprint.correctAnswerCount === 1
+        );
+
+        const result = {
+          test: "Independent Practice Composer v0.7.7",
+          generatorVersion: generatedResource.generatorVersion,
+          composerVersion: generatedResource.metadata?.composerVersion,
+          assetType: generatedResource.assetType,
+          lessonId: generatedResource.lessonId,
+          sectionCount: sections.length,
+          blueprintCount: questionBlueprints.length,
+          allMultipleChoice,
+          allFourChoices,
+          allOneCorrectAnswer,
+          hasPracticeDirections: sections.some(
+            (section) => section.sectionId === "practice_directions"
+          ),
+          hasQuestionBlueprints: sections.some(
+            (section) => section.sectionId === "question_blueprints"
+          ),
+          hasAssessmentTargets: sections.some(
+            (section) => section.sectionId === "assessment_targets"
+          ),
+          hasMisconceptionFocus: sections.some(
+            (section) => section.sectionId === "misconception_focus"
+          ),
+          hasCompletionCriteria: sections.some(
+            (section) => section.sectionId === "completion_criteria"
+          )
+        };
+
+        result.pass =
+          result.test === "Independent Practice Composer v0.7.7" &&
+          result.generatorVersion === "v0.7.7" &&
+          result.composerVersion === "v0.7.7" &&
+          result.assetType === "independent_practice" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.sectionCount === 5 &&
+          result.blueprintCount === 15 &&
+          result.allMultipleChoice === true &&
+          result.allFourChoices === true &&
+          result.allOneCorrectAnswer === true &&
+          result.hasPracticeDirections === true &&
+          result.hasQuestionBlueprints === true &&
+          result.hasAssessmentTargets === true &&
+          result.hasMisconceptionFocus === true &&
+          result.hasCompletionCriteria === true;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Question Blueprint Composer v0.7.6
+ * Question Blueprint Composer v0.7.7
  *
  * Responsibility:
  * Compose question blueprints from lesson data.
@@ -8,8 +8,7 @@
  * Important:
  * This composer does NOT generate final questions.
  * It does NOT create answer choices.
- * It does NOT publish.
- * It only creates structured question blueprints for future question generation.
+ * It only creates blueprint metadata.
  */
 
 import { lessonDataResolver } from "./lessonDataResolver.js";
@@ -22,31 +21,37 @@ export class QuestionBlueprintComposer {
   composeBlueprints(generationContext = {}, options = {}) {
     const lesson = this.resolver.resolve(generationContext);
 
-    const count = Number.isInteger(options.count) && options.count > 0
-      ? options.count
-      : 5;
+    const count =
+      Number.isInteger(options.count) && options.count > 0
+        ? options.count
+        : 5;
 
     const resourceType = options.resourceType || "general_practice";
 
-    const assessmentTargets = lesson.assessmentTargets.length
-      ? lesson.assessmentTargets
-      : [
-          "Identify basic geometric figures.",
-          "Use correct notation.",
-          "Interpret diagrams using geometric vocabulary."
-        ];
+    const assessmentTargets =
+      lesson.assessmentTargets?.length
+        ? lesson.assessmentTargets
+        : [
+            "Identify basic geometric figures.",
+            "Use correct notation.",
+            "Compare geometric figures."
+          ];
 
-    const misconceptions = lesson.misconceptions.length
-      ? lesson.misconceptions
-      : [
-          "Confusing lines, rays, and segments.",
-          "Ignoring arrows or endpoints.",
-          "Using informal language instead of geometric notation."
-        ];
+    const misconceptions =
+      lesson.misconceptions?.length
+        ? lesson.misconceptions
+        : [
+            "Confusing lines, rays, and segments.",
+            "Ignoring arrows or endpoints.",
+            "Using informal language instead of geometric notation."
+          ];
 
     const blueprints = Array.from({ length: count }, (_, index) => {
-      const target = assessmentTargets[index % assessmentTargets.length];
-      const misconception = misconceptions[index % misconceptions.length];
+      const target =
+        assessmentTargets[index % assessmentTargets.length];
+
+      const misconception =
+        misconceptions[index % misconceptions.length];
 
       return this.buildBlueprint({
         lesson,
@@ -59,6 +64,7 @@ export class QuestionBlueprintComposer {
 
     return {
       status: "question_blueprints_composed",
+      composerVersion: "v0.7.7",
       lesson: {
         lessonId: lesson.lessonId,
         lessonNumber: lesson.lessonNumber,
@@ -69,7 +75,7 @@ export class QuestionBlueprintComposer {
       blueprintCount: blueprints.length,
       blueprints,
       metadata: {
-        composerVersion: "v0.7.6",
+        composerVersion: "v0.7.7",
         generatedBy: "QuestionBlueprintComposer",
         generatedAt: new Date().toISOString()
       }
@@ -83,58 +89,86 @@ export class QuestionBlueprintComposer {
     assessmentTarget,
     misconceptionFocus
   }) {
+    const target = this.normalizeTextValue(assessmentTarget);
+    const misconception = this.normalizeTextValue(misconceptionFocus);
+
     return {
       blueprintId: `${resourceType}_blueprint_${index + 1}`,
       lessonId: lesson.lessonId,
       lessonTitle: lesson.lessonTitle,
       resourceType,
-      skill: assessmentTarget,
-      problemType: this.resolveProblemType(assessmentTarget),
+      skill: target,
+      problemType: this.resolveProblemType(target),
       dokLevel: this.resolveDokLevel(index, resourceType),
       difficulty: this.resolveDifficulty(index, resourceType),
-      requiresDiagram: this.resolveDiagramNeed(assessmentTarget),
-      assessmentTarget,
-      misconceptionFocus,
+      requiresDiagram: this.resolveDiagramNeed(target),
+      assessmentTarget: target,
+      misconceptionFocus: misconception,
       answerFormat: "multiple_choice",
       choiceCount: 4,
       correctAnswerCount: 1,
       studentFacing: true,
       metadata: {
         generatedBy: "QuestionBlueprintComposer",
-        blueprintVersion: "v0.7.6"
+        blueprintVersion: "v0.7.7"
       }
     };
   }
 
-  resolveProblemType(assessmentTarget = "") {
-    const text = assessmentTarget.toLowerCase();
+  resolveProblemType(target = "") {
+    const text = this.normalizeTextValue(target).toLowerCase();
 
-    if (text.includes("notation")) {
+    /* ---------- Highest priority ---------- */
+
+    if (
+      text.includes("compare") ||
+      text.includes("contrast") ||
+      text.includes("different") ||
+      text.includes("difference") ||
+      text.includes("between") ||
+      text.includes("distinguish")
+    ) {
+      return "compare_and_contrast";
+    }
+
+    if (
+      text.includes("notation") ||
+      text.includes("symbol") ||
+      text.includes("name")
+    ) {
       return "geometric_notation";
+    }
+
+    if (
+      text.includes("identify") ||
+      text.includes("classify") ||
+      text.includes("classification") ||
+      text.includes("point") ||
+      text.includes("line") ||
+      text.includes("ray") ||
+      text.includes("segment") ||
+      text.includes("plane") ||
+      text.includes("figure")
+    ) {
+      return "classification";
     }
 
     if (text.includes("diagram")) {
       return "diagram_interpretation";
     }
 
-    if (text.includes("identify")) {
-      return "classification";
-    }
-
-    if (text.includes("difference") || text.includes("distinguish")) {
-      return "compare_and_contrast";
-    }
-
     return "conceptual_classification";
   }
 
   resolveDokLevel(index, resourceType) {
-    if (resourceType === "exit_ticket") {
-      return index === 0 ? 2 : 3;
+    if (resourceType === "quiz") {
+      if (index < 2) return 1;
+      if (index < 4) return 2;
+      return 3;
     }
 
-    if (resourceType === "quiz") {
-      return index < 2 ? 1 : index < 4 ? 2 : 3;
+    if (resourceType === "exit_ticket") {
+      return index === 0 ? 2 : 3;
     }
 
     if (resourceType === "independent_practice") {
@@ -150,33 +184,56 @@ export class QuestionBlueprintComposer {
 
   resolveDifficulty(index, resourceType) {
     if (resourceType === "quiz") {
-      return index < 2 ? "easy" : index < 4 ? "medium" : "advanced";
+      if (index < 2) return "easy";
+      if (index < 4) return "medium";
+      return "advanced";
     }
 
     if (resourceType === "exit_ticket") {
       return index === 0 ? "medium" : "advanced";
     }
 
-    if (index < 2) {
-      return "easy";
-    }
-
-    if (index < 4) {
-      return "medium";
-    }
+    if (index < 2) return "easy";
+    if (index < 4) return "medium";
 
     return "advanced";
   }
 
-  resolveDiagramNeed(assessmentTarget = "") {
-    const text = assessmentTarget.toLowerCase();
+  resolveDiagramNeed(target = "") {
+    const text = this.normalizeTextValue(target).toLowerCase();
 
     return (
       text.includes("diagram") ||
-      text.includes("identify") ||
       text.includes("figure") ||
+      text.includes("point") ||
+      text.includes("line") ||
+      text.includes("ray") ||
+      text.includes("segment") ||
+      text.includes("plane") ||
       text.includes("geometric")
     );
+  }
+
+  normalizeTextValue(value = "") {
+    if (typeof value === "string") {
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((v) => this.normalizeTextValue(v))
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    if (value && typeof value === "object") {
+      return Object.values(value)
+        .map((v) => this.normalizeTextValue(v))
+        .filter(Boolean)
+        .join(" ");
+    }
+
+    return "";
   }
 }
 

@@ -64,64 +64,60 @@ button.addEventListener("click", () => {
     const answerFormats =
       result.blueprints.map((blueprint) => blueprint.answerFormat);
 
+    const hasClassification =
+      problemTypes.includes("classification");
+
+    const hasGeometricNotation =
+      problemTypes.includes("geometric_notation");
+
+    const hasCompareAndContrast =
+      problemTypes.includes("compare_and_contrast");
+
+    const allMultipleChoice =
+      answerFormats.every((format) => format === "multiple_choice");
+
+    const allFourChoices =
+      result.blueprints.every((blueprint) => blueprint.choiceCount === 4);
+
+    const allOneCorrectAnswer =
+      result.blueprints.every((blueprint) => blueprint.correctAnswerCount === 1);
+
+    const pass =
+      result.status === "question_blueprints_composed" &&
+      result.metadata.composerVersion === "v0.7.7" &&
+      result.lesson.lessonId === "Geometry-1.1" &&
+      result.resourceType === "independent_practice" &&
+      result.blueprintCount === 6 &&
+      hasClassification &&
+      hasGeometricNotation &&
+      hasCompareAndContrast &&
+      allMultipleChoice &&
+      allFourChoices &&
+      allOneCorrectAnswer;
+
     output.textContent = JSON.stringify({
-      test: "Question Blueprint Composer v0.7.6",
-
-      status:
-        result.status,
-
-      composerVersion:
-        result.metadata.composerVersion,
-
-      lessonId:
-        result.lesson.lessonId,
-
-      resourceType:
-        result.resourceType,
-
-      blueprintCount:
-        result.blueprintCount,
-
+      test: "Question Blueprint Composer v0.7.7",
+      status: result.status,
+      composerVersion: result.metadata.composerVersion,
+      lessonId: result.lesson.lessonId,
+      resourceType: result.resourceType,
+      blueprintCount: result.blueprintCount,
       blueprintIds,
       problemTypes,
       dokLevels,
       difficulties,
       answerFormats,
-
-      hasClassification:
-        problemTypes.includes("classification"),
-
-      hasGeometricNotation:
-        problemTypes.includes("geometric_notation"),
-
-      hasCompareAndContrast:
-        problemTypes.includes("compare_and_contrast"),
-
-      allMultipleChoice:
-        answerFormats.every((format) => format === "multiple_choice"),
-
-      allFourChoices:
-        result.blueprints.every((blueprint) => blueprint.choiceCount === 4),
-
-      allOneCorrectAnswer:
-        result.blueprints.every((blueprint) => blueprint.correctAnswerCount === 1),
-
-      pass:
-        result.status === "question_blueprints_composed" &&
-        result.metadata.composerVersion === "v0.7.6" &&
-        result.lesson.lessonId === "Geometry-1.1" &&
-        result.resourceType === "independent_practice" &&
-        result.blueprintCount === 6 &&
-        problemTypes.includes("classification") &&
-        problemTypes.includes("geometric_notation") &&
-        problemTypes.includes("compare_and_contrast") &&
-        answerFormats.every((format) => format === "multiple_choice") &&
-        result.blueprints.every((blueprint) => blueprint.choiceCount === 4) &&
-        result.blueprints.every((blueprint) => blueprint.correctAnswerCount === 1)
+      hasClassification,
+      hasGeometricNotation,
+      hasCompareAndContrast,
+      allMultipleChoice,
+      allFourChoices,
+      allOneCorrectAnswer,
+      pass
     }, null, 2);
   } catch (error) {
     output.textContent = JSON.stringify({
-      test: "Question Blueprint Composer v0.7.6",
+      test: "Question Blueprint Composer v0.7.7",
       pass: false,
       error: error.message
     }, null, 2);
