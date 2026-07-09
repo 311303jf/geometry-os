@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Final Question Export Contract Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Final Question Export Contract Test</h1>
+
+  <button id="runTestButton">Run Final Question Export Contract Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { finalQuizResourceBuilder } from "./src/engine/generation/questions/finalQuizResourceBuilder.js";
+    import { finalQuestionExportContract } from "./src/engine/generation/questions/finalQuestionExportContract.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const finalResource = finalQuizResourceBuilder.build({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "quiz",
+          count: 20
+        });
+
+        const contract = finalQuestionExportContract.buildContract({
+          finalResource,
+          exportTarget: "google_forms"
+        });
+
+        const questions = contract.questions || [];
+
+        const allQuestionsMapped = questions.length === 20;
+
+        const allHavePrompt = questions.every(
+          (question) => Boolean(question.prompt)
+        );
+
+        const allHaveFourChoices = questions.every(
+          (question) =>
+            Array.isArray(question.choices) &&
+            question.choices.length === 4
+        );
+
+        const allHaveAnswerKey = questions.every(
+          (question) =>
+            Boolean(question.answerKey) &&
+            Boolean(question.answerKey.correctChoice) &&
+            Boolean(question.answerKey.correctAnswer)
+        );
+
+        const allChoicesHideCorrectFlag = questions.every(
+          (question) =>
+            question.choices.every(
+              (choice) => choice.isCorrect === undefined
+            )
+        );
+
+        const result = {
+          test: "Final Question Export Contract v0.9.4",
+          contractVersion: contract.contractVersion,
+          exportTarget: contract.exportTarget,
+          assetType: contract.assetType,
+          lessonId: contract.lessonId,
+          questionCount: contract.questionCount,
+          mappedQuestionCount: questions.length,
+          sectionCount: contract.sections.length,
+          allQuestionsMapped,
+          allHavePrompt,
+          allHaveFourChoices,
+          allHaveAnswerKey,
+          allChoicesHideCorrectFlag,
+          qualityGateApplied: contract.metadata.qualityGateApplied,
+          pipelinePass: contract.metadata.pipelinePass,
+          readyForExport: contract.metadata.readyForExport
+        };
+
+        result.pass =
+          result.test === "Final Question Export Contract v0.9.4" &&
+          result.contractVersion === "v0.9.4" &&
+          result.exportTarget === "google_forms" &&
+          result.assetType === "quiz" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.questionCount === 20 &&
+          result.mappedQuestionCount === 20 &&
+          result.sectionCount === 6 &&
+          result.allQuestionsMapped === true &&
+          result.allHavePrompt === true &&
+          result.allHaveFourChoices === true &&
+          result.allHaveAnswerKey === true &&
+          result.allChoicesHideCorrectFlag === true &&
+          result.qualityGateApplied === true &&
+          result.pipelinePass === true &&
+          result.readyForExport === true;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
