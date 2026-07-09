@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Question Quality Gate Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Question Quality Gate Test</h1>
+
+  <button id="runTestButton">Run Question Quality Gate Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { quizGenerator } from "./src/engine/generation/generators/quizGenerator.js";
+    import { questionFactory } from "./src/engine/generation/questions/questionFactory.js";
+    import { questionQualityGate } from "./src/engine/generation/questions/questionQualityGate.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const quizResource = quizGenerator.generate({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "quiz",
+          count: 20
+        });
+
+        const questionBlueprintSection = quizResource.sections.find(
+          (section) => section.sectionId === "question_blueprints"
+        );
+
+        const questionBlueprints = questionBlueprintSection?.content || [];
+
+        const questionFactoryResult = questionFactory.buildQuestions({
+          lessonModel,
+          questionBlueprints,
+          resourceType: "quiz"
+        });
+
+        const questions = questionFactoryResult.questions || [];
+
+        const qualityGateResult = questionQualityGate.validate({
+          lessonModel,
+          resourceType: "quiz",
+          questions
+        });
+
+        const result = {
+          test: "Question Quality Gate v0.9.1",
+          gateVersion: qualityGateResult.gateVersion,
+          lessonId: qualityGateResult.lessonId,
+          resourceType: qualityGateResult.resourceType,
+          questionCount: qualityGateResult.questionCount,
+          passedCount: qualityGateResult.passedCount,
+          failedCount: qualityGateResult.failedCount,
+          gatePass: qualityGateResult.pass,
+          modifiesQuestions: qualityGateResult.metadata.modifiesQuestions
+        };
+
+        result.pass =
+          result.test === "Question Quality Gate v0.9.1" &&
+          result.gateVersion === "v0.9.1" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.resourceType === "quiz" &&
+          result.questionCount === 20 &&
+          result.passedCount === 20 &&
+          result.failedCount === 0 &&
+          result.gatePass === true &&
+          result.modifiesQuestions === false;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
