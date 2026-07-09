@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Final Question Builder Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Final Question Builder Test</h1>
+
+  <button id="runTestButton">Run Final Question Builder Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { curriculumLoader } from "./src/curriculum/curriculumLoader.js";
+    import { curriculumEngine } from "./src/curriculum/curriculumEngine.js";
+    import { quizGenerator } from "./src/engine/generation/generators/quizGenerator.js";
+    import { finalQuestionBuilder } from "./src/engine/generation/questions/finalQuestionBuilder.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", async () => {
+      try {
+        const lessonBlueprint = await curriculumLoader.loadLesson({
+          course: "Geometry",
+          unit: "Unit 1",
+          lesson: "1.1"
+        });
+
+        const lessonModel = curriculumEngine.buildLessonModel(lessonBlueprint);
+
+        const quizResource = quizGenerator.generate({
+          lessonModel,
+          generationContext: {
+            lessonModel
+          },
+          resourceType: "quiz",
+          count: 20
+        });
+
+        const questionBlueprintSection = quizResource.sections.find(
+          (section) => section.sectionId === "question_blueprints"
+        );
+
+        const questionBlueprints = questionBlueprintSection?.content || [];
+
+        const finalQuestionResult = finalQuestionBuilder.build({
+          lessonModel,
+          questionBlueprints,
+          resourceType: "quiz"
+        });
+
+        const questions = finalQuestionResult.questions || [];
+
+        const allMultipleChoice = questions.every(
+          (question) => question.answerFormat === "multiple_choice"
+        );
+
+        const allFourChoices = questions.every(
+          (question) =>
+            Array.isArray(question.choices) &&
+            question.choices.length === 4
+        );
+
+        const allOneCorrectChoice = questions.every(
+          (question) =>
+            question.choices.filter((choice) => choice.isCorrect === true)
+              .length === 1
+        );
+
+        const allHavePrompt = questions.every(
+          (question) => Boolean(question.prompt)
+        );
+
+        const allHaveCorrectAnswer = questions.every(
+          (question) => Boolean(question.correctAnswer)
+        );
+
+        const result = {
+          test: "Final Question Builder v0.9.2",
+          builderVersion: finalQuestionResult.builderVersion,
+          lessonId: finalQuestionResult.lessonId,
+          resourceType: finalQuestionResult.resourceType,
+          blueprintCount: finalQuestionResult.metadata.blueprintCount,
+          questionCount: finalQuestionResult.metadata.questionCount,
+          finalQuestionCount: finalQuestionResult.metadata.finalQuestionCount,
+          factoryVersion: finalQuestionResult.metadata.factoryVersion,
+          qualityGateVersion: finalQuestionResult.metadata.qualityGateVersion,
+          qualityGateApplied: finalQuestionResult.metadata.qualityGateApplied,
+          pipelinePass: finalQuestionResult.metadata.pass,
+          allMultipleChoice,
+          allFourChoices,
+          allOneCorrectChoice,
+          allHavePrompt,
+          allHaveCorrectAnswer
+        };
+
+        result.pass =
+          result.test === "Final Question Builder v0.9.2" &&
+          result.builderVersion === "v0.9.2" &&
+          result.lessonId === "Geometry-1.1" &&
+          result.resourceType === "quiz" &&
+          result.blueprintCount === 20 &&
+          result.questionCount === 20 &&
+          result.finalQuestionCount === 20 &&
+          result.factoryVersion === "v0.9.0" &&
+          result.qualityGateVersion === "v0.9.1" &&
+          result.qualityGateApplied === true &&
+          result.pipelinePass === true &&
+          result.allMultipleChoice === true &&
+          result.allFourChoices === true &&
+          result.allOneCorrectChoice === true &&
+          result.allHavePrompt === true &&
+          result.allHaveCorrectAnswer === true;
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = error.stack || error.message;
+      }
+    });
+  </script>
+</body>
+</html>
