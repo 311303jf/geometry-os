@@ -16,6 +16,7 @@ import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.
 import { studentNotesGenerator } from "./generators/studentNotesGenerator.js";
 import { guidedPracticeGenerator } from "./generators/guidedPracticeGenerator.js";
 import { independentPracticeGenerator } from "./generators/independentPracticeGenerator.js";
+import { homeworkGenerator } from "./generators/homeworkGenerator.js";
 
 export function registerContentGenerators({
   registry = contentGeneratorRegistry
@@ -127,6 +128,26 @@ export function registerContentGenerators({
     status: "active",
     generate: independentPracticeGenerator.generate.bind(independentPracticeGenerator)
   });
-
+  registry.register("homework_generator", {
+    name: "Homework Generator",
+    responsibility:
+      "Generate homework resources from generation tasks and generation context.",
+    supportedAssetTypes: ["homework"],
+    requiredInputFields: ["generationTask", "generationContext"],
+    outputContract: {
+      generatorId: "string",
+      generatorVersion: "string",
+      assetType: "string",
+      lessonId: "string|null",
+      title: "string",
+      purpose: "object",
+      studentFacingInstructions: "array",
+      homeworkStructure: "object",
+      assessmentContract: "object",
+      metadata: "object"
+    },
+    status: "active",
+    generate: homeworkGenerator.generate.bind(homeworkGenerator)
+  });
   return registry.list();
 }

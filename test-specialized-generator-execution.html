@@ -84,6 +84,12 @@
               order: 5,
               assetType: "independent_practice",
               generatorId: "independent_practice_generator"
+            },
+            {
+              queueId: "generation_queue_item_6",
+              order: 6,
+              assetType: "homework",
+              generatorId: "homework_generator"
             }
           ]
         };
@@ -95,7 +101,8 @@
           "teacher_playbook_generator",
           "student_notes_generator",
           "guided_practice_generator",
-          "independent_practice_generator"
+          "independent_practice_generator",
+          "homework_generator"
         ];
 
         const missingGenerators = requiredGeneratorIds.filter((generatorId) => {
@@ -111,18 +118,18 @@
         if (
           result.status !== "content_generated" ||
           result.contentGenerated !== true ||
-          result.totalExecutionRecords !== 5 ||
-          result.generatedCount !== 5 ||
+          result.totalExecutionRecords !== 6 ||
+          result.generatedCount !== 6 ||
           missingGenerators.length > 0
         ) {
           throw new Error(
-            "Specialized generator execution bridge failed for v0.4.4. Missing: " +
+            "Specialized generator execution bridge failed for v0.4.5. Missing: " +
               missingGenerators.join(", ")
           );
         }
 
         output.textContent =
-          "PASS — Independent Practice Generator v0.4.4\n\n" +
+          "PASS — Homework Generator v0.4.5\n\n" +
           JSON.stringify(
             {
               registeredGenerators,
@@ -133,7 +140,7 @@
           );
       } catch (error) {
         output.textContent =
-          "FAIL — Independent Practice Generator v0.4.4\n\n" +
+          "FAIL — Homework Generator v0.4.5\n\n" +
           error.message;
         console.error(error);
       }
