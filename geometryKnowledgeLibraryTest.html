@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Geometry OS — Geometry Knowledge Library Test</title>
+  <title>Geometry OS — Geometry Knowledge Library Metadata Test</title>
 </head>
 <body>
-  <h1>Geometry OS — Geometry Knowledge Library Test</h1>
+  <h1>Geometry OS — Geometry Knowledge Library Metadata Test</h1>
 
-  <button id="runTestButton">Run Geometry Knowledge Library Test</button>
+  <button id="runTestButton">Run Geometry Knowledge Library Metadata Test</button>
 
   <pre id="output"></pre>
 
@@ -24,55 +24,55 @@
         const concepts = geometryKnowledgeLibrary.listConcepts();
         const categories = geometryKnowledgeLibrary.listCategories();
 
-        const requiredConceptIds = [
-          "points",
-          "lines",
-          "segments",
-          "rays",
-          "planes",
-          "angles",
-          "angle_relationships",
-          "polygons",
-          "triangles",
-          "circles",
-          "coordinate_geometry",
-          "transformations",
-          "congruence",
-          "similarity",
-          "proof",
-          "measurement"
-        ];
-
-        const allRequiredConceptsPresent = requiredConceptIds.every((conceptId) =>
-          geometryKnowledgeLibrary.hasConcept(conceptId)
+        const allConceptsHaveVocabulary = concepts.every((concept) =>
+          Array.isArray(concept.vocabulary) && concept.vocabulary.length > 0
         );
 
-        const pointsConcept = geometryKnowledgeLibrary.getConcept("points");
-        const linesConcept = geometryKnowledgeLibrary.getConcept("lines");
+        const allConceptsHaveAliases = concepts.every((concept) =>
+          Array.isArray(concept.aliases) && concept.aliases.length > 0
+        );
+
+        const allConceptsHaveFloridaBestDomains = concepts.every((concept) =>
+          Array.isArray(concept.floridaBestDomains) &&
+          concept.floridaBestDomains.includes("MA.912.GR")
+        );
+
+        const angleVocabularyConcepts =
+          geometryKnowledgeLibrary.getConceptsByVocabularyTerm("vertex");
+
+        const floridaBestGeometryConcepts =
+          geometryKnowledgeLibrary.getConceptsByFloridaBestDomain("MA.912.GR");
+
         const classifyTriangleConcepts =
           geometryKnowledgeLibrary.getConceptsByProblemType("classify_triangle");
 
         const result = {
-          test: "Geometry Knowledge Library Foundation v1.0.0",
+          test: "Geometry Knowledge Library Metadata Hardening v1.0.1",
           libraryVersion: validation.libraryVersion,
           conceptCount: validation.conceptCount,
           categoryCount: validation.categoryCount,
           hasConceptsArray: Array.isArray(concepts),
           hasCategoriesArray: Array.isArray(categories),
-          allRequiredConceptsPresent,
-          pointsConceptFound: Boolean(pointsConcept),
-          linesConceptFound: Boolean(linesConcept),
+          allConceptsHaveVocabulary,
+          allConceptsHaveAliases,
+          allConceptsHaveFloridaBestDomains,
+          vertexVocabularyMapped:
+            angleVocabularyConcepts.some((concept) => concept.conceptId === "angles"),
+          floridaBestGeometryConceptCount: floridaBestGeometryConcepts.length,
           classifyTriangleMapped:
             classifyTriangleConcepts.some((concept) => concept.conceptId === "triangles"),
           validationPassed: validation.valid,
           validationErrors: validation.errors,
           pass:
             validation.valid === true &&
+            validation.libraryVersion === "v1.0.1" &&
             validation.conceptCount === 16 &&
-            validation.categoryCount >= 5 &&
-            allRequiredConceptsPresent === true &&
-            Boolean(pointsConcept) === true &&
-            Boolean(linesConcept) === true &&
+            validation.categoryCount === 6 &&
+            allConceptsHaveVocabulary === true &&
+            allConceptsHaveAliases === true &&
+            allConceptsHaveFloridaBestDomains === true &&
+            angleVocabularyConcepts.some((concept) => concept.conceptId === "angles") &&
+            floridaBestGeometryConcepts.length === 16 &&
             classifyTriangleConcepts.some((concept) => concept.conceptId === "triangles")
         };
 
@@ -80,7 +80,7 @@
       } catch (error) {
         output.textContent = JSON.stringify(
           {
-            test: "Geometry Knowledge Library Foundation v1.0.0",
+            test: "Geometry Knowledge Library Metadata Hardening v1.0.1",
             pass: false,
             error: error.message
           },
