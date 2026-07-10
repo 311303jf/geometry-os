@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>
+    Geometry OS — Geometry Template Registry Test
+  </title>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Template Registry Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Template Registry Test
+  </button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      geometryTemplateRegistry
+    } from "./src/geometry/templates/geometryTemplateRegistry.js";
+
+    const button =
+      document.getElementById("runTestButton");
+
+    const output =
+      document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const validation =
+          geometryTemplateRegistry.validate();
+
+        const templates =
+          geometryTemplateRegistry.listTemplates();
+
+        const templateIds =
+          geometryTemplateRegistry.listTemplateIds();
+
+        const templateFamilies =
+          geometryTemplateRegistry.listTemplateFamilies();
+
+        const classifyAngleTemplate =
+          geometryTemplateRegistry.getTemplate(
+            "classify_angle_by_measure"
+          );
+
+        const missingTemplate =
+          geometryTemplateRegistry.getTemplate(
+            "missing_template"
+          );
+
+        const classifyTriangleTemplates =
+          geometryTemplateRegistry
+            .getTemplatesByProblemType(
+              "classify_triangle"
+            );
+
+        const foundationalTemplates =
+          geometryTemplateRegistry
+            .getTemplatesByFamily(
+              "foundational_identification"
+            );
+
+        const figureRequiredTemplates =
+          geometryTemplateRegistry
+            .getTemplatesRequiringFigure();
+
+        const noFigureRequiredTemplates =
+          geometryTemplateRegistry
+            .getTemplatesNotRequiringFigure();
+
+        const allTemplatesHaveRequiredFields =
+          templates.every((template) =>
+            Array.isArray(
+              template.requiredFields
+            ) &&
+            template.requiredFields.length > 0
+          );
+
+        const allTemplatesUseMultipleChoice =
+          templates.every((template) =>
+            template.outputType ===
+            "multiple_choice"
+          );
+
+        const protectedCopy = (() => {
+          const firstTemplate =
+            geometryTemplateRegistry.getTemplate(
+              "classify_angle_by_measure"
+            );
+
+          firstTemplate.requiredFields.push(
+            "mutated_field"
+          );
+
+          firstTemplate.promptPattern =
+            "mutated prompt";
+
+          const secondTemplate =
+            geometryTemplateRegistry.getTemplate(
+              "classify_angle_by_measure"
+            );
+
+          return (
+            secondTemplate.requiredFields.includes(
+              "mutated_field"
+            ) === false &&
+            secondTemplate.promptPattern !==
+              "mutated prompt"
+          );
+        })();
+
+        const result = {
+          test:
+            "Geometry Template Registry Foundation v1.0.9",
+
+          registryVersion:
+            validation.registryVersion,
+
+          problemTypeRegistryVersion:
+            validation.problemTypeRegistryVersion,
+
+          templateCount:
+            validation.templateCount,
+
+          templateFamilyCount:
+            validation.templateFamilyCount,
+
+          connectedProblemTypeCount:
+            validation.connectedProblemTypeCount,
+
+          listTemplatesReturnsArray:
+            Array.isArray(templates),
+
+          listTemplateIdsReturnsArray:
+            Array.isArray(templateIds),
+
+          listTemplateFamiliesReturnsArray:
+            Array.isArray(templateFamilies),
+
+          classifyAngleTemplateFound:
+            Boolean(classifyAngleTemplate),
+
+          classifyAngleProblemTypeId:
+            classifyAngleTemplate
+              ?.problemTypeId || null,
+
+          missingTemplateReturnsNull:
+            missingTemplate === null,
+
+          classifyTriangleTemplateCount:
+            classifyTriangleTemplates.length,
+
+          foundationalTemplateCount:
+            foundationalTemplates.length,
+
+          figureRequiredTemplateCount:
+            figureRequiredTemplates.length,
+
+          noFigureRequiredTemplateCount:
+            noFigureRequiredTemplates.length,
+
+          allTemplatesHaveRequiredFields,
+
+          allTemplatesUseMultipleChoice,
+
+          protectedCopy,
+
+          validationPassed:
+            validation.valid,
+
+          validationErrors:
+            validation.errors,
+
+          pass:
+            validation.valid === true &&
+
+            validation.registryVersion ===
+              "v1.0.9" &&
+
+            validation.problemTypeRegistryVersion ===
+              "v1.0.3" &&
+
+            validation.templateCount ===
+              23 &&
+
+            validation.templateFamilyCount ===
+              11 &&
+
+            validation.connectedProblemTypeCount ===
+              22 &&
+
+            Array.isArray(templates) ===
+              true &&
+
+            Array.isArray(templateIds) ===
+              true &&
+
+            Array.isArray(templateFamilies) ===
+              true &&
+
+            Boolean(classifyAngleTemplate) ===
+              true &&
+
+            classifyAngleTemplate.problemTypeId ===
+              "classify_angle" &&
+
+            missingTemplate === null &&
+
+            classifyTriangleTemplates.length ===
+              2 &&
+
+            foundationalTemplates.length ===
+              5 &&
+
+            figureRequiredTemplates.length >
+              0 &&
+
+            noFigureRequiredTemplates.length >
+              0 &&
+
+            allTemplatesHaveRequiredFields ===
+              true &&
+
+            allTemplatesUseMultipleChoice ===
+              true &&
+
+            protectedCopy === true
+        };
+
+        output.textContent =
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent =
+          JSON.stringify(
+            {
+              test:
+                "Geometry Template Registry Foundation v1.0.9",
+              pass: false,
+              error: error.message
+            },
+            null,
+            2
+          );
+      }
+    });
+  </script>
+</body>
+</html>
