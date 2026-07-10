@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Geometry Problem Type Resolution Contract Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Problem Type Resolution Contract Test</h1>
+
+  <button id="runTestButton">
+    Run Geometry Problem Type Resolution Contract Test
+  </button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      geometryProblemTypeResolutionContract
+    } from "./src/geometry/problemTypes/geometryProblemTypeResolutionContract.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const contractValidation =
+          geometryProblemTypeResolutionContract.validateContract();
+
+        const explicitResult =
+          geometryProblemTypeResolutionContract.buildAndValidate({
+            blueprintId: "blueprint_explicit_resolution",
+            problemTypeId: "classify_triangle"
+          });
+
+        const conceptResult =
+          geometryProblemTypeResolutionContract.buildAndValidate({
+            blueprintId: "blueprint_concept_resolution",
+            conceptId: "angles",
+            targetSkill: "measure"
+          });
+
+        const familyResult =
+          geometryProblemTypeResolutionContract.buildAndValidate({
+            blueprintId: "blueprint_family_resolution",
+            family: "foundational_identification"
+          });
+
+        const invalidResult =
+          geometryProblemTypeResolutionContract.buildAndValidate({
+            blueprintId: "blueprint_invalid_resolution",
+            problemTypeId: "missing_problem_type"
+          });
+
+        const explicitResolution = explicitResult.resolution;
+        const conceptResolution = conceptResult.resolution;
+        const familyResolution = familyResult.resolution;
+        const invalidResolution = invalidResult.resolution;
+
+        const protectedCopyTest = (() => {
+          const firstResolution =
+            geometryProblemTypeResolutionContract.buildResolution({
+              problemTypeId: "classify_triangle"
+            });
+
+          firstResolution.problemType.description = "mutated description";
+          firstResolution.errors.push("mutated error");
+
+          const secondResolution =
+            geometryProblemTypeResolutionContract.buildResolution({
+              problemTypeId: "classify_triangle"
+            });
+
+          return (
+            secondResolution.problemType.description !== "mutated description" &&
+            secondResolution.errors.includes("mutated error") === false
+          );
+        })();
+
+        const result = {
+          test: "Geometry Problem Type Resolution Contract v1.0.6",
+
+          contractVersion: contractValidation.contractVersion,
+          resolverVersion: contractValidation.resolverVersion,
+
+          explicitStatus: explicitResolution.status,
+          explicitResolved: explicitResolution.resolved,
+          explicitProblemTypeId: explicitResolution.problemTypeId,
+          explicitContractValid: explicitResult.validation.valid,
+
+          conceptStatus: conceptResolution.status,
+          conceptResolved: conceptResolution.resolved,
+          conceptProblemTypeId: conceptResolution.problemTypeId,
+          conceptContractValid: conceptResult.validation.valid,
+
+          familyStatus: familyResolution.status,
+          familyResolved: familyResolution.resolved,
+          familyProblemTypeId: familyResolution.problemTypeId,
+          familyContractValid: familyResult.validation.valid,
+
+          invalidStatus: invalidResolution.status,
+          invalidResolved: invalidResolution.resolved,
+          invalidProblemTypeIsNull: invalidResolution.problemType === null,
+          invalidErrorCount: invalidResolution.errors.length,
+          invalidContractValid: invalidResult.validation.valid,
+
+          normalizedResolutionIsProtectedCopy: protectedCopyTest,
+
+          validationPassed: contractValidation.valid,
+          validationErrors: contractValidation.errors,
+
+          pass:
+            contractValidation.valid === true &&
+            contractValidation.contractVersion === "v1.0.6" &&
+            contractValidation.resolverVersion === "v1.0.5" &&
+
+            explicitResolution.status === "problem_type_resolved" &&
+            explicitResolution.resolved === true &&
+            explicitResolution.problemTypeId === "classify_triangle" &&
+            explicitResult.validation.valid === true &&
+
+            conceptResolution.status === "problem_type_resolved" &&
+            conceptResolution.resolved === true &&
+            conceptResolution.problemTypeId === "measure_angle" &&
+            conceptResult.validation.valid === true &&
+
+            familyResolution.status === "problem_type_resolved" &&
+            familyResolution.resolved === true &&
+            familyResolution.problemTypeId === "identify_point" &&
+            familyResult.validation.valid === true &&
+
+            invalidResolution.status === "problem_type_unresolved" &&
+            invalidResolution.resolved === false &&
+            invalidResolution.problemType === null &&
+            invalidResolution.errors.length > 0 &&
+            invalidResult.validation.valid === true &&
+
+            protectedCopyTest === true
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Geometry Problem Type Resolution Contract v1.0.6",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
