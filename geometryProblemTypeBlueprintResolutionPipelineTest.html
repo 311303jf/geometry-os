@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>
+    Geometry OS — Geometry Problem Type Blueprint Resolution Pipeline Test
+  </title>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Problem Type Blueprint Resolution Pipeline Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Problem Type Blueprint Resolution Pipeline Test
+  </button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      geometryProblemTypeBlueprintResolutionPipeline
+    } from "./src/geometry/problemTypes/geometryProblemTypeBlueprintResolutionPipeline.js";
+
+    const button =
+      document.getElementById("runTestButton");
+
+    const output =
+      document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const pipelineValidation =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .validatePipeline();
+
+        const blueprints = [
+          {
+            blueprintId: "quiz_blueprint_triangle",
+            problemType: "classify_triangle",
+            dokLevel: 1,
+            resourceType: "quiz"
+          },
+          {
+            blueprintId: "quiz_blueprint_angle_measure",
+            conceptId: "angles",
+            targetSkill: "measure",
+            dokLevel: 2,
+            resourceType: "quiz"
+          },
+          {
+            blueprintId: "quiz_blueprint_foundational",
+            problemFamily: "foundational_identification",
+            dokLevel: 1,
+            resourceType: "quiz"
+          },
+          {
+            blueprintId: "quiz_blueprint_nested",
+            metadata: {
+              conceptId: "triangles",
+              problemType: "triangle_angle_sum",
+              dokLevel: 2,
+              resourceType: "quiz"
+            }
+          },
+          {
+            blueprintId: "quiz_blueprint_missing_type",
+            problemType: "missing_problem_type",
+            dokLevel: 1,
+            resourceType: "quiz"
+          },
+          {
+            blueprintId: "quiz_blueprint_rejected",
+            dokLevel: 1,
+            resourceType: "quiz"
+          }
+        ];
+
+        const originalBlueprints =
+          JSON.stringify(blueprints);
+
+        const pipelineResult =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .execute(blueprints);
+
+        const resultValidation =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .validatePipelineResult(pipelineResult);
+
+        const resolvedResults =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .getResolvedResults(pipelineResult);
+
+        const unresolvedResults =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .getUnresolvedResults(pipelineResult);
+
+        const rejectedResults =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .getRejectedResults(pipelineResult);
+
+        const triangleResult =
+          resolvedResults.find((result) =>
+            result.blueprintId ===
+            "quiz_blueprint_triangle"
+          );
+
+        const angleMeasureResult =
+          resolvedResults.find((result) =>
+            result.blueprintId ===
+            "quiz_blueprint_angle_measure"
+          );
+
+        const familyResult =
+          resolvedResults.find((result) =>
+            result.blueprintId ===
+            "quiz_blueprint_foundational"
+          );
+
+        const nestedResult =
+          resolvedResults.find((result) =>
+            result.blueprintId ===
+            "quiz_blueprint_nested"
+          );
+
+        const sourceBlueprintsProtected =
+          JSON.stringify(blueprints) ===
+          originalBlueprints;
+
+        const outputProtectedCopy = (() => {
+          const firstExecution =
+            geometryProblemTypeBlueprintResolutionPipeline
+              .execute([
+                {
+                  blueprintId: "protected_pipeline_blueprint",
+                  problemType: "classify_triangle"
+                }
+              ]);
+
+          firstExecution.results[0]
+            .sourceBlueprint
+            .problemType = "mutated_problem_type";
+
+          firstExecution.results[0]
+            .adapterResult
+            .resolution
+            .problemType
+            .description = "mutated description";
+
+          const secondExecution =
+            geometryProblemTypeBlueprintResolutionPipeline
+              .execute([
+                {
+                  blueprintId: "protected_pipeline_blueprint",
+                  problemType: "classify_triangle"
+                }
+              ]);
+
+          return (
+            secondExecution.results[0]
+              .sourceBlueprint
+              .problemType ===
+              "classify_triangle" &&
+
+            secondExecution.results[0]
+              .adapterResult
+              .resolution
+              .problemType
+              .description !==
+              "mutated description"
+          );
+        })();
+
+        const invalidArrayResult =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .execute({});
+
+        const invalidArrayValidation =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .validatePipelineResult(
+              invalidArrayResult
+            );
+
+        const emptyArrayResult =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .execute([]);
+
+        const emptyArrayValidation =
+          geometryProblemTypeBlueprintResolutionPipeline
+            .validatePipelineResult(
+              emptyArrayResult
+            );
+
+        const result = {
+          test:
+            "Geometry Problem Type Blueprint Resolution Pipeline v1.0.8",
+
+          pipelineVersion:
+            pipelineValidation.pipelineVersion,
+
+          adapterVersion:
+            pipelineValidation.adapterVersion,
+
+          certificationBlueprintCount:
+            pipelineValidation.certificationBlueprintCount,
+
+          pipelineStatus:
+            pipelineResult.status,
+
+          pipelineAccepted:
+            pipelineResult.accepted,
+
+          inputBlueprintCount:
+            pipelineResult.inputBlueprintCount,
+
+          processedBlueprintCount:
+            pipelineResult.processedBlueprintCount,
+
+          resolvedBlueprintCount:
+            pipelineResult.resolvedBlueprintCount,
+
+          unresolvedBlueprintCount:
+            pipelineResult.unresolvedBlueprintCount,
+
+          rejectedBlueprintCount:
+            pipelineResult.rejectedBlueprintCount,
+
+          allProcessed:
+            pipelineResult.allProcessed,
+
+          allResolved:
+            pipelineResult.allResolved,
+
+          resolvedResultsCount:
+            resolvedResults.length,
+
+          unresolvedResultsCount:
+            unresolvedResults.length,
+
+          rejectedResultsCount:
+            rejectedResults.length,
+
+          triangleProblemTypeId:
+            triangleResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId || null,
+
+          angleMeasureProblemTypeId:
+            angleMeasureResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId || null,
+
+          familyProblemTypeId:
+            familyResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId || null,
+
+          nestedProblemTypeId:
+            nestedResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId || null,
+
+          sourceBlueprintsProtected,
+
+          outputProtectedCopy,
+
+          invalidArrayRejected:
+            invalidArrayResult.accepted === false,
+
+          invalidArrayStatus:
+            invalidArrayResult.status,
+
+          invalidArrayContractValid:
+            invalidArrayValidation.valid,
+
+          emptyArrayRejected:
+            emptyArrayResult.accepted === false,
+
+          emptyArrayStatus:
+            emptyArrayResult.status,
+
+          emptyArrayContractValid:
+            emptyArrayValidation.valid,
+
+          resultContractValid:
+            resultValidation.valid,
+
+          validationPassed:
+            pipelineValidation.valid,
+
+          validationErrors:
+            pipelineValidation.errors,
+
+          pass:
+            pipelineValidation.valid === true &&
+
+            pipelineValidation.pipelineVersion ===
+              "v1.0.8" &&
+
+            pipelineValidation.adapterVersion ===
+              "v1.0.7" &&
+
+            pipelineValidation.certificationBlueprintCount ===
+              5 &&
+
+            pipelineResult.status ===
+              "blueprint_resolution_pipeline_complete" &&
+
+            pipelineResult.accepted === true &&
+
+            pipelineResult.inputBlueprintCount ===
+              6 &&
+
+            pipelineResult.processedBlueprintCount ===
+              6 &&
+
+            pipelineResult.resolvedBlueprintCount ===
+              4 &&
+
+            pipelineResult.unresolvedBlueprintCount ===
+              1 &&
+
+            pipelineResult.rejectedBlueprintCount ===
+              1 &&
+
+            pipelineResult.allProcessed === true &&
+
+            pipelineResult.allResolved === false &&
+
+            resolvedResults.length === 4 &&
+
+            unresolvedResults.length === 1 &&
+
+            rejectedResults.length === 1 &&
+
+            triangleResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId ===
+              "classify_triangle" &&
+
+            angleMeasureResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId ===
+              "measure_angle" &&
+
+            familyResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId ===
+              "identify_point" &&
+
+            nestedResult
+              ?.adapterResult
+              ?.resolution
+              ?.problemTypeId ===
+              "triangle_angle_sum" &&
+
+            sourceBlueprintsProtected === true &&
+
+            outputProtectedCopy === true &&
+
+            invalidArrayResult.accepted === false &&
+
+            invalidArrayResult.status ===
+              "blueprint_resolution_pipeline_rejected" &&
+
+            invalidArrayValidation.valid === true &&
+
+            emptyArrayResult.accepted === false &&
+
+            emptyArrayResult.status ===
+              "blueprint_resolution_pipeline_rejected" &&
+
+            emptyArrayValidation.valid === true &&
+
+            resultValidation.valid === true
+        };
+
+        output.textContent =
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent =
+          JSON.stringify(
+            {
+              test:
+                "Geometry Problem Type Blueprint Resolution Pipeline v1.0.8",
+              pass: false,
+              error: error.message
+            },
+            null,
+            2
+          );
+      }
+    });
+  </script>
+</body>
+</html>
