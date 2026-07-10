@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Geometry OS — Geometry Problem Type Resolver Test</title>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Problem Type Resolver Test</h1>
+
+  <button id="runTestButton">Run Geometry Problem Type Resolver Test</button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { geometryProblemTypeResolver } from "./src/geometry/problemTypes/geometryProblemTypeResolver.js";
+
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const validation = geometryProblemTypeResolver.validateResolver();
+
+        const explicitResolution = geometryProblemTypeResolver.resolve({
+          blueprintId: "blueprint_explicit_triangle",
+          problemTypeId: "classify_triangle"
+        });
+
+        const conceptResolution = geometryProblemTypeResolver.resolve({
+          blueprintId: "blueprint_angles",
+          conceptId: "angles"
+        });
+
+        const familyResolution = geometryProblemTypeResolver.resolve({
+          blueprintId: "blueprint_foundational",
+          family: "foundational_identification"
+        });
+
+        const targetSkillResolution = geometryProblemTypeResolver.resolve({
+          blueprintId: "blueprint_angle_measure",
+          conceptId: "angles",
+          targetSkill: "measure"
+        });
+
+        const invalidResolution = geometryProblemTypeResolver.resolve({
+          blueprintId: "blueprint_invalid",
+          problemTypeId: "missing_problem_type"
+        });
+
+        const emptyResolution = geometryProblemTypeResolver.resolve({});
+
+        const result = {
+          test: "Geometry Problem Type Resolver Foundation v1.0.5",
+          resolverVersion: validation.resolverVersion,
+          registryVersion: validation.registryVersion,
+          problemTypeCount: validation.problemTypeCount,
+
+          explicitResolved: explicitResolution.resolved,
+          explicitProblemTypeId: explicitResolution.problemTypeId,
+          explicitResolutionStrategy: explicitResolution.resolutionStrategy,
+
+          conceptResolved: conceptResolution.resolved,
+          conceptResolvedConceptId: conceptResolution.conceptId,
+          conceptResolutionStrategy: conceptResolution.resolutionStrategy,
+
+          familyResolved: familyResolution.resolved,
+          familyResolvedFamily: familyResolution.family,
+          familyResolutionStrategy: familyResolution.resolutionStrategy,
+
+          targetSkillResolved: targetSkillResolution.resolved,
+          targetSkillProblemTypeId: targetSkillResolution.problemTypeId,
+
+          invalidResolutionRejected: invalidResolution.resolved === false,
+          invalidResolutionErrorCount: invalidResolution.errors.length,
+
+          emptyResolutionRejected: emptyResolution.resolved === false,
+          emptyResolutionErrorCount: emptyResolution.errors.length,
+
+          validationPassed: validation.valid,
+          validationErrors: validation.errors,
+
+          pass:
+            validation.valid === true &&
+            validation.resolverVersion === "v1.0.5" &&
+            validation.registryVersion === "v1.0.3" &&
+            validation.problemTypeCount === 22 &&
+
+            explicitResolution.resolved === true &&
+            explicitResolution.problemTypeId === "classify_triangle" &&
+            explicitResolution.resolutionStrategy === "explicit_problem_type" &&
+
+            conceptResolution.resolved === true &&
+            conceptResolution.conceptId === "angles" &&
+            conceptResolution.resolutionStrategy === "concept_id" &&
+
+            familyResolution.resolved === true &&
+            familyResolution.family === "foundational_identification" &&
+            familyResolution.resolutionStrategy === "family" &&
+
+            targetSkillResolution.resolved === true &&
+            targetSkillResolution.problemTypeId === "measure_angle" &&
+
+            invalidResolution.resolved === false &&
+            invalidResolution.errors.length > 0 &&
+
+            emptyResolution.resolved === false &&
+            emptyResolution.errors.length > 0
+        };
+
+        output.textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent = JSON.stringify(
+          {
+            test: "Geometry Problem Type Resolver Foundation v1.0.5",
+            pass: false,
+            error: error.message
+          },
+          null,
+          2
+        );
+      }
+    });
+  </script>
+</body>
+</html>
