@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>
+    Geometry OS — Geometry Problem Type Blueprint Adapter Test
+  </title>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Problem Type Blueprint Adapter Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Problem Type Blueprint Adapter Test
+  </button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      geometryProblemTypeBlueprintAdapter
+    } from "./src/geometry/problemTypes/geometryProblemTypeBlueprintAdapter.js";
+
+    const button =
+      document.getElementById("runTestButton");
+
+    const output =
+      document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const adapterValidation =
+          geometryProblemTypeBlueprintAdapter.validateAdapter();
+
+        const explicitBlueprint = {
+          blueprintId: "quiz_blueprint_explicit_triangle",
+          problemType: "classify_triangle",
+          dokLevel: 1,
+          resourceType: "quiz"
+        };
+
+        const explicitAdapterResult =
+          geometryProblemTypeBlueprintAdapter.adaptBlueprint(
+            explicitBlueprint
+          );
+
+        const explicitAdapterContractValidation =
+          geometryProblemTypeBlueprintAdapter.validateAdapterResult(
+            explicitAdapterResult
+          );
+
+        const explicitResolutionResult =
+          geometryProblemTypeBlueprintAdapter.resolveBlueprint(
+            explicitBlueprint
+          );
+
+        const explicitResolutionValidation =
+          geometryProblemTypeBlueprintAdapter
+            .validateResolvedBlueprintResult(
+              explicitResolutionResult
+            );
+
+        const conceptBlueprint = {
+          blueprintId: "quiz_blueprint_angle_measure",
+          conceptId: "angles",
+          targetSkill: "measure",
+          dokLevel: 2,
+          resourceType: "quiz"
+        };
+
+        const conceptResolutionResult =
+          geometryProblemTypeBlueprintAdapter.resolveBlueprint(
+            conceptBlueprint
+          );
+
+        const familyBlueprint = {
+          blueprintId: "quiz_blueprint_foundational",
+          problemFamily: "foundational_identification",
+          dokLevel: 1,
+          resourceType: "quiz"
+        };
+
+        const familyResolutionResult =
+          geometryProblemTypeBlueprintAdapter.resolveBlueprint(
+            familyBlueprint
+          );
+
+        const nestedMetadataBlueprint = {
+          blueprintId: "quiz_blueprint_nested_metadata",
+          metadata: {
+            conceptId: "triangles",
+            problemType: "triangle_angle_sum",
+            dokLevel: 2,
+            resourceType: "quiz"
+          }
+        };
+
+        const nestedMetadataResolutionResult =
+          geometryProblemTypeBlueprintAdapter.resolveBlueprint(
+            nestedMetadataBlueprint
+          );
+
+        const invalidBlueprintResult =
+          geometryProblemTypeBlueprintAdapter.resolveBlueprint({
+            blueprintId: "quiz_blueprint_invalid"
+          });
+
+        const missingBlueprintIdResult =
+          geometryProblemTypeBlueprintAdapter.resolveBlueprint({
+            problemType: "classify_triangle"
+          });
+
+        const sourceBlueprintProtected = (() => {
+          const sourceBlueprint = {
+            blueprintId: "protected_blueprint",
+            problemType: "classify_triangle",
+            metadata: {
+              source: "test"
+            }
+          };
+
+          const originalBlueprint =
+            JSON.stringify(sourceBlueprint);
+
+          const resolved =
+            geometryProblemTypeBlueprintAdapter.resolveBlueprint(
+              sourceBlueprint
+            );
+
+          resolved.resolutionRequest.problemTypeId =
+            "mutated_problem_type";
+
+          if (resolved.resolution?.problemType) {
+            resolved.resolution.problemType.description =
+              "mutated description";
+          }
+
+          return (
+            JSON.stringify(sourceBlueprint) ===
+            originalBlueprint
+          );
+        })();
+
+        const result = {
+          test:
+            "Geometry Problem Type Resolver Blueprint Adapter v1.0.7",
+
+          adapterVersion:
+            adapterValidation.adapterVersion,
+
+          resolutionContractVersion:
+            adapterValidation.resolutionContractVersion,
+
+          resolverVersion:
+            adapterValidation.resolverVersion,
+
+          explicitBlueprintAdapted:
+            explicitAdapterResult.adapted,
+
+          explicitAdapterStatus:
+            explicitAdapterResult.status,
+
+          explicitResolutionRequestProblemTypeId:
+            explicitAdapterResult
+              .resolutionRequest
+              .problemTypeId,
+
+          explicitAdapterContractValid:
+            explicitAdapterContractValidation.valid,
+
+          explicitBlueprintResolved:
+            explicitResolutionResult
+              .resolution
+              .resolved,
+
+          explicitResolvedProblemTypeId:
+            explicitResolutionResult
+              .resolution
+              .problemTypeId,
+
+          explicitResolutionStatus:
+            explicitResolutionResult.status,
+
+          explicitResolutionContractValid:
+            explicitResolutionValidation.valid,
+
+          conceptBlueprintResolved:
+            conceptResolutionResult
+              .resolution
+              .resolved,
+
+          conceptResolvedProblemTypeId:
+            conceptResolutionResult
+              .resolution
+              .problemTypeId,
+
+          familyBlueprintResolved:
+            familyResolutionResult
+              .resolution
+              .resolved,
+
+          familyResolvedProblemTypeId:
+            familyResolutionResult
+              .resolution
+              .problemTypeId,
+
+          nestedMetadataBlueprintResolved:
+            nestedMetadataResolutionResult
+              .resolution
+              .resolved,
+
+          nestedMetadataProblemTypeId:
+            nestedMetadataResolutionResult
+              .resolution
+              .problemTypeId,
+
+          invalidBlueprintRejected:
+            invalidBlueprintResult.adapted === false,
+
+          invalidBlueprintStatus:
+            invalidBlueprintResult.status,
+
+          invalidBlueprintErrorCount:
+            invalidBlueprintResult.errors.length,
+
+          missingBlueprintIdRejected:
+            missingBlueprintIdResult.adapted === false,
+
+          missingBlueprintIdErrorCount:
+            missingBlueprintIdResult.errors.length,
+
+          sourceBlueprintProtected,
+
+          validationPassed:
+            adapterValidation.valid,
+
+          validationErrors:
+            adapterValidation.errors,
+
+          pass:
+            adapterValidation.valid === true &&
+
+            adapterValidation.adapterVersion ===
+              "v1.0.7" &&
+
+            adapterValidation.resolutionContractVersion ===
+              "v1.0.6" &&
+
+            adapterValidation.resolverVersion ===
+              "v1.0.5" &&
+
+            explicitAdapterResult.adapted === true &&
+
+            explicitAdapterResult.status ===
+              "blueprint_adapted" &&
+
+            explicitAdapterResult
+              .resolutionRequest
+              .problemTypeId ===
+              "classify_triangle" &&
+
+            explicitAdapterContractValidation.valid ===
+              true &&
+
+            explicitResolutionResult
+              .resolution
+              .resolved === true &&
+
+            explicitResolutionResult
+              .resolution
+              .problemTypeId ===
+              "classify_triangle" &&
+
+            explicitResolutionResult.status ===
+              "blueprint_problem_type_resolved" &&
+
+            explicitResolutionValidation.valid ===
+              true &&
+
+            conceptResolutionResult
+              .resolution
+              .resolved === true &&
+
+            conceptResolutionResult
+              .resolution
+              .problemTypeId ===
+              "measure_angle" &&
+
+            familyResolutionResult
+              .resolution
+              .resolved === true &&
+
+            familyResolutionResult
+              .resolution
+              .problemTypeId ===
+              "identify_point" &&
+
+            nestedMetadataResolutionResult
+              .resolution
+              .resolved === true &&
+
+            nestedMetadataResolutionResult
+              .resolution
+              .problemTypeId ===
+              "triangle_angle_sum" &&
+
+            invalidBlueprintResult.adapted ===
+              false &&
+
+            invalidBlueprintResult.status ===
+              "blueprint_resolution_rejected" &&
+
+            invalidBlueprintResult.errors.length >
+              0 &&
+
+            missingBlueprintIdResult.adapted ===
+              false &&
+
+            missingBlueprintIdResult.errors.length >
+              0 &&
+
+            sourceBlueprintProtected === true
+        };
+
+        output.textContent =
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        output.textContent =
+          JSON.stringify(
+            {
+              test:
+                "Geometry Problem Type Resolver Blueprint Adapter v1.0.7",
+              pass: false,
+              error: error.message
+            },
+            null,
+            2
+          );
+      }
+    });
+  </script>
+</body>
+</html>
