@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Geometry Certified Question Factory Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+    .sample { margin-top: 16px; padding: 16px 20px; background: #ffffff; border: 1px solid #d5dbe0; border-radius: 8px; }
+    .sample ul { list-style: none; padding-left: 0; }
+    .sample li { padding: 4px 0; }
+    .sample li.correct { font-weight: 700; color: #146c2e; }
+    .sample svg { max-width: 100%; height: auto; background: #fafafa; --text-primary: #17202a; margin-top: 8px; }
+    .sample svg text.t { font-size: 16px; font-weight: 700; fill: var(--text-primary); }
+    .sample svg text.ts { font-size: 14px; fill: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Certified Question Factory Test</h1>
+  <p>Calls the factory with ONLY a templateId (no manual chaining of the six underlying engines) across all 50 certified templates, 20 seeds each (1,000 total runs), verifying a complete question object every time — including a figure SVG for exactly the 12 templates that require one, and null for the other 38.</p>
+  <button id="runTestButton">Run Question Factory Test</button>
+  <pre id="output">Ready.</pre>
+  <div id="samples"></div>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+    const samplesContainer = document.getElementById("samples");
+
+    const SEEDS_PER_TEMPLATE = 20;
+
+    const FIGURE_TEMPLATE_IDS = new Set([
+      "identify_point_from_description",
+      "identify_line_from_labels",
+      "identify_segment_from_endpoints",
+      "identify_ray_from_endpoint",
+      "identify_plane_from_points",
+      "identify_angle_from_rays",
+      "measure_angle_from_relationship",
+      "identify_complementary_angle_pair",
+      "identify_supplementary_angle_pair",
+      "identify_vertical_angle_pair",
+      "identify_adjacent_angle_pair",
+      "identify_polygon_from_attributes"
+    ]);
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    function renderSample(result) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "sample";
+      const heading = document.createElement("h3");
+      heading.textContent = result.templateId;
+      wrapper.appendChild(heading);
+      const prompt = document.createElement("p");
+      prompt.textContent = result.question.promptText;
+      wrapper.appendChild(prompt);
+      const list = document.createElement("ul");
+      result.question.choices.forEach((choice) => {
+        const item = document.createElement("li");
+        item.textContent = `${choice.label}) ${JSON.stringify(choice.text)}`;
+        if (choice.isCorrect) item.className = "correct";
+        list.appendChild(item);
+      });
+      wrapper.appendChild(list);
+      if (result.question.figureSvg) {
+        const svgContainer = document.createElement("div");
+        svgContainer.innerHTML = result.question.figureSvg;
+        wrapper.appendChild(svgContainer);
+      }
+      samplesContainer.appendChild(wrapper);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+      samplesContainer.innerHTML = "";
+
+      try {
+        const factoryModule = await import("../src/engine/geometryCertifiedQuestionFactory.js");
+        const { geometryCertifiedQuestionFactory } = factoryModule;
+
+        assert(
+          geometryCertifiedQuestionFactory &&
+          typeof geometryCertifiedQuestionFactory.generate === "function",
+          "Geometry Certified Question Factory did not load correctly."
+        );
+
+        const allTemplateIds = geometryCertifiedQuestionFactory.getSupportedTemplateIds();
+        assert(allTemplateIds.length === 50, `Expected 50 supported templates, found ${allTemplateIds.length}.`);
+
+        output.textContent = `Modules loaded. Running ${allTemplateIds.length} templates x ${SEEDS_PER_TEMPLATE} seeds (templateId only, no manual engine chaining)...`;
+
+        const failures = [];
+        let totalRuns = 0;
+        const exampleByTemplate = {};
+
+        allTemplateIds.forEach((templateId) => {
+          for (let seedIndex = 0; seedIndex < SEEDS_PER_TEMPLATE; seedIndex++) {
+            totalRuns += 1;
+
+            const result = geometryCertifiedQuestionFactory.generate({
+              templateId,
+              seed: `factory-test-${templateId}-${seedIndex}`,
+              generationIndex: seedIndex
+            });
+
+            const shouldHaveFigure = FIGURE_TEMPLATE_IDS.has(templateId);
+
+            const valid = result.certified &&
+              result.question &&
+              typeof result.question.promptText === "string" &&
+              result.question.promptText.length > 5 &&
+              !result.question.promptText.includes("undefined") &&
+              !result.question.promptText.includes("NaN") &&
+              Array.isArray(result.question.choices) &&
+              result.question.choices.length === 4 &&
+              result.question.choices.filter((c) => c.isCorrect).length === 1 &&
+              (shouldHaveFigure
+                ? typeof result.question.figureSvg === "string" && result.question.figureSvg.startsWith("<svg")
+                : result.question.figureSvg === null) &&
+              result.audit && result.audit.variables && result.audit.correctAnswer !== undefined;
+
+            if (!valid) {
+              failures.push({ templateId, seedIndex, failedStage: result.failedStage, errors: result.errors });
+              continue;
+            }
+
+            if (!exampleByTemplate[templateId]) {
+              exampleByTemplate[templateId] = result;
+            }
+          }
+        });
+
+        assert(failures.length === 0, `Factory failed for ${failures.length} of ${totalRuns} runs. First failure: ${JSON.stringify(failures[0])}`);
+
+        const invalidTemplateResult = geometryCertifiedQuestionFactory.generate({ templateId: "not_a_real_template" });
+        assert(invalidTemplateResult.certified === false && invalidTemplateResult.failedStage === "resolver", "Invalid templateId was not rejected at the resolver stage.");
+
+        const missingTemplateResult = geometryCertifiedQuestionFactory.generate({});
+        assert(missingTemplateResult.certified === false, "Missing templateId was not rejected.");
+
+        const result = {
+          test: "Geometry Certified Question Factory",
+          factoryVersion: geometryCertifiedQuestionFactory.getFactoryVersion(),
+          supportedTemplateCount: allTemplateIds.length,
+          seedsPerTemplate: SEEDS_PER_TEMPLATE,
+          totalRuns,
+          failureCount: failures.length,
+          allRunsPassed: failures.length === 0,
+          invalidTemplateRejected: invalidTemplateResult.certified === false,
+          missingTemplateRejected: missingTemplateResult.certified === false,
+          pass: true
+        };
+
+        output.textContent = "PASS — Geometry Certified Question Factory " + result.factoryVersion + " (" + totalRuns + " runs, 0 failures)\n\n" + JSON.stringify(result, null, 2);
+
+        ["identify_ray_from_endpoint", "right_triangle_trig_ratio_from_sides", "circle_circumference_and_area_calculation", "identify_triangle_congruence_postulate"].forEach((templateId) => {
+          if (exampleByTemplate[templateId]) renderSample(exampleByTemplate[templateId]);
+        });
+      } catch (error) {
+        const failureResult = {
+          test: "Geometry Certified Question Factory",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null,
+          diagnostic: "Verify that geometryCertifiedQuestionFactory.js exists at src/engine/geometryCertifiedQuestionFactory.js and that the page is opened through the project web server rather than directly with file://."
+        };
+        output.textContent = "FAIL — Geometry Certified Question Factory\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
