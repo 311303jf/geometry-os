@@ -7,12 +7,12 @@
  * Content Generator Registry.
  */
 
-import { bellRingerGenerator } from "./generators/BellRingerGenerator.js";
-import { teacherPlaybookGenerator } from "./generators/TeacherPlaybookGenerator.js";
-import { studentNotesGenerator } from "./generators/StudentNotesGenerator.js";
-import { guidedPracticeGenerator } from "./generators/GuidedPracticeGenerator.js";
-import { independentPracticeGenerator } from "./generators/IndependentPracticeGenerator.js";
-import { homeworkGenerator } from "./generators/HomeworkGenerator.js";
+import { bellRingerGenerator } from "./generators/bellRingerGenerator.js";
+import { teacherPlaybookGenerator } from "./generators/teacherPlaybookGenerator.js";
+import { studentNotesGenerator } from "./generators/studentNotesGenerator.js";
+import { guidedPracticeGenerator } from "./generators/guidedPracticeGenerator.js";
+import { independentPracticeGenerator } from "./generators/independentPracticeGenerator.js";
+import { homeworkGenerator } from "./generators/homeworkGenerator.js";
 import { exitTicketGenerator } from "./generators/ExitTicketGenerator.js";
 import { quizGenerator } from "./generators/QuizGenerator.js";
 import { recoveryGenerator } from "./generators/RecoveryGenerator.js";

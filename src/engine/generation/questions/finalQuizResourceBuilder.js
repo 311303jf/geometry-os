@@ -19,7 +19,7 @@
  * It does NOT bypass the Question Quality Gate.
  */
 
-import { quizGenerator } from "../generators/quizGenerator.js";
+import { quizGenerator } from "../generators/QuizGenerator.js";
 import { finalQuestionBuilder } from "./finalQuestionBuilder.js";
 
 export class FinalQuizResourceBuilder {
