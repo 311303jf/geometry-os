@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.1.0";
+const SOLVER_VERSION = "v1.2.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -66,7 +66,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_dilation_from_scale_factor",
   "identify_angle_pair_type_from_transversal",
   "angle_measure_from_parallel_lines",
-  "classify_line_relationship_from_slopes"
+  "classify_line_relationship_from_slopes",
+  "pythagorean_theorem_missing_side",
+  "special_right_triangle_45_45_90_missing_side",
+  "special_right_triangle_30_60_90_missing_side",
+  "right_triangle_trig_ratio_from_sides"
 ]);
 
 function protectedCopy(value) {
@@ -409,6 +413,32 @@ function solveClassifyLineRelationship(variables) {
   return { answerFormat: "classification_label", correctAnswer };
 }
 
+// --- Chapter 9: Right Triangles and Trigonometry ---
+
+function solvePythagoreanTheorem(variables) {
+  const correctAnswer = variables.missingSideValue;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveSpecialRightTriangle454590(variables) {
+  const correctAnswer = variables.missingSideValue;
+
+  return { answerFormat: "radical_value", correctAnswer };
+}
+
+function solveSpecialRightTriangle306090(variables) {
+  const correctAnswer = variables.missingSideValue;
+
+  return { answerFormat: "radical_value", correctAnswer };
+}
+
+function solveRightTriangleTrigRatio(variables) {
+  const correctAnswer = variables.ratioValue;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -441,7 +471,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveParallelLinesAngleMeasure,
 
   classify_line_relationship_from_slopes:
-    solveClassifyLineRelationship
+    solveClassifyLineRelationship,
+
+  pythagorean_theorem_missing_side:
+    solvePythagoreanTheorem,
+
+  special_right_triangle_45_45_90_missing_side:
+    solveSpecialRightTriangle454590,
+
+  special_right_triangle_30_60_90_missing_side:
+    solveSpecialRightTriangle306090,
+
+  right_triangle_trig_ratio_from_sides:
+    solveRightTriangleTrigRatio
 });
 
 export class GeometrySolver {

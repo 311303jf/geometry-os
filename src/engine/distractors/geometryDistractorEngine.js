@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.1.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.2.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -64,7 +64,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_dilation_from_scale_factor",
   "identify_angle_pair_type_from_transversal",
   "angle_measure_from_parallel_lines",
-  "classify_line_relationship_from_slopes"
+  "classify_line_relationship_from_slopes",
+  "pythagorean_theorem_missing_side",
+  "special_right_triangle_45_45_90_missing_side",
+  "special_right_triangle_30_60_90_missing_side",
+  "right_triangle_trig_ratio_from_sides"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -584,6 +588,154 @@ function distractClassifyLineRelationship(variables) {
   return [...otherTwo, "coincident"];
 }
 
+// --- Chapter 9: Right Triangles and Trigonometry ---
+
+function distractPythagoreanTheorem(variables, correctAnswer) {
+  const { sideA, sideB, missingSideRole } = variables;
+
+  const pool =
+    missingSideRole === "hypotenuse"
+      ? [
+          sideA ** 2 + sideB ** 2, // forgot the square root
+          Math.abs(sideA - sideB), // subtracted instead of added, no sqrt
+          sideA + sideB // added the raw side lengths, no formula at all
+        ]
+      : [
+          Math.round(Math.sqrt(sideA ** 2 + sideB ** 2)), // added instead of subtracted under the root
+          sideA - sideB, // subtracted the raw side lengths, no formula
+          sideA ** 2 - sideB ** 2 // forgot the square root
+        ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1
+  });
+}
+
+function distractSpecialRightTriangle454590(variables) {
+  const leg = variables.legValue;
+
+  if (variables.givenSideType === "leg") {
+    // Correct answer is "{leg}√2". Errors: confusing with the
+    // 30-60-90 radical, forgetting to multiply by √2 at all, and
+    // doubling instead of multiplying by √2.
+    return [`${leg}\u221A3`, String(leg), String(leg * 2)];
+  }
+
+  // Correct answer is the plain integer leg. Errors: forgetting to
+  // cancel the radical (leaving it in the answer), confusing with
+  // the 30-60-90 radical, and doubling instead of dividing out √2.
+  return [`${leg}\u221A2`, `${leg}\u221A3`, String(leg * 2)];
+}
+
+function distractSpecialRightTriangle306090(variables) {
+  const shortLeg = variables.shortLegValue;
+
+  if (variables.askedSideType === "longLeg") {
+    // Correct answer is "{shortLeg}√3". Errors: confusing with the
+    // 45-45-90 radical, forgetting the multiplier entirely, and
+    // confusing with the hypotenuse formula (doubling).
+    return [
+      `${shortLeg}\u221A2`,
+      String(shortLeg),
+      String(shortLeg * 2)
+    ];
+  }
+
+  if (variables.askedSideType === "hypotenuse") {
+    // Correct answer is shortLeg * 2 (plain integer). Errors:
+    // forgetting to double, and tripling instead (a plausible
+    // formula mix-up).
+    return buildNumericDistractors({
+      correctAnswer: shortLeg * 2,
+      pool: [shortLeg, shortLeg * 3],
+      min: 1
+    });
+  }
+
+  // askedSideType === "shortLeg": correct answer is shortLeg (plain
+  // integer, derived by halving the given hypotenuse). The single
+  // highest-value error is forgetting to divide by 2 at all.
+  return buildNumericDistractors({
+    correctAnswer: shortLeg,
+    pool: [shortLeg * 2],
+    min: 1
+  });
+}
+
+function formatReducedFractionForDistractor(numerator, denominator) {
+  const divisor = greatestCommonDivisorForDistractors(
+    numerator,
+    denominator
+  );
+
+  return `${numerator / divisor}/${denominator / divisor}`;
+}
+
+function greatestCommonDivisorForDistractors(a, b) {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+
+  while (y !== 0) {
+    [x, y] = [y, x % y];
+  }
+
+  return x || 1;
+}
+
+function distractRightTriangleTrigRatio(variables, correctAnswer) {
+  const { legA, legB, hypotenuse, ratioType } = variables;
+
+  // The two highest-value distractors: the values a student gets by
+  // applying the WRONG trig ratio formula (mixing up sine, cosine,
+  // and tangent is the single most common real error here).
+  const sineValue = formatReducedFractionForDistractor(legA, hypotenuse);
+  const cosineValue = formatReducedFractionForDistractor(legB, hypotenuse);
+  const tangentValue = formatReducedFractionForDistractor(legA, legB);
+
+  const wrongFormulaPool = [sineValue, cosineValue, tangentValue].filter(
+    (value) => value !== correctAnswer
+  );
+
+  // Third distractor: the correct ratio's UNREDUCED form — forgetting
+  // to simplify the fraction is an extremely common, real error.
+  let unreducedNumerator;
+  let unreducedDenominator;
+
+  if (ratioType === "sine") {
+    unreducedNumerator = legA;
+    unreducedDenominator = hypotenuse;
+  } else if (ratioType === "cosine") {
+    unreducedNumerator = legB;
+    unreducedDenominator = hypotenuse;
+  } else {
+    unreducedNumerator = legA;
+    unreducedDenominator = legB;
+  }
+
+  const unreducedValue = `${unreducedNumerator}/${unreducedDenominator}`;
+
+  const candidates = uniqueExcluding(
+    [...wrongFormulaPool, unreducedValue],
+    [correctAnswer]
+  );
+
+  if (candidates.length >= 3) {
+    return candidates.slice(0, 3);
+  }
+
+  // Extremely rare fallback (only if a triple's ratios happen to
+  // collide, e.g. an isosceles-like right triangle): pad with the
+  // ratio's numerator/denominator swapped (a reciprocal error).
+  const reciprocalValue = `${unreducedDenominator}/${unreducedNumerator}`;
+
+  return uniqueExcluding(
+    [...candidates, reciprocalValue],
+    [correctAnswer]
+  ).slice(0, 3);
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -624,7 +776,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractParallelLinesAngleMeasure(v, correct),
 
   classify_line_relationship_from_slopes: (v) =>
-    distractClassifyLineRelationship(v)
+    distractClassifyLineRelationship(v),
+
+  pythagorean_theorem_missing_side: (v, correct) =>
+    distractPythagoreanTheorem(v, correct),
+
+  special_right_triangle_45_45_90_missing_side: (v) =>
+    distractSpecialRightTriangle454590(v),
+
+  special_right_triangle_30_60_90_missing_side: (v) =>
+    distractSpecialRightTriangle306090(v),
+
+  right_triangle_trig_ratio_from_sides: (v, correct) =>
+    distractRightTriangleTrigRatio(v, correct)
 });
 
 function extractInput(input = {}) {

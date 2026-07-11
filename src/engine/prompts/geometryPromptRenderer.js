@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.1.0";
+const RENDERER_VERSION = "v1.2.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -60,7 +60,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_dilation_from_scale_factor",
   "identify_angle_pair_type_from_transversal",
   "angle_measure_from_parallel_lines",
-  "classify_line_relationship_from_slopes"
+  "classify_line_relationship_from_slopes",
+  "pythagorean_theorem_missing_side",
+  "special_right_triangle_45_45_90_missing_side",
+  "special_right_triangle_30_60_90_missing_side",
+  "right_triangle_trig_ratio_from_sides"
 ]);
 
 function protectedCopy(value) {
@@ -244,6 +248,49 @@ function renderClassifyLineRelationship(variables) {
   return `Line p has a slope of ${variables.slopeA}, and line q has a slope of ${variables.slopeB}. What is the relationship between line p and line q?`;
 }
 
+// --- Chapter 9: Right Triangles and Trigonometry ---
+
+function renderPythagoreanTheorem(variables) {
+  if (variables.missingSideRole === "hypotenuse") {
+    return `A right triangle has legs measuring ${variables.sideA} and ${variables.sideB}. What is the length of the hypotenuse?`;
+  }
+
+  return `A right triangle has a hypotenuse measuring ${variables.sideA} and one leg measuring ${variables.sideB}. What is the length of the other leg?`;
+}
+
+function renderSpecialRightTriangle454590(variables) {
+  if (variables.givenSideType === "leg") {
+    return `A 45-45-90 triangle has a leg measuring ${variables.givenSideDisplay}. What is the length of the hypotenuse?`;
+  }
+
+  return `A 45-45-90 triangle has a hypotenuse measuring ${variables.givenSideDisplay}. What is the length of each leg?`;
+}
+
+function renderSpecialRightTriangle306090(variables) {
+  const givenLabel =
+    variables.givenSideType === "shortLeg"
+      ? "short leg"
+      : "hypotenuse";
+
+  const askedLabel = {
+    longLeg: "long leg",
+    hypotenuse: "hypotenuse",
+    shortLeg: "short leg"
+  }[variables.askedSideType];
+
+  return `A 30-60-90 triangle has a ${givenLabel} measuring ${variables.givenSideDisplay}. What is the length of the ${askedLabel}?`;
+}
+
+function renderRightTriangleTrigRatio(variables) {
+  const ratioLabel = {
+    sine: "sine",
+    cosine: "cosine",
+    tangent: "tangent"
+  }[variables.ratioType];
+
+  return `A right triangle has legs measuring ${variables.legA} and ${variables.legB}, and a hypotenuse measuring ${variables.hypotenuse}. Angle A is opposite the side measuring ${variables.legA}. What is the ${ratioLabel} of angle A, expressed as a reduced fraction?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -276,7 +323,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderParallelLinesAngleMeasure,
 
   classify_line_relationship_from_slopes:
-    renderClassifyLineRelationship
+    renderClassifyLineRelationship,
+
+  pythagorean_theorem_missing_side:
+    renderPythagoreanTheorem,
+
+  special_right_triangle_45_45_90_missing_side:
+    renderSpecialRightTriangle454590,
+
+  special_right_triangle_30_60_90_missing_side:
+    renderSpecialRightTriangle306090,
+
+  right_triangle_trig_ratio_from_sides:
+    renderRightTriangleTrigRatio
 });
 
 function extractInput(input = {}) {
