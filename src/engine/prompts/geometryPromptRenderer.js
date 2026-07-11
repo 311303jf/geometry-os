@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.4.0";
+const RENDERER_VERSION = "v1.5.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -72,7 +72,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "triangle_exterior_angle_measure",
   "identify_triangle_congruence_postulate",
   "isosceles_triangle_angle_measure",
-  "triangle_inequality_check"
+  "triangle_inequality_check",
+  "identify_triangle_similarity_postulate",
+  "similar_polygon_scale_factor_calculation",
+  "similar_polygon_missing_side_length",
+  "triangle_proportionality_missing_segment"
 ]);
 
 function protectedCopy(value) {
@@ -344,6 +348,24 @@ function renderTriangleInequalityCheck(variables) {
   return `Three segments have lengths of ${variables.sideA}, ${variables.sideB}, and ${variables.sideC}. Can these three segments form a triangle?`;
 }
 
+// --- Chapter 8: Similarity ---
+
+function renderTriangleSimilarityPostulate(variables) {
+  return `In two triangles, ${variables.givenInformation}. Which postulate or theorem proves the triangles are similar?`;
+}
+
+function renderSimilarPolygonScaleFactor(variables) {
+  return `Polygon ABCD is similar to Polygon EFGH. A side in Polygon ABCD measures ${variables.sideLengthOriginal}, and the corresponding side in Polygon EFGH measures ${variables.sideLengthImage}. What is the scale factor from Polygon ABCD to Polygon EFGH?`;
+}
+
+function renderSimilarPolygonMissingSide(variables) {
+  return `Two figures are similar, with a scale factor of ${variables.scaleFactorDisplay} from the original figure to the image. If a side in the original figure measures ${variables.knownSideLength}, what is the length of the corresponding side in the image?`;
+}
+
+function renderTriangleProportionality(variables) {
+  return `In triangle ABC, segment DE is parallel to side BC, with point D on side AB and point E on side AC. If AD = ${variables.segmentAD}, DB = ${variables.segmentDB}, and AE = ${variables.segmentAE}, what is the length of EC?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -412,7 +434,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderIsoscelesTriangleAngle,
 
   triangle_inequality_check:
-    renderTriangleInequalityCheck
+    renderTriangleInequalityCheck,
+
+  identify_triangle_similarity_postulate:
+    renderTriangleSimilarityPostulate,
+
+  similar_polygon_scale_factor_calculation:
+    renderSimilarPolygonScaleFactor,
+
+  similar_polygon_missing_side_length:
+    renderSimilarPolygonMissingSide,
+
+  triangle_proportionality_missing_segment:
+    renderTriangleProportionality
 });
 
 function extractInput(input = {}) {

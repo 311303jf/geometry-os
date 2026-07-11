@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.4.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.5.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -76,7 +76,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "triangle_exterior_angle_measure",
   "identify_triangle_congruence_postulate",
   "isosceles_triangle_angle_measure",
-  "triangle_inequality_check"
+  "triangle_inequality_check",
+  "identify_triangle_similarity_postulate",
+  "similar_polygon_scale_factor_calculation",
+  "similar_polygon_missing_side_length",
+  "triangle_proportionality_missing_segment"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -883,6 +887,106 @@ function distractTriangleInequalityCheck(variables) {
   return [otherValidityLabel, "acute triangle", "obtuse triangle"];
 }
 
+// --- Chapter 8: Similarity ---
+
+function distractTriangleSimilarityPostulate(variables) {
+  const all = ["AA~", "SSS~", "SAS~"];
+
+  const otherTwo = all.filter(
+    (type) => type !== variables.postulateType
+  );
+
+  // The single sharpest distractor: the matching CONGRUENCE
+  // postulate name (same letters, no tilde) when one exists — this
+  // directly tests whether a student confuses similarity's
+  // proportional-sides requirement with congruence's equal-sides
+  // requirement. AA~ has no congruence equivalent, so ASA (a real
+  // congruence postulate) is used instead in that case.
+  const congruenceCrossover =
+    variables.postulateType === "AA~"
+      ? "ASA"
+      : variables.postulateType.replace("~", "");
+
+  return [...otherTwo, congruenceCrossover];
+}
+
+function distractSimilarPolygonScaleFactor(variables, correctAnswer) {
+  const { sideLengthOriginal, sideLengthImage } = variables;
+
+  const reciprocal = formatScaleFactorForDistractor(
+    sideLengthOriginal,
+    sideLengthImage
+  );
+
+  const unreduced = `${sideLengthImage}/${sideLengthOriginal}`;
+
+  const differenceAsRatio = String(
+    Math.abs(sideLengthImage - sideLengthOriginal)
+  );
+
+  return buildFromPool({
+    pool: [reciprocal, unreduced, differenceAsRatio],
+    correctAnswer,
+    fallbackGenerator: (i) => {
+      // Extra grounded fallbacks for edge cases where the primary
+      // pool doesn't yield 3 distinct values (e.g. when the
+      // reciprocal happens to equal the unreduced form, or either
+      // collides with the correct answer itself — a real collision
+      // this stress-tested and found, not a hypothetical one).
+      const fallbacks = [
+        String(sideLengthOriginal + sideLengthImage),
+        `${sideLengthOriginal}/${sideLengthImage}`,
+        String(sideLengthImage),
+        String(sideLengthOriginal)
+      ];
+
+      return fallbacks[i];
+    }
+  });
+}
+
+function formatScaleFactorForDistractor(numerator, denominator) {
+  const divisor = greatestCommonDivisorForDistractors(
+    numerator,
+    denominator
+  );
+  const reducedNumerator = numerator / divisor;
+  const reducedDenominator = denominator / divisor;
+
+  return reducedDenominator === 1
+    ? String(reducedNumerator)
+    : `${reducedNumerator}/${reducedDenominator}`;
+}
+
+function distractSimilarPolygonMissingSide(variables, correctAnswer) {
+  const { knownSideLength } = variables;
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      knownSideLength, // forgot to apply the scale factor at all
+      knownSideLength * 2 // doubled instead of scaling correctly
+    ],
+    min: 1
+  });
+}
+
+function distractTriangleProportionality(variables, correctAnswer) {
+  const { segmentAD, segmentDB, segmentAE } = variables;
+
+  const pool = [
+    Math.round((segmentAD * segmentDB) / segmentAE), // set up the proportion with AE and EC swapped
+    Math.round((segmentAE * segmentAD) / segmentDB), // used the reciprocal ratio
+    segmentAE + (segmentDB - segmentAD) // added the difference instead of using the proportion
+  ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1
+  });
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -959,7 +1063,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractIsoscelesTriangleAngle(v, correct),
 
   triangle_inequality_check: (v) =>
-    distractTriangleInequalityCheck(v)
+    distractTriangleInequalityCheck(v),
+
+  identify_triangle_similarity_postulate: (v) =>
+    distractTriangleSimilarityPostulate(v),
+
+  similar_polygon_scale_factor_calculation: (v, correct) =>
+    distractSimilarPolygonScaleFactor(v, correct),
+
+  similar_polygon_missing_side_length: (v, correct) =>
+    distractSimilarPolygonMissingSide(v, correct),
+
+  triangle_proportionality_missing_segment: (v, correct) =>
+    distractTriangleProportionality(v, correct)
 });
 
 function extractInput(input = {}) {

@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.4.0";
+const SOLVER_VERSION = "v1.5.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -78,7 +78,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "triangle_exterior_angle_measure",
   "identify_triangle_congruence_postulate",
   "isosceles_triangle_angle_measure",
-  "triangle_inequality_check"
+  "triangle_inequality_check",
+  "identify_triangle_similarity_postulate",
+  "similar_polygon_scale_factor_calculation",
+  "similar_polygon_missing_side_length",
+  "triangle_proportionality_missing_segment"
 ]);
 
 function protectedCopy(value) {
@@ -499,6 +503,32 @@ function solveTriangleInequalityCheck(variables) {
   return { answerFormat: "classification_label", correctAnswer };
 }
 
+// --- Chapter 8: Similarity ---
+
+function solveTriangleSimilarityPostulate(variables) {
+  const correctAnswer = variables.postulateType;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
+function solveSimilarPolygonScaleFactor(variables) {
+  const correctAnswer = variables.scaleFactor;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveSimilarPolygonMissingSide(variables) {
+  const correctAnswer = variables.missingSideLength;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveTriangleProportionality(variables) {
+  const correctAnswer = variables.segmentEC;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -567,7 +597,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveIsoscelesTriangleAngle,
 
   triangle_inequality_check:
-    solveTriangleInequalityCheck
+    solveTriangleInequalityCheck,
+
+  identify_triangle_similarity_postulate:
+    solveTriangleSimilarityPostulate,
+
+  similar_polygon_scale_factor_calculation:
+    solveSimilarPolygonScaleFactor,
+
+  similar_polygon_missing_side_length:
+    solveSimilarPolygonMissingSide,
+
+  triangle_proportionality_missing_segment:
+    solveTriangleProportionality
 });
 
 export class GeometrySolver {
