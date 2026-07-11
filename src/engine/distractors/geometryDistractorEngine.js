@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.3.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.4.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -72,7 +72,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "polygon_interior_angle_sum_calculation",
   "regular_polygon_interior_angle_measure",
   "parallelogram_angle_relationship_measure",
-  "quadrilateral_diagonal_bisection_length"
+  "quadrilateral_diagonal_bisection_length",
+  "triangle_exterior_angle_measure",
+  "identify_triangle_congruence_postulate",
+  "isosceles_triangle_angle_measure",
+  "triangle_inequality_check"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -806,6 +810,79 @@ function distractQuadrilateralDiagonalBisection(variables, correctAnswer) {
   });
 }
 
+// --- Chapters 5-6: Congruent Triangles and Relationships Within Triangles ---
+
+function distractTriangleExteriorAngle(variables, correctAnswer) {
+  const { remoteAngleA, remoteAngleB } = variables;
+
+  const pool = [
+    remoteAngleA, // used only one remote angle, forgot the other
+    remoteAngleB, // used only the other remote angle
+    180 - (remoteAngleA + remoteAngleB) // confused the exterior angle with the third INTERIOR angle
+  ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1,
+    max: 179
+  });
+}
+
+function distractTriangleCongruencePostulate(variables) {
+  const all = ["SSS", "SAS", "ASA", "AAS"];
+
+  // Error family: neighboring-category confusion between the four
+  // postulates, especially ASA vs AAS (the included-vs-non-included
+  // side distinction), which the pool naturally includes since it's
+  // one of the 3 "other" options every time.
+  return all.filter((type) => type !== variables.postulateType);
+}
+
+function distractIsoscelesTriangleAngle(variables, correctAnswer) {
+  const base = variables.baseAngleMeasure;
+
+  if (variables.scenario === "find_other_base") {
+    // Correct answer is simply `base` (base angles are congruent).
+    // Errors: treating the base angles as supplementary or
+    // complementary instead of congruent, or doubling.
+    const pool = [180 - base, 90 - base, base * 2];
+
+    return buildNumericDistractors({
+      correctAnswer,
+      pool,
+      min: 1,
+      max: 179
+    });
+  }
+
+  // scenario === "find_vertex": correct answer is 180 - 2*base.
+  // Errors: forgetting to compute anything and just repeating the
+  // base angle, subtracting only once instead of twice (180-base),
+  // and forgetting the "180 minus" part entirely (just doubling).
+  const pool = [base, 180 - base, base * 2];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1,
+    max: 179
+  });
+}
+
+function distractTriangleInequalityCheck(variables) {
+  const otherValidityLabel =
+    variables.validityLabel === "valid triangle"
+      ? "not a valid triangle"
+      : "valid triangle";
+
+  // Cross-category decoys: confusing a validity JUDGMENT question
+  // with a triangle-TYPE classification question (a real mix-up —
+  // seeing "triangle" and reflexively answering with a shape
+  // category instead of checking the inequality).
+  return [otherValidityLabel, "acute triangle", "obtuse triangle"];
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -870,7 +947,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractParallelogramAngleRelationship(v, correct),
 
   quadrilateral_diagonal_bisection_length: (v, correct) =>
-    distractQuadrilateralDiagonalBisection(v, correct)
+    distractQuadrilateralDiagonalBisection(v, correct),
+
+  triangle_exterior_angle_measure: (v, correct) =>
+    distractTriangleExteriorAngle(v, correct),
+
+  identify_triangle_congruence_postulate: (v) =>
+    distractTriangleCongruencePostulate(v),
+
+  isosceles_triangle_angle_measure: (v, correct) =>
+    distractIsoscelesTriangleAngle(v, correct),
+
+  triangle_inequality_check: (v) =>
+    distractTriangleInequalityCheck(v)
 });
 
 function extractInput(input = {}) {

@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.3.0";
+const RENDERER_VERSION = "v1.4.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -68,7 +68,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "polygon_interior_angle_sum_calculation",
   "regular_polygon_interior_angle_measure",
   "parallelogram_angle_relationship_measure",
-  "quadrilateral_diagonal_bisection_length"
+  "quadrilateral_diagonal_bisection_length",
+  "triangle_exterior_angle_measure",
+  "identify_triangle_congruence_postulate",
+  "isosceles_triangle_angle_measure",
+  "triangle_inequality_check"
 ]);
 
 function protectedCopy(value) {
@@ -318,6 +322,28 @@ function renderQuadrilateralDiagonalBisection(variables) {
   return `In parallelogram ABCD, the diagonals intersect at point E. If one half of a diagonal measures ${variables.givenSegmentLength}, what is the length of the other half of that same diagonal?`;
 }
 
+// --- Chapters 5-6: Congruent Triangles and Relationships Within Triangles ---
+
+function renderTriangleExteriorAngle(variables) {
+  return `A triangle has two remote interior angles measuring ${variables.remoteAngleA}\u00B0 and ${variables.remoteAngleB}\u00B0. What is the measure of the exterior angle at the third vertex?`;
+}
+
+function renderTriangleCongruencePostulate(variables) {
+  return `In two triangles, ${variables.givenInformation}. Which postulate or theorem proves the triangles are congruent?`;
+}
+
+function renderIsoscelesTriangleAngle(variables) {
+  if (variables.scenario === "find_other_base") {
+    return `An isosceles triangle has a base angle measuring ${variables.baseAngleMeasure}\u00B0. What is the measure of the other base angle?`;
+  }
+
+  return `An isosceles triangle has a base angle measuring ${variables.baseAngleMeasure}\u00B0. What is the measure of the vertex angle?`;
+}
+
+function renderTriangleInequalityCheck(variables) {
+  return `Three segments have lengths of ${variables.sideA}, ${variables.sideB}, and ${variables.sideC}. Can these three segments form a triangle?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -374,7 +400,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderParallelogramAngleRelationship,
 
   quadrilateral_diagonal_bisection_length:
-    renderQuadrilateralDiagonalBisection
+    renderQuadrilateralDiagonalBisection,
+
+  triangle_exterior_angle_measure:
+    renderTriangleExteriorAngle,
+
+  identify_triangle_congruence_postulate:
+    renderTriangleCongruencePostulate,
+
+  isosceles_triangle_angle_measure:
+    renderIsoscelesTriangleAngle,
+
+  triangle_inequality_check:
+    renderTriangleInequalityCheck
 });
 
 function extractInput(input = {}) {

@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.3.0";
+const SOLVER_VERSION = "v1.4.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -74,7 +74,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "polygon_interior_angle_sum_calculation",
   "regular_polygon_interior_angle_measure",
   "parallelogram_angle_relationship_measure",
-  "quadrilateral_diagonal_bisection_length"
+  "quadrilateral_diagonal_bisection_length",
+  "triangle_exterior_angle_measure",
+  "identify_triangle_congruence_postulate",
+  "isosceles_triangle_angle_measure",
+  "triangle_inequality_check"
 ]);
 
 function protectedCopy(value) {
@@ -469,6 +473,32 @@ function solveQuadrilateralDiagonalBisection(variables) {
   return { answerFormat: "numeric_value", correctAnswer };
 }
 
+// --- Chapters 5-6: Congruent Triangles and Relationships Within Triangles ---
+
+function solveTriangleExteriorAngle(variables) {
+  const correctAnswer = variables.exteriorAngleMeasure;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveTriangleCongruencePostulate(variables) {
+  const correctAnswer = variables.postulateType;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
+function solveIsoscelesTriangleAngle(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveTriangleInequalityCheck(variables) {
+  const correctAnswer = variables.validityLabel;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -525,7 +555,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveParallelogramAngleRelationship,
 
   quadrilateral_diagonal_bisection_length:
-    solveQuadrilateralDiagonalBisection
+    solveQuadrilateralDiagonalBisection,
+
+  triangle_exterior_angle_measure:
+    solveTriangleExteriorAngle,
+
+  identify_triangle_congruence_postulate:
+    solveTriangleCongruencePostulate,
+
+  isosceles_triangle_angle_measure:
+    solveIsoscelesTriangleAngle,
+
+  triangle_inequality_check:
+    solveTriangleInequalityCheck
 });
 
 export class GeometrySolver {
