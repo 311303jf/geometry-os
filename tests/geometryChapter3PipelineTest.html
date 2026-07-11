@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Chapter 3 Pipeline Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+    .sample { margin-top: 16px; padding: 16px 20px; background: #ffffff; border: 1px solid #d5dbe0; border-radius: 8px; }
+    .sample ul { list-style: none; padding-left: 0; }
+    .sample li { padding: 4px 0; }
+    .sample li.correct { font-weight: 700; color: #146c2e; }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Chapter 3 (Parallel and Perpendicular Lines) Pipeline Test</h1>
+  <p>Runs the full pipeline (Resolver → Variable Generator → Solver → Distractor Engine → Prompt Renderer) for the 3 new Chapter 3 templates across 30 seeds each (90 total runs), and also re-runs all 26 certified templates as a full regression check.</p>
+  <button id="runTestButton">Run Chapter 3 Pipeline Test</button>
+  <pre id="output">Ready.</pre>
+  <div id="samples"></div>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+    const samplesContainer = document.getElementById("samples");
+
+    const chapter3Templates = [
+      { templateId: "identify_angle_pair_type_from_transversal", problemTypeId: "identify_transversal_angle_pair" },
+      { templateId: "angle_measure_from_parallel_lines", problemTypeId: "parallel_lines_angle_measure" },
+      { templateId: "classify_line_relationship_from_slopes", problemTypeId: "classify_line_relationship" }
+    ];
+
+    const allTemplates = [
+      { templateId: "identify_point_from_description", problemTypeId: "identify_point" },
+      { templateId: "identify_line_from_labels", problemTypeId: "identify_line" },
+      { templateId: "identify_segment_from_endpoints", problemTypeId: "identify_segment" },
+      { templateId: "identify_ray_from_endpoint", problemTypeId: "identify_ray" },
+      { templateId: "identify_plane_from_points", problemTypeId: "identify_plane" },
+      { templateId: "identify_angle_from_rays", problemTypeId: "identify_angle" },
+      { templateId: "classify_angle_by_measure", problemTypeId: "classify_angle" },
+      { templateId: "measure_angle_from_relationship", problemTypeId: "measure_angle" },
+      { templateId: "identify_complementary_angle_pair", problemTypeId: "identify_complementary_angles" },
+      { templateId: "identify_supplementary_angle_pair", problemTypeId: "identify_supplementary_angles" },
+      { templateId: "identify_vertical_angle_pair", problemTypeId: "identify_vertical_angles" },
+      { templateId: "identify_adjacent_angle_pair", problemTypeId: "identify_adjacent_angles" },
+      { templateId: "classify_polygon_by_sides", problemTypeId: "classify_polygon" },
+      { templateId: "identify_polygon_from_attributes", problemTypeId: "identify_polygon" },
+      { templateId: "classify_triangle_by_sides", problemTypeId: "classify_triangle" },
+      { templateId: "classify_triangle_by_angles", problemTypeId: "classify_triangle" },
+      { templateId: "triangle_angle_sum_missing_angle", problemTypeId: "triangle_angle_sum" },
+      { templateId: "distance_between_two_points", problemTypeId: "distance_formula" },
+      { templateId: "midpoint_between_two_points", problemTypeId: "midpoint" },
+      { templateId: "identify_translation_from_rule", problemTypeId: "identify_translation" },
+      { templateId: "identify_reflection_from_rule", problemTypeId: "identify_reflection" },
+      { templateId: "identify_rotation_from_rule", problemTypeId: "identify_rotation" },
+      { templateId: "identify_dilation_from_scale_factor", problemTypeId: "identify_dilation" },
+      ...chapter3Templates
+    ];
+
+    const SEEDS_PER_NEW_TEMPLATE = 30;
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    function renderSample(rendered) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "sample";
+      const heading = document.createElement("h3");
+      heading.textContent = rendered.templateId;
+      wrapper.appendChild(heading);
+      const prompt = document.createElement("p");
+      prompt.textContent = rendered.promptText;
+      wrapper.appendChild(prompt);
+      const list = document.createElement("ul");
+      rendered.choices.forEach((choice) => {
+        const item = document.createElement("li");
+        item.textContent = `${choice.label}) ${JSON.stringify(choice.text)}`;
+        if (choice.isCorrect) item.className = "correct";
+        list.appendChild(item);
+      });
+      wrapper.appendChild(list);
+      samplesContainer.appendChild(wrapper);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+      samplesContainer.innerHTML = "";
+
+      try {
+        const resolverModule = await import("../src/geometry/templates/geometryTemplateResolver.js");
+        const generatorModule = await import("../src/geometry/generation/geometryVariableGenerator.js");
+        const solverModule = await import("../src/engine/solver/geometrySolver.js");
+        const distractorModule = await import("../src/engine/distractors/geometryDistractorEngine.js");
+        const rendererModule = await import("../src/engine/prompts/geometryPromptRenderer.js");
+        const validationModule = await import("../src/geometry/templates/geometryTemplateValidationContract.js");
+
+        const { geometryTemplateResolver } = resolverModule;
+        const { geometryVariableGenerator } = generatorModule;
+        const { geometrySolver } = solverModule;
+        const { geometryDistractorEngine } = distractorModule;
+        const { geometryPromptRenderer } = rendererModule;
+        const { geometryTemplateValidationContract } = validationModule;
+
+        output.textContent = "Modules loaded. Validating registry...";
+
+        const registryValidation = geometryTemplateValidationContract.validateRegistry();
+        assert(registryValidation.valid, `Registry validation failed: ${JSON.stringify(registryValidation.errors)}`);
+        assert(registryValidation.templateCount === 26, `Expected 26 certified templates, found ${registryValidation.templateCount}.`);
+
+        output.textContent = `Registry OK (26 templates). Running Chapter 3 pipeline (${chapter3Templates.length} templates x ${SEEDS_PER_NEW_TEMPLATE} seeds)...`;
+
+        const failures = [];
+        let totalRuns = 0;
+        const exampleByTemplate = {};
+
+        chapter3Templates.forEach((templateCase) => {
+          for (let seedIndex = 0; seedIndex < SEEDS_PER_NEW_TEMPLATE; seedIndex++) {
+            totalRuns += 1;
+
+            const resolution = geometryTemplateResolver.resolve(templateCase);
+            if (!resolution.resolved) { failures.push({ ...templateCase, seedIndex, stage: "resolver", errors: resolution.errors }); continue; }
+
+            const generation = geometryVariableGenerator.generate(resolution, {
+              seed: `ch3-test-${templateCase.templateId}-${seedIndex}`,
+              generationIndex: seedIndex
+            });
+            if (!generation.generated) { failures.push({ ...templateCase, seedIndex, stage: "generator", errors: generation.errors }); continue; }
+
+            const solveResult = geometrySolver.solve({
+              templateId: templateCase.templateId,
+              problemTypeId: templateCase.problemTypeId,
+              variables: generation.variables
+            });
+            if (!solveResult.solved) { failures.push({ ...templateCase, seedIndex, stage: "solver", errors: solveResult.errors }); continue; }
+
+            const distractorResult = geometryDistractorEngine.generate({
+              templateId: templateCase.templateId,
+              problemTypeId: templateCase.problemTypeId,
+              variables: generation.variables,
+              correctAnswer: solveResult.correctAnswer,
+              acceptableAnswers: solveResult.acceptableAnswers
+            });
+            const distractorsValid = distractorResult.generated &&
+              Array.isArray(distractorResult.distractors) &&
+              distractorResult.distractors.length === 3 &&
+              new Set(distractorResult.distractors.map((d) => JSON.stringify(d))).size === 3;
+            if (!distractorsValid) { failures.push({ ...templateCase, seedIndex, stage: "distractors", errors: distractorResult.errors }); continue; }
+
+            const rendered = geometryPromptRenderer.render({
+              templateId: templateCase.templateId,
+              problemTypeId: templateCase.problemTypeId,
+              variables: generation.variables,
+              correctAnswer: solveResult.correctAnswer,
+              distractors: distractorResult.distractors,
+              seed: `ch3-render-${templateCase.templateId}-${seedIndex}`
+            });
+
+            const valid = rendered.rendered &&
+              rendered.choices.length === 4 &&
+              rendered.choices.filter((c) => c.isCorrect).length === 1 &&
+              !rendered.promptText.includes("undefined") &&
+              !rendered.promptText.includes("NaN");
+
+            if (!valid) { failures.push({ ...templateCase, seedIndex, stage: "renderer" }); continue; }
+
+            if (!exampleByTemplate[templateCase.templateId]) {
+              exampleByTemplate[templateCase.templateId] = rendered;
+            }
+          }
+        });
+
+        assert(failures.length === 0, `Chapter 3 pipeline failed for ${failures.length} of ${totalRuns} runs. First failure: ${JSON.stringify(failures[0])}`);
+
+        output.textContent = "Chapter 3 pipeline OK. Running full 26-template regression...";
+
+        let regressionPass = 0;
+        allTemplates.forEach((templateCase, index) => {
+          const resolution = geometryTemplateResolver.resolve(templateCase);
+          const generation = geometryVariableGenerator.generate(resolution, { seed: `regression-${templateCase.templateId}`, generationIndex: index });
+          const solveResult = geometrySolver.solve({ templateId: templateCase.templateId, problemTypeId: templateCase.problemTypeId, variables: generation.variables });
+          const distractorResult = geometryDistractorEngine.generate({ templateId: templateCase.templateId, problemTypeId: templateCase.problemTypeId, variables: generation.variables, correctAnswer: solveResult.correctAnswer, acceptableAnswers: solveResult.acceptableAnswers });
+          const rendered = geometryPromptRenderer.render({ templateId: templateCase.templateId, problemTypeId: templateCase.problemTypeId, variables: generation.variables, correctAnswer: solveResult.correctAnswer, distractors: distractorResult.distractors, seed: `regression-render-${templateCase.templateId}` });
+          if (resolution.resolved && generation.generated && solveResult.solved && distractorResult.generated && rendered.rendered && rendered.choices.length === 4) {
+            regressionPass += 1;
+          }
+        });
+
+        assert(regressionPass === allTemplates.length, `Full regression failed: only ${regressionPass}/${allTemplates.length} templates passed the complete pipeline.`);
+
+        const result = {
+          test: "Chapter 3 (Parallel and Perpendicular Lines) Pipeline",
+          registryTemplateCount: registryValidation.templateCount,
+          registryValid: registryValidation.valid,
+          chapter3TemplateCount: chapter3Templates.length,
+          seedsPerTemplate: SEEDS_PER_NEW_TEMPLATE,
+          totalChapter3Runs: totalRuns,
+          chapter3FailureCount: failures.length,
+          fullRegressionTemplateCount: allTemplates.length,
+          fullRegressionPassCount: regressionPass,
+          pass: true
+        };
+
+        output.textContent = "PASS — Chapter 3 Pipeline (" + totalRuns + " runs, 0 failures; full 26-template regression: " + regressionPass + "/" + allTemplates.length + ")\n\n" + JSON.stringify(result, null, 2);
+
+        chapter3Templates.forEach((t) => {
+          if (exampleByTemplate[t.templateId]) renderSample(exampleByTemplate[t.templateId]);
+        });
+      } catch (error) {
+        const failureResult = {
+          test: "Chapter 3 Pipeline",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null
+        };
+        output.textContent = "FAIL — Chapter 3 Pipeline\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.0.0";
+const RENDERER_VERSION = "v1.1.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -57,7 +57,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_translation_from_rule",
   "identify_reflection_from_rule",
   "identify_rotation_from_rule",
-  "identify_dilation_from_scale_factor"
+  "identify_dilation_from_scale_factor",
+  "identify_angle_pair_type_from_transversal",
+  "angle_measure_from_parallel_lines",
+  "classify_line_relationship_from_slopes"
 ]);
 
 function protectedCopy(value) {
@@ -222,6 +225,25 @@ function renderDilation(variables) {
   return `A point is dilated by a scale factor of ${variables.scaleFactor}, centered at the origin. Which rule represents this dilation?`;
 }
 
+// --- Chapter 3: Parallel and Perpendicular Lines ---
+
+function renderTransversalAnglePairType(variables) {
+  return `Two parallel lines are cut by a transversal. ${variables.angleDescriptionA[0].toUpperCase()}${variables.angleDescriptionA.slice(1)} and ${variables.angleDescriptionB} are a pair of angles formed by the intersections. What is the relationship between these two angles?`;
+}
+
+function renderParallelLinesAngleMeasure(variables) {
+  const relationshipPhrase =
+    variables.relationshipType === "consecutive interior"
+      ? "consecutive interior (same-side interior) angles"
+      : `${variables.relationshipType} angles`;
+
+  return `Two parallel lines are cut by a transversal, forming a pair of ${relationshipPhrase}. If one angle measures ${variables.knownAngleMeasure}\u00B0, what is the measure of the other angle in the pair?`;
+}
+
+function renderClassifyLineRelationship(variables) {
+  return `Line p has a slope of ${variables.slopeA}, and line q has a slope of ${variables.slopeB}. What is the relationship between line p and line q?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -245,7 +267,16 @@ const TEMPLATE_RENDERERS = Object.freeze({
   identify_translation_from_rule: renderTranslation,
   identify_reflection_from_rule: renderReflection,
   identify_rotation_from_rule: renderRotation,
-  identify_dilation_from_scale_factor: renderDilation
+  identify_dilation_from_scale_factor: renderDilation,
+
+  identify_angle_pair_type_from_transversal:
+    renderTransversalAnglePairType,
+
+  angle_measure_from_parallel_lines:
+    renderParallelLinesAngleMeasure,
+
+  classify_line_relationship_from_slopes:
+    renderClassifyLineRelationship
 });
 
 function extractInput(input = {}) {

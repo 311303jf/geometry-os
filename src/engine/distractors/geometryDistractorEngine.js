@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.0.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.1.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -61,7 +61,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_translation_from_rule",
   "identify_reflection_from_rule",
   "identify_rotation_from_rule",
-  "identify_dilation_from_scale_factor"
+  "identify_dilation_from_scale_factor",
+  "identify_angle_pair_type_from_transversal",
+  "angle_measure_from_parallel_lines",
+  "classify_line_relationship_from_slopes"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -533,6 +536,54 @@ function distractDilation(variables) {
     .map((factor) => `(x, y) → (${factor}x, ${factor}y)`);
 }
 
+// --- Chapter 3: Parallel and Perpendicular Lines ---
+
+function distractTransversalAnglePairType(variables) {
+  const all = [
+    "corresponding",
+    "alternate interior",
+    "alternate exterior",
+    "consecutive interior"
+  ];
+
+  // Error family: neighboring-category confusion between the four
+  // transversal angle relationships — the same pattern used for
+  // complementary/supplementary/vertical/adjacent.
+  return all.filter((type) => type !== variables.relationshipType);
+}
+
+function distractParallelLinesAngleMeasure(variables, correctAnswer) {
+  const known = variables.knownAngleMeasure;
+
+  // The single most valuable distractor: the answer a student would
+  // get by applying the WRONG relationship rule (congruent vs.
+  // supplementary) — mixing up which of the four relationships
+  // requires which formula is the single most common real error
+  // here.
+  const wrongRuleAnswer =
+    correctAnswer === known ? 180 - known : known;
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [wrongRuleAnswer],
+    min: 1,
+    max: 179
+  });
+}
+
+function distractClassifyLineRelationship(variables) {
+  const all = ["parallel", "perpendicular", "neither"];
+
+  const otherTwo = all.filter(
+    (type) => type !== variables.relationshipType
+  );
+
+  // Cross-category decoy: confusing "parallel" with "the same
+  // line" (coincident) is a real, common misconception distinct
+  // from the three certified categories.
+  return [...otherTwo, "coincident"];
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -564,7 +615,16 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_translation_from_rule: (v) => distractTranslation(v),
   identify_reflection_from_rule: (v) => distractReflection(v),
   identify_rotation_from_rule: (v) => distractRotation(v),
-  identify_dilation_from_scale_factor: (v) => distractDilation(v)
+  identify_dilation_from_scale_factor: (v) => distractDilation(v),
+
+  identify_angle_pair_type_from_transversal: (v) =>
+    distractTransversalAnglePairType(v),
+
+  angle_measure_from_parallel_lines: (v, correct) =>
+    distractParallelLinesAngleMeasure(v, correct),
+
+  classify_line_relationship_from_slopes: (v) =>
+    distractClassifyLineRelationship(v)
 });
 
 function extractInput(input = {}) {

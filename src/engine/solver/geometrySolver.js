@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.0.0";
+const SOLVER_VERSION = "v1.1.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -63,7 +63,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_translation_from_rule",
   "identify_reflection_from_rule",
   "identify_rotation_from_rule",
-  "identify_dilation_from_scale_factor"
+  "identify_dilation_from_scale_factor",
+  "identify_angle_pair_type_from_transversal",
+  "angle_measure_from_parallel_lines",
+  "classify_line_relationship_from_slopes"
 ]);
 
 function protectedCopy(value) {
@@ -386,6 +389,26 @@ function solveIdentifyDilation(variables) {
   return { answerFormat: "classification_label", correctAnswer };
 }
 
+// --- Chapter 3: Parallel and Perpendicular Lines ---
+
+function solveTransversalAnglePairType(variables) {
+  const correctAnswer = variables.relationshipType;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
+function solveParallelLinesAngleMeasure(variables) {
+  const correctAnswer = variables.unknownAngleMeasure;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveClassifyLineRelationship(variables) {
+  const correctAnswer = variables.relationshipType;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -409,7 +432,16 @@ const TEMPLATE_SOLVERS = Object.freeze({
   identify_translation_from_rule: solveIdentifyTranslation,
   identify_reflection_from_rule: solveIdentifyReflection,
   identify_rotation_from_rule: solveIdentifyRotation,
-  identify_dilation_from_scale_factor: solveIdentifyDilation
+  identify_dilation_from_scale_factor: solveIdentifyDilation,
+
+  identify_angle_pair_type_from_transversal:
+    solveTransversalAnglePairType,
+
+  angle_measure_from_parallel_lines:
+    solveParallelLinesAngleMeasure,
+
+  classify_line_relationship_from_slopes:
+    solveClassifyLineRelationship
 });
 
 export class GeometrySolver {
