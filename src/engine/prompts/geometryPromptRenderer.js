@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.7.0";
+const RENDERER_VERSION = "v1.8.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -84,7 +84,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "circle_circumference_and_area_calculation",
   "arc_length_or_sector_area_calculation",
   "prism_or_cylinder_volume_calculation",
-  "sphere_surface_area_or_volume_calculation"
+  "sphere_surface_area_or_volume_calculation",
+  "identify_conditional_statement_transformation",
+  "identify_conditional_statement_part",
+  "identify_algebraic_reasoning_property"
 ]);
 
 function protectedCopy(value) {
@@ -427,6 +430,23 @@ function renderSphereSurfaceAreaOrVolume(variables) {
   return `A sphere has a radius of ${variables.radius}. What is the ${measurementLabel} of the sphere, expressed exactly in terms of \u03C0?`;
 }
 
+// --- Chapter 2: Reasoning and Proofs ---
+
+function renderConditionalStatementTransformation(variables) {
+  return `Consider the statement: "${variables.originalStatement}" It is transformed into: "${variables.transformedStatement}" What type of statement is the transformed version?`;
+}
+
+function renderConditionalStatementPart(variables) {
+  const partLabel =
+    variables.scenario === "hypothesis" ? "hypothesis" : "conclusion";
+
+  return `Consider the statement: "${variables.originalStatement}" What is the ${partLabel} of this statement?`;
+}
+
+function renderAlgebraicReasoningProperty(variables) {
+  return `An equation ${variables.beforeEquation} is transformed in one step into ${variables.afterEquation}. Which property of equality justifies this step?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -531,7 +551,16 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderPrismOrCylinderVolume,
 
   sphere_surface_area_or_volume_calculation:
-    renderSphereSurfaceAreaOrVolume
+    renderSphereSurfaceAreaOrVolume,
+
+  identify_conditional_statement_transformation:
+    renderConditionalStatementTransformation,
+
+  identify_conditional_statement_part:
+    renderConditionalStatementPart,
+
+  identify_algebraic_reasoning_property:
+    renderAlgebraicReasoningProperty
 });
 
 function extractInput(input = {}) {

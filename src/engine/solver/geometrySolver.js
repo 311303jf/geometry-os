@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.7.0";
+const SOLVER_VERSION = "v1.8.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -90,7 +90,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "circle_circumference_and_area_calculation",
   "arc_length_or_sector_area_calculation",
   "prism_or_cylinder_volume_calculation",
-  "sphere_surface_area_or_volume_calculation"
+  "sphere_surface_area_or_volume_calculation",
+  "identify_conditional_statement_transformation",
+  "identify_conditional_statement_part",
+  "identify_algebraic_reasoning_property"
 ]);
 
 function protectedCopy(value) {
@@ -589,6 +592,26 @@ function solveSphereSurfaceAreaOrVolume(variables) {
   return { answerFormat: "radical_value", correctAnswer };
 }
 
+// --- Chapter 2: Reasoning and Proofs ---
+
+function solveConditionalStatementTransformation(variables) {
+  const correctAnswer = variables.transformationType;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
+function solveConditionalStatementPart(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
+function solveAlgebraicReasoningProperty(variables) {
+  const correctAnswer = variables.propertyType;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -693,7 +716,16 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solvePrismOrCylinderVolume,
 
   sphere_surface_area_or_volume_calculation:
-    solveSphereSurfaceAreaOrVolume
+    solveSphereSurfaceAreaOrVolume,
+
+  identify_conditional_statement_transformation:
+    solveConditionalStatementTransformation,
+
+  identify_conditional_statement_part:
+    solveConditionalStatementPart,
+
+  identify_algebraic_reasoning_property:
+    solveAlgebraicReasoningProperty
 });
 
 export class GeometrySolver {

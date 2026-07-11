@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.7.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.8.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -88,7 +88,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "circle_circumference_and_area_calculation",
   "arc_length_or_sector_area_calculation",
   "prism_or_cylinder_volume_calculation",
-  "sphere_surface_area_or_volume_calculation"
+  "sphere_surface_area_or_volume_calculation",
+  "identify_conditional_statement_transformation",
+  "identify_conditional_statement_part",
+  "identify_algebraic_reasoning_property"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -1302,6 +1305,60 @@ function distractSphereSurfaceAreaOrVolume(variables, correctAnswer) {
   });
 }
 
+// --- Chapter 2: Reasoning and Proofs ---
+
+function distractConditionalStatementTransformation(variables) {
+  const allTransformationTypes = ["converse", "inverse", "contrapositive"];
+
+  const otherTransformations = allTransformationTypes.filter(
+    (type) => type !== variables.transformationType
+  );
+
+  // Cross-category decoy: the fourth real category in this family
+  // is "original" — a student who doesn't recognize any
+  // transformation happened at all is a genuine, common error.
+  return [...otherTransformations, "original"];
+}
+
+function distractConditionalStatementPart(variables) {
+  const {
+    scenario,
+    hypothesis,
+    conclusion,
+    negatedHypothesis,
+    negatedConclusion
+  } = variables;
+
+  // Error family: picking the other part of the conditional
+  // (hypothesis instead of conclusion or vice versa), and confusing
+  // either part with its negation.
+  if (scenario === "hypothesis") {
+    return [conclusion, negatedHypothesis, negatedConclusion];
+  }
+
+  return [hypothesis, negatedConclusion, negatedHypothesis];
+}
+
+function distractAlgebraicReasoningProperty(variables) {
+  const allProperties = [
+    "Addition Property of Equality",
+    "Subtraction Property of Equality",
+    "Multiplication Property of Equality",
+    "Division Property of Equality",
+    "Distributive Property"
+  ];
+
+  // Error family: confusing this property with one of the other
+  // four — most valuably, mixing up the "opposite operation" pairs
+  // (addition vs. subtraction, multiplication vs. division), which
+  // this filter-based selection naturally includes since both
+  // members of each pair remain in the candidate list whenever the
+  // correct answer is the third or later property.
+  return allProperties
+    .filter((property) => property !== variables.propertyType)
+    .slice(0, 3);
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -1414,7 +1471,16 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractPrismOrCylinderVolume(v, correct),
 
   sphere_surface_area_or_volume_calculation: (v, correct) =>
-    distractSphereSurfaceAreaOrVolume(v, correct)
+    distractSphereSurfaceAreaOrVolume(v, correct),
+
+  identify_conditional_statement_transformation: (v) =>
+    distractConditionalStatementTransformation(v),
+
+  identify_conditional_statement_part: (v) =>
+    distractConditionalStatementPart(v),
+
+  identify_algebraic_reasoning_property: (v) =>
+    distractAlgebraicReasoningProperty(v)
 });
 
 function extractInput(input = {}) {
