@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.1.2
+ * Geometry Variable Generator v1.1.5
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
