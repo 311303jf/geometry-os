@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Geometry OS — Geometry Solver Test
+  </title>
+
+  <style>
+    body {
+      margin: 32px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #17202a;
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    pre {
+      margin-top: 20px;
+      padding: 20px;
+      min-height: 120px;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 8px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Solver Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Solver Test
+  </button>
+
+  <pre id="output">Ready.</pre>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    const templateCases = [
+      { templateId: "identify_point_from_description", problemTypeId: "identify_point" },
+      { templateId: "identify_line_from_labels", problemTypeId: "identify_line" },
+      { templateId: "identify_segment_from_endpoints", problemTypeId: "identify_segment" },
+      { templateId: "identify_ray_from_endpoint", problemTypeId: "identify_ray" },
+      { templateId: "identify_plane_from_points", problemTypeId: "identify_plane" },
+      { templateId: "identify_angle_from_rays", problemTypeId: "identify_angle" },
+      { templateId: "classify_angle_by_measure", problemTypeId: "classify_angle" },
+      { templateId: "measure_angle_from_relationship", problemTypeId: "measure_angle" },
+      { templateId: "identify_complementary_angle_pair", problemTypeId: "identify_complementary_angles" },
+      { templateId: "identify_supplementary_angle_pair", problemTypeId: "identify_supplementary_angles" },
+      { templateId: "identify_vertical_angle_pair", problemTypeId: "identify_vertical_angles" },
+      { templateId: "identify_adjacent_angle_pair", problemTypeId: "identify_adjacent_angles" },
+      { templateId: "classify_polygon_by_sides", problemTypeId: "classify_polygon" },
+      { templateId: "identify_polygon_from_attributes", problemTypeId: "identify_polygon" },
+      { templateId: "classify_triangle_by_sides", problemTypeId: "classify_triangle" },
+      { templateId: "classify_triangle_by_angles", problemTypeId: "classify_triangle" },
+      { templateId: "triangle_angle_sum_missing_angle", problemTypeId: "triangle_angle_sum" },
+      { templateId: "distance_between_two_points", problemTypeId: "distance_formula" },
+      { templateId: "midpoint_between_two_points", problemTypeId: "midpoint" },
+      { templateId: "identify_translation_from_rule", problemTypeId: "identify_translation" },
+      { templateId: "identify_reflection_from_rule", problemTypeId: "identify_reflection" },
+      { templateId: "identify_rotation_from_rule", problemTypeId: "identify_rotation" },
+      { templateId: "identify_dilation_from_scale_factor", problemTypeId: "identify_dilation" }
+    ];
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function verifyMathematics(templateId, variables, correctAnswer) {
+      switch (templateId) {
+        case "distance_between_two_points": {
+          const expected = Math.sqrt(
+            (variables.x2 - variables.x1) ** 2 +
+            (variables.y2 - variables.y1) ** 2
+          );
+          return Math.abs(correctAnswer - expected) < 1e-9;
+        }
+
+        case "midpoint_between_two_points":
+          return correctAnswer === `(${variables.midpointX}, ${variables.midpointY})`;
+
+        case "triangle_angle_sum_missing_angle":
+          return variables.angleA + variables.angleB + correctAnswer === 180;
+
+        case "measure_angle_from_relationship":
+          return correctAnswer === variables.unknownAngleMeasure;
+
+        case "classify_angle_by_measure":
+          return correctAnswer === variables.angleType;
+
+        case "identify_ray_from_endpoint":
+          return (
+            correctAnswer === variables.rayName &&
+            correctAnswer !== variables.reverseOrder
+          );
+
+        case "identify_complementary_angle_pair":
+        case "identify_supplementary_angle_pair":
+        case "identify_vertical_angle_pair":
+        case "identify_adjacent_angle_pair":
+          return correctAnswer === variables.relationshipType;
+
+        default:
+          return (
+            correctAnswer !== undefined &&
+            correctAnswer !== null &&
+            correctAnswer !== ""
+          );
+      }
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+
+      try {
+        const resolverModule = await import(
+          "../src/geometry/templates/geometryTemplateResolver.js"
+        );
+
+        const generatorModule = await import(
+          "../src/geometry/generation/geometryVariableGenerator.js"
+        );
+
+        const solverModule = await import(
+          "../src/engine/solver/geometrySolver.js"
+        );
+
+        const { geometryTemplateResolver } = resolverModule;
+        const { geometryVariableGenerator } = generatorModule;
+        const { geometrySolver } = solverModule;
+
+        assert(
+          geometryTemplateResolver &&
+          typeof geometryTemplateResolver.resolve === "function",
+          "Geometry Template Resolver did not load correctly."
+        );
+
+        assert(
+          geometryVariableGenerator &&
+          typeof geometryVariableGenerator.generate === "function",
+          "Geometry Variable Generator did not load correctly."
+        );
+
+        assert(
+          geometrySolver &&
+          typeof geometrySolver.solve === "function",
+          "Geometry Solver did not load correctly."
+        );
+
+        output.textContent = "Modules loaded. Running certification...";
+
+        const records = templateCases.map((templateCase, index) => {
+          const resolution = geometryTemplateResolver.resolve({
+            templateId: templateCase.templateId,
+            problemTypeId: templateCase.problemTypeId
+          });
+
+          assert(
+            resolution.resolved === true,
+            `Template resolution failed for ${templateCase.templateId}.`
+          );
+
+          const generation = geometryVariableGenerator.generate(
+            resolution,
+            {
+              seed: `solver-certification-${templateCase.templateId}`,
+              generationIndex: index
+            }
+          );
+
+          assert(
+            generation.generated === true,
+            `Variable generation failed for ${templateCase.templateId}. Errors: ${(generation.errors || []).join(" ")}`
+          );
+
+          const solveResult = geometrySolver.solve({
+            templateId: templateCase.templateId,
+            problemTypeId: templateCase.problemTypeId,
+            variables: generation.variables
+          });
+
+          assert(
+            solveResult.solved === true,
+            `Solve failed for ${templateCase.templateId}. Errors: ${(solveResult.errors || []).join(" ")}`
+          );
+
+          assert(
+            solveResult.correctAnswer !== undefined &&
+            solveResult.correctAnswer !== null &&
+            solveResult.correctAnswer !== "",
+            `No valid correctAnswer produced for ${templateCase.templateId}.`
+          );
+
+          assert(
+            Array.isArray(solveResult.acceptableAnswers) &&
+            solveResult.acceptableAnswers.length > 0,
+            `No acceptableAnswers produced for ${templateCase.templateId}.`
+          );
+
+          const mathematicallyValid = verifyMathematics(
+            templateCase.templateId,
+            generation.variables,
+            solveResult.correctAnswer
+          );
+
+          assert(
+            mathematicallyValid,
+            `Mathematical validation failed for ${templateCase.templateId}. correctAnswer: ${JSON.stringify(solveResult.correctAnswer)}`
+          );
+
+          return {
+            templateId: solveResult.templateId,
+            problemTypeId: solveResult.problemTypeId,
+            solved: solveResult.solved,
+            answerFormat: solveResult.answerFormat,
+            correctAnswer: solveResult.correctAnswer,
+            acceptableAnswerCount: solveResult.acceptableAnswers.length,
+            mathematicalCheck: true
+          };
+        });
+
+        const invalidTemplate = geometrySolver.solve({
+          templateId: "not_a_real_template",
+          variables: {}
+        });
+
+        const missingVariables = geometrySolver.solve({
+          templateId: "classify_angle_by_measure"
+        });
+
+        const supportedTemplateIds = geometrySolver.getSupportedTemplateIds();
+
+        assert(
+          supportedTemplateIds.length === 23,
+          "Supported template count must equal 23."
+        );
+
+        assert(
+          invalidTemplate.solved === false,
+          "Invalid templateId was not rejected."
+        );
+
+        assert(
+          missingVariables.solved === false,
+          "Missing variables were not rejected."
+        );
+
+        const result = {
+          test: "Geometry Solver",
+          solverVersion: geometrySolver.getSolverVersion(),
+          certifiedTemplateCount: templateCases.length,
+          supportedTemplateCount: supportedTemplateIds.length,
+          solvedTemplateCount: records.filter((r) => r.solved).length,
+          allTemplatesSolved: records.every((r) => r.solved),
+          allMathematicalChecksPassed: records.every(
+            (r) => r.mathematicalCheck
+          ),
+          invalidTemplateRejected: invalidTemplate.solved === false,
+          missingVariablesRejected: missingVariables.solved === false,
+          solveRecords: records,
+          pass: true
+        };
+
+        output.textContent =
+          "PASS — Geometry Solver " +
+          result.solverVersion +
+          "\n\n" +
+          JSON.stringify(result, null, 2);
+      } catch (error) {
+        const failureResult = {
+          test: "Geometry Solver",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null,
+          diagnostic:
+            "Verify that geometrySolver.js exists at src/engine/solver/geometrySolver.js and that the page is opened through the project web server rather than directly with file://."
+        };
+
+        output.textContent =
+          "FAIL — Geometry Solver\n\n" +
+          JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
