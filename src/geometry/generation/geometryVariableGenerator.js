@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.2.0
+ * Geometry Variable Generator v1.3.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.2.0";
+const GENERATOR_VERSION = "v1.3.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -80,7 +80,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_dilation_from_scale_factor",
   "identify_angle_pair_type_from_transversal",
   "angle_measure_from_parallel_lines",
-  "classify_line_relationship_from_slopes"
+  "classify_line_relationship_from_slopes",
+  "pythagorean_theorem_missing_side",
+  "special_right_triangle_45_45_90_missing_side",
+  "special_right_triangle_30_60_90_missing_side",
+  "right_triangle_trig_ratio_from_sides"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -1938,6 +1942,166 @@ function generateLineRelationshipVariables(random) {
   };
 }
 
+// --- Chapter 9: Right Triangles and Trigonometry ---
+// All answers in this chapter are kept EXACT (integers, simplified
+// radicals as strings like "5√2", or reduced fractions as strings
+// like "3/5") rather than rounded decimals, so correctness can be
+// checked with exact string/number equality instead of a tolerance
+// threshold — consistent with the exactness standard used
+// throughout the rest of this certified pipeline.
+
+// Curated Pythagorean triples, reused from the same family already
+// certified in distance_between_two_points, guaranteeing every
+// missing side is an exact integer with no radicals involved.
+const PYTHAGOREAN_TRIPLES = Object.freeze([
+  [3, 4, 5],
+  [5, 12, 13],
+  [6, 8, 10],
+  [8, 15, 17],
+  [7, 24, 25],
+  [9, 12, 15],
+  [12, 16, 20],
+  [20, 21, 29]
+]);
+
+function generatePythagoreanTheoremVariables(random) {
+  const [legOne, legTwo, hypotenuse] = randomChoice(
+    random,
+    PYTHAGOREAN_TRIPLES
+  );
+
+  const missingSideRole = randomChoice(random, ["hypotenuse", "leg"]);
+
+  if (missingSideRole === "hypotenuse") {
+    return {
+      sideA: legOne,
+      sideB: legTwo,
+      missingSideRole,
+      missingSideValue: hypotenuse
+    };
+  }
+
+  // Solving for a leg: sideA is always the hypotenuse, sideB is the
+  // known leg, and the missing leg is whichever triple member is
+  // left over.
+  const knownLeg = randomChoice(random, [legOne, legTwo]);
+  const missingLeg = knownLeg === legOne ? legTwo : legOne;
+
+  return {
+    sideA: hypotenuse,
+    sideB: knownLeg,
+    missingSideRole,
+    missingSideValue: missingLeg
+  };
+}
+
+function generateSpecialRightTriangle454590Variables(random) {
+  const legValue = randomInteger(random, 2, 14);
+  const givenSideType = randomChoice(random, ["leg", "hypotenuse"]);
+
+  const givenSideDisplay =
+    givenSideType === "leg"
+      ? String(legValue)
+      : `${legValue}\u221A2`;
+
+  const missingSideValue =
+    givenSideType === "leg"
+      ? `${legValue}\u221A2`
+      : legValue;
+
+  return {
+    legValue,
+    givenSideType,
+    givenSideDisplay,
+    missingSideValue
+  };
+}
+
+function generateSpecialRightTriangle306090Variables(random) {
+  const shortLegValue = randomInteger(random, 2, 12);
+
+  const scenario = randomChoice(random, [
+    "shortLeg_to_longLeg",
+    "shortLeg_to_hypotenuse",
+    "hypotenuse_to_shortLeg"
+  ]);
+
+  if (scenario === "shortLeg_to_longLeg") {
+    return {
+      shortLegValue,
+      givenSideType: "shortLeg",
+      givenSideDisplay: String(shortLegValue),
+      askedSideType: "longLeg",
+      missingSideValue: `${shortLegValue}\u221A3`
+    };
+  }
+
+  if (scenario === "shortLeg_to_hypotenuse") {
+    return {
+      shortLegValue,
+      givenSideType: "shortLeg",
+      givenSideDisplay: String(shortLegValue),
+      askedSideType: "hypotenuse",
+      missingSideValue: shortLegValue * 2
+    };
+  }
+
+  return {
+    shortLegValue,
+    givenSideType: "hypotenuse",
+    givenSideDisplay: String(shortLegValue * 2),
+    askedSideType: "shortLeg",
+    missingSideValue: shortLegValue
+  };
+}
+
+function greatestCommonDivisor(a, b) {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+
+  while (y !== 0) {
+    [x, y] = [y, x % y];
+  }
+
+  return x || 1;
+}
+
+function formatReducedFraction(numerator, denominator) {
+  const divisor = greatestCommonDivisor(numerator, denominator);
+
+  return `${numerator / divisor}/${denominator / divisor}`;
+}
+
+function generateRightTriangleTrigRatioVariables(random) {
+  const [legOne, legTwo, hypotenuse] = randomChoice(
+    random,
+    PYTHAGOREAN_TRIPLES
+  );
+
+  // Angle A is defined as opposite legOne, adjacent legTwo, so:
+  // sine = opposite/hypotenuse, cosine = adjacent/hypotenuse,
+  // tangent = opposite/adjacent — all using legOne as "opposite".
+  const ratioType = randomChoice(random, ["sine", "cosine", "tangent"]);
+
+  let ratioValue;
+
+  if (ratioType === "sine") {
+    ratioValue = formatReducedFraction(legOne, hypotenuse);
+  } else if (ratioType === "cosine") {
+    ratioValue = formatReducedFraction(legTwo, hypotenuse);
+  } else {
+    ratioValue = formatReducedFraction(legOne, legTwo);
+  }
+
+  return {
+    legA: legOne,
+    legB: legTwo,
+    hypotenuse,
+    ratioType,
+    ratioValue
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2015,7 +2179,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateParallelLinesAngleMeasureVariables,
 
   classify_line_relationship_from_slopes:
-    generateLineRelationshipVariables
+    generateLineRelationshipVariables,
+
+  pythagorean_theorem_missing_side:
+    generatePythagoreanTheoremVariables,
+
+  special_right_triangle_45_45_90_missing_side:
+    generateSpecialRightTriangle454590Variables,
+
+  special_right_triangle_30_60_90_missing_side:
+    generateSpecialRightTriangle306090Variables,
+
+  right_triangle_trig_ratio_from_sides:
+    generateRightTriangleTrigRatioVariables
 });
 
 export class GeometryVariableGenerator {

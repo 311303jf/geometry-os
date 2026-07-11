@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.4";
+    this.version = "v1.0.5";
 
     this.problemTypes = [
       {
@@ -215,6 +215,38 @@ export class GeometryProblemTypeRegistry {
         family: "line_relationship_classification",
         description: "Classify the relationship between two lines based on their slopes.",
         expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "pythagorean_theorem",
+        conceptId: "right_triangles",
+        family: "right_triangle_measurement",
+        description: "Use the Pythagorean Theorem to find a missing side of a right triangle.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "special_right_triangle_45_45_90",
+        conceptId: "right_triangles",
+        family: "special_right_triangles",
+        description: "Use 45-45-90 triangle side ratios to find a missing side.",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "special_right_triangle_30_60_90",
+        conceptId: "right_triangles",
+        family: "special_right_triangles",
+        description: "Use 30-60-90 triangle side ratios to find a missing side.",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "right_triangle_trig_ratio",
+        conceptId: "right_triangles",
+        family: "trigonometric_ratios",
+        description: "Find the sine, cosine, or tangent ratio of an acute angle in a right triangle, expressed as an exact reduced fraction.",
+        expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
     ];

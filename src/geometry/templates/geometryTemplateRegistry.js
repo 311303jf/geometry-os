@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.0.10";
+    this.version = "v1.1.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -387,6 +387,68 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "pythagorean_theorem_missing_side",
+        problemTypeId: "pythagorean_theorem",
+        templateFamily: "right_triangle_measurement",
+        promptPattern:
+          "A right triangle has the given side lengths. What is the length of the missing side?",
+        requiredFields: [
+          "sideA",
+          "sideB",
+          "missingSideRole"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "special_right_triangle_45_45_90_missing_side",
+        problemTypeId: "special_right_triangle_45_45_90",
+        templateFamily: "special_right_triangles",
+        promptPattern:
+          "A 45-45-90 triangle has the given side length. What is the length of the missing side?",
+        requiredFields: [
+          "legValue",
+          "givenSideType",
+          "givenSideDisplay"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "special_right_triangle_30_60_90_missing_side",
+        problemTypeId: "special_right_triangle_30_60_90",
+        templateFamily: "special_right_triangles",
+        promptPattern:
+          "A 30-60-90 triangle has the given side length. What is the length of the missing side?",
+        requiredFields: [
+          "shortLegValue",
+          "givenSideType",
+          "givenSideDisplay",
+          "askedSideType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "right_triangle_trig_ratio_from_sides",
+        problemTypeId: "right_triangle_trig_ratio",
+        templateFamily: "trigonometric_ratios",
+        promptPattern:
+          "A right triangle has the given side lengths. What is the requested trigonometric ratio of the specified angle?",
+        requiredFields: [
+          "legA",
+          "legB",
+          "hypotenuse",
+          "ratioType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
     ];
