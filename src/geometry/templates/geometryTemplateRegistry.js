@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.5.0";
+    this.version = "v1.6.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -673,6 +673,65 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "circle_circumference_and_area_calculation",
+        problemTypeId: "circle_circumference_and_area",
+        templateFamily: "circle_measurement",
+        promptPattern:
+          "A circle has the given radius. What is the requested measurement, expressed exactly in terms of pi?",
+        requiredFields: [
+          "radius",
+          "scenario"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "arc_length_or_sector_area_calculation",
+        problemTypeId: "arc_length_and_sector_area",
+        templateFamily: "circle_measurement",
+        promptPattern:
+          "A circle has the given radius, and a central angle intercepts an arc with the given measure. What is the requested measurement, expressed exactly in terms of pi?",
+        requiredFields: [
+          "radius",
+          "centralAngle",
+          "scenario"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "prism_or_cylinder_volume_calculation",
+        problemTypeId: "prism_or_cylinder_volume",
+        templateFamily: "volume_measurement",
+        promptPattern:
+          "A solid has the given dimensions. What is its volume?",
+        requiredFields: [
+          "scenario",
+          "dimensionOne",
+          "dimensionTwo",
+          "dimensionThree"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "sphere_surface_area_or_volume_calculation",
+        problemTypeId: "sphere_surface_area_and_volume",
+        templateFamily: "volume_measurement",
+        promptPattern:
+          "A sphere has the given radius. What is the requested measurement, expressed exactly in terms of pi?",
+        requiredFields: [
+          "radius",
+          "scenario"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "radical_value",
         requiresFigure: false
       }
     ];

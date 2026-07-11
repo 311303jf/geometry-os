@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.7.0
+ * Geometry Variable Generator v1.8.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.7.0";
+const GENERATOR_VERSION = "v1.8.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -100,7 +100,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "inscribed_angle_arc_measure",
   "circle_equation_from_center_radius",
   "tangent_segment_length",
-  "intersecting_chords_missing_segment"
+  "intersecting_chords_missing_segment",
+  "circle_circumference_and_area_calculation",
+  "arc_length_or_sector_area_calculation",
+  "prism_or_cylinder_volume_calculation",
+  "sphere_surface_area_or_volume_calculation"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2519,6 +2523,127 @@ function generateIntersectingChordsSegments(random) {
   };
 }
 
+// --- Chapters 11-12: Circumference, Area, Surface Area, and Volume ---
+// All π-based answers are kept EXACT as coefficient strings like
+// "16π" rather than decimal approximations, consistent with the
+// exactness standard used throughout this certified pipeline.
+
+function generateCircleCircumferenceAndArea(random) {
+  const scenario = randomChoice(random, [
+    "circumference",
+    "area"
+  ]);
+
+  const radius = randomInteger(random, 2, 20);
+
+  const coefficient =
+    scenario === "circumference" ? 2 * radius : radius * radius;
+
+  return {
+    scenario,
+    radius,
+    answerValue: `${coefficient}\u03C0`
+  };
+}
+
+// Curated central angles that are all "nice" fractions of 360, so
+// the arc-length/sector-area coefficient always reduces to an exact
+// integer once radius is constructed as a multiple of the reduced
+// fraction's denominator — verified independently with a standalone
+// Python script before writing this code.
+const CIRCLE_SECTOR_ANGLES = Object.freeze([
+  30, 45, 60, 90, 120, 135, 150, 180, 240, 270, 300
+]);
+
+function generateArcLengthOrSectorArea(random) {
+  const centralAngle = randomChoice(random, CIRCLE_SECTOR_ANGLES);
+
+  const divisor = greatestCommonDivisor(centralAngle, 360);
+  const reducedNumerator = centralAngle / divisor;
+  const reducedDenominator = 360 / divisor;
+
+  const multiplier = randomInteger(random, 1, 5);
+  const radius = reducedDenominator * multiplier;
+
+  const scenario = randomChoice(random, [
+    "arc_length",
+    "sector_area"
+  ]);
+
+  const coefficient =
+    scenario === "arc_length"
+      ? 2 * reducedNumerator * multiplier
+      : reducedNumerator * reducedDenominator * multiplier * multiplier;
+
+  return {
+    scenario,
+    radius,
+    centralAngle,
+    answerValue: `${coefficient}\u03C0`
+  };
+}
+
+function generatePrismOrCylinderVolume(random) {
+  const scenario = randomChoice(random, [
+    "rectangular_prism",
+    "cylinder"
+  ]);
+
+  if (scenario === "rectangular_prism") {
+    const length = randomInteger(random, 2, 15);
+    const width = randomInteger(random, 2, 15);
+    const height = randomInteger(random, 2, 15);
+
+    return {
+      scenario,
+      dimensionOne: length,
+      dimensionTwo: width,
+      dimensionThree: height,
+      answerValue: length * width * height
+    };
+  }
+
+  const cylinderRadius = randomInteger(random, 2, 12);
+  const cylinderHeight = randomInteger(random, 2, 15);
+
+  return {
+    scenario,
+    dimensionOne: cylinderRadius,
+    dimensionTwo: cylinderHeight,
+    // dimensionThree is unused for the cylinder scenario (only two
+    // dimensions — radius and height — are needed), but every
+    // template requires all three fields to be present; duplicating
+    // the radius here keeps the value non-null without affecting
+    // the rendered prompt, which only reads dimensionOne/dimensionTwo
+    // for this scenario.
+    dimensionThree: cylinderRadius,
+    answerValue: `${cylinderRadius * cylinderRadius * cylinderHeight}\u03C0`
+  };
+}
+
+function generateSphereSurfaceAreaOrVolume(random) {
+  // Radius is always a multiple of 3 so that the volume formula
+  // (4/3)*π*r³ always produces an exact integer coefficient — never
+  // a fraction — regardless of which scenario is chosen.
+  const radius = 3 * randomInteger(random, 1, 5);
+
+  const scenario = randomChoice(random, [
+    "surface_area",
+    "volume"
+  ]);
+
+  const coefficient =
+    scenario === "surface_area"
+      ? 4 * radius * radius
+      : (4 * radius * radius * radius) / 3;
+
+  return {
+    scenario,
+    radius,
+    answerValue: `${coefficient}\u03C0`
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2656,7 +2781,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateTangentSegmentLength,
 
   intersecting_chords_missing_segment:
-    generateIntersectingChordsSegments
+    generateIntersectingChordsSegments,
+
+  circle_circumference_and_area_calculation:
+    generateCircleCircumferenceAndArea,
+
+  arc_length_or_sector_area_calculation:
+    generateArcLengthOrSectorArea,
+
+  prism_or_cylinder_volume_calculation:
+    generatePrismOrCylinderVolume,
+
+  sphere_surface_area_or_volume_calculation:
+    generateSphereSurfaceAreaOrVolume
 });
 
 export class GeometryVariableGenerator {

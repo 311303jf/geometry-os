@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.9";
+    this.version = "v1.0.10";
 
     this.problemTypes = [
       {
@@ -375,6 +375,38 @@ export class GeometryProblemTypeRegistry {
         family: "circle_segment_relationships",
         description: "Use the Intersecting Chords Theorem (the products of the two segments of each chord are equal) to find a missing segment length.",
         expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "circle_circumference_and_area",
+        conceptId: "circumference_and_area",
+        family: "circle_measurement",
+        description: "Find the circumference or area of a circle from its radius, expressed exactly in terms of pi.",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "arc_length_and_sector_area",
+        conceptId: "circumference_and_area",
+        family: "circle_measurement",
+        description: "Find the arc length or sector area of a circle from its radius and central angle, expressed exactly in terms of pi.",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "prism_or_cylinder_volume",
+        conceptId: "surface_area_and_volume",
+        family: "volume_measurement",
+        description: "Find the volume of a rectangular prism or a cylinder from its dimensions.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "sphere_surface_area_and_volume",
+        conceptId: "surface_area_and_volume",
+        family: "volume_measurement",
+        description: "Find the surface area or volume of a sphere from its radius, expressed exactly in terms of pi.",
+        expectedAnswerFormat: "radical_value",
         requiresFigure: false
       }
     ];
