@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Geometry OS — Geometry Template Resolver Test
+  </title>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 32px;
+      background: #f4f6f8;
+      color: #17202a;
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    pre {
+      margin-top: 20px;
+      padding: 20px;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 8px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Template Resolver Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Template Resolver Test
+  </button>
+
+  <pre id="output">
+    Ready.
+  </pre>
+
+  <script type="module">
+    import {
+      geometryTemplateResolver
+    } from "../src/geometry/templates/geometryTemplateResolver.js";
+
+    const runTestButton =
+      document.getElementById("runTestButton");
+
+    const output =
+      document.getElementById("output");
+
+    function protectedCopy(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    runTestButton.addEventListener("click", () => {
+      try {
+        const triangleByAngles =
+          geometryTemplateResolver.resolve({
+            problemTypeId: "classify_triangle",
+            targetSkill: "angles"
+          });
+
+        const triangleBySides =
+          geometryTemplateResolver.resolve({
+            problemTypeId: "classify_triangle",
+            targetSkill: "sides"
+          });
+
+        const classifyAngle =
+          geometryTemplateResolver.resolve({
+            problemTypeId: "classify_angle"
+          });
+
+        const explicitTemplate =
+          geometryTemplateResolver.resolve({
+            templateId:
+              "triangle_angle_sum_missing_angle",
+            problemTypeId:
+              "triangle_angle_sum"
+          });
+
+        const invalidExplicitTemplate =
+          geometryTemplateResolver.resolve({
+            templateId:
+              "invalid_geometry_template"
+          });
+
+        const mismatchedExplicitTemplate =
+          geometryTemplateResolver.resolve({
+            templateId:
+              "classify_angle_by_measure",
+            problemTypeId:
+              "classify_triangle"
+          });
+
+        const protectedCopyTest =
+          geometryTemplateResolver.resolve({
+            problemTypeId: "classify_angle"
+          });
+
+        const originalTemplateId =
+          protectedCopyTest.template.templateId;
+
+        protectedCopyTest.template.templateId =
+          "mutated_template_id";
+
+        const protectedCopyVerification =
+          geometryTemplateResolver.resolve({
+            problemTypeId: "classify_angle"
+          });
+
+        const normalizedProblemTypeInput =
+          geometryTemplateResolver.resolve({
+            resolvedProblemType: {
+              problemTypeId: "midpoint"
+            }
+          });
+
+        assert(
+          triangleByAngles.resolved === true,
+          "Triangle-by-angles resolution failed."
+        );
+
+        assert(
+          triangleByAngles.templateId ===
+            "classify_triangle_by_angles",
+          "Triangle angles metadata did not select classify_triangle_by_angles."
+        );
+
+        assert(
+          triangleByAngles.resolutionStrategy ===
+            "problem_type_metadata_match",
+          "Triangle angles resolution strategy is incorrect."
+        );
+
+        assert(
+          triangleBySides.resolved === true,
+          "Triangle-by-sides resolution failed."
+        );
+
+        assert(
+          triangleBySides.templateId ===
+            "classify_triangle_by_sides",
+          "Triangle sides metadata did not select classify_triangle_by_sides."
+        );
+
+        assert(
+          classifyAngle.resolved === true,
+          "Classify-angle resolution failed."
+        );
+
+        assert(
+          classifyAngle.templateId ===
+            "classify_angle_by_measure",
+          "Classify-angle template is incorrect."
+        );
+
+        assert(
+          explicitTemplate.resolved === true,
+          "Explicit template resolution failed."
+        );
+
+        assert(
+          explicitTemplate.resolutionStrategy ===
+            "explicit_template_id",
+          "Explicit template strategy is incorrect."
+        );
+
+        assert(
+          invalidExplicitTemplate.resolved === false,
+          "Invalid explicit template was not rejected."
+        );
+
+        assert(
+          invalidExplicitTemplate.status ===
+            "geometry_template_rejected",
+          "Invalid explicit template status is incorrect."
+        );
+
+        assert(
+          mismatchedExplicitTemplate.resolved === false,
+          "Mismatched explicit template was not rejected."
+        );
+
+        assert(
+          mismatchedExplicitTemplate.status ===
+            "geometry_template_rejected",
+          "Mismatched template status is incorrect."
+        );
+
+        assert(
+          protectedCopyVerification.template.templateId ===
+            originalTemplateId,
+          "Registry template data was mutated."
+        );
+
+        assert(
+          normalizedProblemTypeInput.resolved === true,
+          "Nested resolved problem type input was not accepted."
+        );
+
+        assert(
+          normalizedProblemTypeInput.templateId ===
+            "midpoint_between_two_points",
+          "Midpoint template resolution is incorrect."
+        );
+
+        const result = {
+          test:
+            "Geometry Template Resolver v1.1.0",
+
+          resolverVersion:
+            geometryTemplateResolver.getResolverVersion(),
+
+          triangleAnglesResolved:
+            triangleByAngles.resolved,
+
+          triangleAnglesTemplateId:
+            triangleByAngles.templateId,
+
+          triangleAnglesResolutionStrategy:
+            triangleByAngles.resolutionStrategy,
+
+          triangleSidesResolved:
+            triangleBySides.resolved,
+
+          triangleSidesTemplateId:
+            triangleBySides.templateId,
+
+          triangleSidesResolutionStrategy:
+            triangleBySides.resolutionStrategy,
+
+          classifyAngleResolved:
+            classifyAngle.resolved,
+
+          classifyAngleTemplateId:
+            classifyAngle.templateId,
+
+          explicitTemplateResolved:
+            explicitTemplate.resolved,
+
+          explicitTemplateStrategy:
+            explicitTemplate.resolutionStrategy,
+
+          invalidExplicitTemplateRejected:
+            invalidExplicitTemplate.resolved === false,
+
+          invalidExplicitTemplateErrorCount:
+            invalidExplicitTemplate.errors.length,
+
+          mismatchedTemplateRejected:
+            mismatchedExplicitTemplate.resolved === false,
+
+          mismatchedTemplateErrorCount:
+            mismatchedExplicitTemplate.errors.length,
+
+          normalizedProblemTypeAccepted:
+            normalizedProblemTypeInput.resolved,
+
+          normalizedProblemTypeTemplateId:
+            normalizedProblemTypeInput.templateId,
+
+          stableResultShape:
+            [
+              "resolverVersion",
+              "status",
+              "resolved",
+              "resolutionStrategy",
+              "templateId",
+              "problemTypeId",
+              "templateFamily",
+              "promptPattern",
+              "requiredFields",
+              "outputType",
+              "expectedAnswerFormat",
+              "requiresFigure",
+              "template",
+              "errors"
+            ].every((field) =>
+              Object.prototype.hasOwnProperty.call(
+                triangleByAngles,
+                field
+              )
+            ),
+
+          protectedCopy:
+            protectedCopyVerification.template.templateId ===
+              originalTemplateId,
+
+          generatesVariables:
+            false,
+
+          rendersPrompts:
+            false,
+
+          calculatesAnswers:
+            false,
+
+          generatesDistractors:
+            false,
+
+          pass:
+            true
+        };
+
+        output.textContent =
+          "PASS — Geometry Template Resolver v1.1.0\n\n" +
+          JSON.stringify(
+            protectedCopy(result),
+            null,
+            2
+          );
+      } catch (error) {
+        const failureResult = {
+          test:
+            "Geometry Template Resolver v1.1.0",
+
+          pass: false,
+
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+
+          stack:
+            error instanceof Error
+              ? error.stack
+              : null
+        };
+
+        output.textContent =
+          "FAIL — Geometry Template Resolver v1.1.0\n\n" +
+          JSON.stringify(
+            failureResult,
+            null,
+            2
+          );
+      }
+    });
+  </script>
+</body>
+</html>
