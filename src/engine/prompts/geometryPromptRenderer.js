@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.6.0";
+const RENDERER_VERSION = "v1.7.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -80,7 +80,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "inscribed_angle_arc_measure",
   "circle_equation_from_center_radius",
   "tangent_segment_length",
-  "intersecting_chords_missing_segment"
+  "intersecting_chords_missing_segment",
+  "circle_circumference_and_area_calculation",
+  "arc_length_or_sector_area_calculation",
+  "prism_or_cylinder_volume_calculation",
+  "sphere_surface_area_or_volume_calculation"
 ]);
 
 function protectedCopy(value) {
@@ -392,6 +396,37 @@ function renderIntersectingChords(variables) {
   return `Two chords intersect inside a circle. One chord is divided into segments of length ${variables.segmentP} and ${variables.segmentQ}. The other chord is divided into segments of length ${variables.segmentR} and an unknown length. What is the length of the unknown segment?`;
 }
 
+// --- Chapters 11-12: Circumference, Area, Surface Area, and Volume ---
+
+function renderCircleCircumferenceAndArea(variables) {
+  const measurementLabel =
+    variables.scenario === "circumference" ? "circumference" : "area";
+
+  return `A circle has a radius of ${variables.radius}. What is the ${measurementLabel} of the circle, expressed exactly in terms of \u03C0?`;
+}
+
+function renderArcLengthOrSectorArea(variables) {
+  const measurementLabel =
+    variables.scenario === "arc_length" ? "arc length" : "area of the sector";
+
+  return `A circle has a radius of ${variables.radius}. A central angle intercepts an arc measuring ${variables.centralAngle}\u00B0. What is the ${measurementLabel}, expressed exactly in terms of \u03C0?`;
+}
+
+function renderPrismOrCylinderVolume(variables) {
+  if (variables.scenario === "rectangular_prism") {
+    return `A rectangular prism has a length of ${variables.dimensionOne}, a width of ${variables.dimensionTwo}, and a height of ${variables.dimensionThree}. What is its volume?`;
+  }
+
+  return `A cylinder has a radius of ${variables.dimensionOne} and a height of ${variables.dimensionTwo}. What is its volume, expressed exactly in terms of \u03C0?`;
+}
+
+function renderSphereSurfaceAreaOrVolume(variables) {
+  const measurementLabel =
+    variables.scenario === "surface_area" ? "surface area" : "volume";
+
+  return `A sphere has a radius of ${variables.radius}. What is the ${measurementLabel} of the sphere, expressed exactly in terms of \u03C0?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -484,7 +519,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderTangentSegmentLength,
 
   intersecting_chords_missing_segment:
-    renderIntersectingChords
+    renderIntersectingChords,
+
+  circle_circumference_and_area_calculation:
+    renderCircleCircumferenceAndArea,
+
+  arc_length_or_sector_area_calculation:
+    renderArcLengthOrSectorArea,
+
+  prism_or_cylinder_volume_calculation:
+    renderPrismOrCylinderVolume,
+
+  sphere_surface_area_or_volume_calculation:
+    renderSphereSurfaceAreaOrVolume
 });
 
 function extractInput(input = {}) {

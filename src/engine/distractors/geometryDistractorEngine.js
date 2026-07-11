@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.6.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.7.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -84,7 +84,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "inscribed_angle_arc_measure",
   "circle_equation_from_center_radius",
   "tangent_segment_length",
-  "intersecting_chords_missing_segment"
+  "intersecting_chords_missing_segment",
+  "circle_circumference_and_area_calculation",
+  "arc_length_or_sector_area_calculation",
+  "prism_or_cylinder_volume_calculation",
+  "sphere_surface_area_or_volume_calculation"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -1133,6 +1137,171 @@ function distractIntersectingChords(variables, correctAnswer) {
   });
 }
 
+// --- Chapters 11-12: Circumference, Area, Surface Area, and Volume ---
+
+// Shared helper: builds pi-coefficient distractors from a pool of
+// candidate coefficients (numbers), formatting each as "Nπ" and
+// falling back to independent numeric offsets of the correct
+// coefficient if the formula-confusion pool doesn't yield 3 distinct
+// values — a real, confirmed risk here: e.g. the circumference
+// formula (2r) and area formula (r²) coincide exactly at r=2,
+// verified independently with a standalone Python check before
+// writing this code, not assumed.
+function buildPiCoefficientDistractors({
+  correctAnswer,
+  coefficientPool,
+  correctCoefficient
+}) {
+  const pool = coefficientPool.map((coefficient) => `${coefficient}\u03C0`);
+
+  return buildFromPool({
+    pool,
+    correctAnswer,
+    fallbackGenerator: (i) => {
+      const offsets = [1, -1, 2, -2, 3, -3, 5, -5];
+      const offset = offsets[i];
+
+      if (offset === undefined) {
+        return undefined;
+      }
+
+      const candidateCoefficient = correctCoefficient + offset;
+
+      if (candidateCoefficient <= 0) {
+        return undefined;
+      }
+
+      return `${candidateCoefficient}\u03C0`;
+    }
+  });
+}
+
+function distractCircleCircumferenceAndArea(variables, correctAnswer) {
+  const { radius, scenario } = variables;
+
+  const correctCoefficient =
+    scenario === "circumference" ? 2 * radius : radius * radius;
+
+  const coefficientPool =
+    scenario === "circumference"
+      ? [radius * radius, radius, 4 * radius] // area formula; forgot the *2; used diameter instead of 2r
+      : [2 * radius, 4 * radius * radius, radius]; // circumference formula; used diameter² instead of r²; forgot to square
+
+  return buildPiCoefficientDistractors({
+    correctAnswer,
+    coefficientPool,
+    correctCoefficient
+  });
+}
+
+function distractArcLengthOrSectorArea(variables, correctAnswer) {
+  const { radius, centralAngle, scenario } = variables;
+
+  const fractionNumerator = centralAngle;
+  const fractionDenominator = 360;
+
+  const correctCoefficient =
+    scenario === "arc_length"
+      ? (fractionNumerator / fractionDenominator) * 2 * radius
+      : (fractionNumerator / fractionDenominator) * radius * radius;
+
+  // Error family: using the OTHER formula (arc length vs sector
+  // area confusion), forgetting the angle fraction entirely (as if
+  // the angle were the full 360 degrees), and using angle/180
+  // instead of angle/360 (a common denominator mix-up, doubling the
+  // fraction).
+  const swappedFormula =
+    scenario === "arc_length"
+      ? (fractionNumerator / fractionDenominator) * radius * radius
+      : (fractionNumerator / fractionDenominator) * 2 * radius;
+
+  const forgotFraction =
+    scenario === "arc_length" ? 2 * radius : radius * radius;
+
+  const wrongDenominator =
+    scenario === "arc_length"
+      ? (fractionNumerator / 180) * 2 * radius
+      : (fractionNumerator / 180) * radius * radius;
+
+  return buildPiCoefficientDistractors({
+    correctAnswer,
+    coefficientPool: [swappedFormula, forgotFraction, wrongDenominator],
+    correctCoefficient
+  });
+}
+
+function distractPrismOrCylinderVolume(variables, correctAnswer) {
+  const { scenario } = variables;
+
+  if (scenario === "rectangular_prism") {
+    const { dimensionOne, dimensionTwo, dimensionThree } = variables;
+
+    const pool = [
+      2 *
+        (dimensionOne * dimensionTwo +
+          dimensionOne * dimensionThree +
+          dimensionTwo * dimensionThree), // used the surface area formula instead of volume
+      dimensionOne + dimensionTwo + dimensionThree, // added instead of multiplying
+      dimensionOne * dimensionTwo // forgot the third dimension entirely
+    ];
+
+    return buildNumericDistractors({
+      correctAnswer,
+      pool,
+      min: 1
+    });
+  }
+
+  // scenario === "cylinder"
+  const cylinderRadius = variables.dimensionOne;
+  const cylinderHeight = variables.dimensionTwo;
+  const correctCoefficient = cylinderRadius * cylinderRadius * cylinderHeight;
+
+  const coefficientPool = [
+    4 * cylinderRadius * cylinderRadius * cylinderHeight, // used diameter (2r) squared instead of r squared
+    cylinderRadius * cylinderHeight, // forgot to square the radius
+    ((4 * cylinderRadius ** 3) / 3) // confused with the sphere volume formula
+  ];
+
+  return buildPiCoefficientDistractors({
+    correctAnswer,
+    coefficientPool,
+    correctCoefficient
+  });
+}
+
+function distractSphereSurfaceAreaOrVolume(variables, correctAnswer) {
+  const { radius, scenario } = variables;
+
+  const correctCoefficient =
+    scenario === "surface_area"
+      ? 4 * radius * radius
+      : (4 * radius ** 3) / 3;
+
+  // Error family: using the OTHER sphere formula (surface area vs
+  // volume confusion), and forgetting the leading coefficient (4 or
+  // 4/3) entirely.
+  const swappedFormula =
+    scenario === "surface_area"
+      ? (4 * radius ** 3) / 3
+      : 4 * radius * radius;
+
+  const forgotLeadingCoefficient =
+    scenario === "surface_area" ? radius * radius : radius ** 3 / 3;
+
+  const coefficientPool = [
+    swappedFormula,
+    forgotLeadingCoefficient,
+    2 * radius * radius // confused with a circle's area-adjacent formula
+  ];
+
+  return buildPiCoefficientDistractors({
+    correctAnswer,
+    coefficientPool,
+    correctCoefficient
+  });
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -1233,7 +1402,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractTangentSegmentLength(v, correct),
 
   intersecting_chords_missing_segment: (v, correct) =>
-    distractIntersectingChords(v, correct)
+    distractIntersectingChords(v, correct),
+
+  circle_circumference_and_area_calculation: (v, correct) =>
+    distractCircleCircumferenceAndArea(v, correct),
+
+  arc_length_or_sector_area_calculation: (v, correct) =>
+    distractArcLengthOrSectorArea(v, correct),
+
+  prism_or_cylinder_volume_calculation: (v, correct) =>
+    distractPrismOrCylinderVolume(v, correct),
+
+  sphere_surface_area_or_volume_calculation: (v, correct) =>
+    distractSphereSurfaceAreaOrVolume(v, correct)
 });
 
 function extractInput(input = {}) {

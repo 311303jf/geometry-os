@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.6.0";
+const SOLVER_VERSION = "v1.7.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -86,7 +86,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "inscribed_angle_arc_measure",
   "circle_equation_from_center_radius",
   "tangent_segment_length",
-  "intersecting_chords_missing_segment"
+  "intersecting_chords_missing_segment",
+  "circle_circumference_and_area_calculation",
+  "arc_length_or_sector_area_calculation",
+  "prism_or_cylinder_volume_calculation",
+  "sphere_surface_area_or_volume_calculation"
 ]);
 
 function protectedCopy(value) {
@@ -559,6 +563,32 @@ function solveIntersectingChords(variables) {
   return { answerFormat: "numeric_value", correctAnswer };
 }
 
+// --- Chapters 11-12: Circumference, Area, Surface Area, and Volume ---
+
+function solveCircleCircumferenceAndArea(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "radical_value", correctAnswer };
+}
+
+function solveArcLengthOrSectorArea(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "radical_value", correctAnswer };
+}
+
+function solvePrismOrCylinderVolume(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveSphereSurfaceAreaOrVolume(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "radical_value", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -651,7 +681,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveTangentSegmentLength,
 
   intersecting_chords_missing_segment:
-    solveIntersectingChords
+    solveIntersectingChords,
+
+  circle_circumference_and_area_calculation:
+    solveCircleCircumferenceAndArea,
+
+  arc_length_or_sector_area_calculation:
+    solveArcLengthOrSectorArea,
+
+  prism_or_cylinder_volume_calculation:
+    solvePrismOrCylinderVolume,
+
+  sphere_surface_area_or_volume_calculation:
+    solveSphereSurfaceAreaOrVolume
 });
 
 export class GeometrySolver {
