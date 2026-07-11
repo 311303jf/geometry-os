@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.0.9";
+    this.version = "v1.0.10";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -342,6 +342,48 @@ export class GeometryTemplateRegistry {
         requiredFields: [
           "scaleFactor",
           "dilationCenter"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "identify_angle_pair_type_from_transversal",
+        problemTypeId: "identify_transversal_angle_pair",
+        templateFamily: "parallel_lines_angle_relationships",
+        promptPattern:
+          "Two parallel lines are cut by a transversal. What is the relationship between the given pair of angles?",
+        requiredFields: [
+          "angleDescriptionA",
+          "angleDescriptionB"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "angle_measure_from_parallel_lines",
+        problemTypeId: "parallel_lines_angle_measure",
+        templateFamily: "parallel_lines_measurement",
+        promptPattern:
+          "Two parallel lines are cut by a transversal. What is the measure of the related angle?",
+        requiredFields: [
+          "knownAngleMeasure",
+          "relationshipType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "classify_line_relationship_from_slopes",
+        problemTypeId: "classify_line_relationship",
+        templateFamily: "line_relationship_classification",
+        promptPattern:
+          "Two lines have the given slopes. What is the relationship between the two lines?",
+        requiredFields: [
+          "slopeA",
+          "slopeB"
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "classification_label",

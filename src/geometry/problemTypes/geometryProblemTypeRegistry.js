@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.3";
+    this.version = "v1.0.4";
 
     this.problemTypes = [
       {
@@ -192,6 +192,30 @@ export class GeometryProblemTypeRegistry {
         description: "Identify a dilation from a transformation description or figure.",
         expectedAnswerFormat: "classification_label",
         requiresFigure: true
+      },
+      {
+        problemTypeId: "identify_transversal_angle_pair",
+        conceptId: "parallel_lines",
+        family: "parallel_lines_angle_relationships",
+        description: "Identify the relationship between a pair of angles formed when a transversal crosses two lines.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "parallel_lines_angle_measure",
+        conceptId: "parallel_lines",
+        family: "parallel_lines_measurement",
+        description: "Determine the measure of an angle formed when a transversal crosses two parallel lines, given a related known angle.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "classify_line_relationship",
+        conceptId: "parallel_lines",
+        family: "line_relationship_classification",
+        description: "Classify the relationship between two lines based on their slopes.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
       }
     ];
   }

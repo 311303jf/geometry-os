@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.1.5
+ * Geometry Variable Generator v1.2.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.1.5";
+const GENERATOR_VERSION = "v1.2.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -77,7 +77,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_translation_from_rule",
   "identify_reflection_from_rule",
   "identify_rotation_from_rule",
-  "identify_dilation_from_scale_factor"
+  "identify_dilation_from_scale_factor",
+  "identify_angle_pair_type_from_transversal",
+  "angle_measure_from_parallel_lines",
+  "classify_line_relationship_from_slopes"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -1740,6 +1743,201 @@ function generateDilationVariables(random) {
   };
 }
 
+// --- Chapter 3: Parallel and Perpendicular Lines ---
+
+// The 8 angles formed when a transversal crosses two lines, at two
+// intersection points, are described in words (not numbered 1-8)
+// so every question is answerable as text alone, with no figure
+// required. Each entry pairs two angle positions with the correctly
+// certified relationship between them (Corresponding, Alternate
+// Interior, Alternate Exterior, and Consecutive Interior Angles
+// Theorems).
+const TRANSVERSAL_ANGLE_PAIRS = Object.freeze([
+  {
+    positionA: "the upper-left angle at the first intersection",
+    positionB: "the upper-left angle at the second intersection",
+    relationshipType: "corresponding"
+  },
+  {
+    positionA: "the upper-right angle at the first intersection",
+    positionB: "the upper-right angle at the second intersection",
+    relationshipType: "corresponding"
+  },
+  {
+    positionA: "the lower-left angle at the first intersection",
+    positionB: "the lower-left angle at the second intersection",
+    relationshipType: "corresponding"
+  },
+  {
+    positionA: "the lower-right angle at the first intersection",
+    positionB: "the lower-right angle at the second intersection",
+    relationshipType: "corresponding"
+  },
+  {
+    positionA: "the lower-left angle at the first intersection",
+    positionB: "the upper-right angle at the second intersection",
+    relationshipType: "alternate interior"
+  },
+  {
+    positionA: "the lower-right angle at the first intersection",
+    positionB: "the upper-left angle at the second intersection",
+    relationshipType: "alternate interior"
+  },
+  {
+    positionA: "the upper-left angle at the first intersection",
+    positionB: "the lower-right angle at the second intersection",
+    relationshipType: "alternate exterior"
+  },
+  {
+    positionA: "the upper-right angle at the first intersection",
+    positionB: "the lower-left angle at the second intersection",
+    relationshipType: "alternate exterior"
+  },
+  {
+    positionA: "the lower-left angle at the first intersection",
+    positionB: "the upper-left angle at the second intersection",
+    relationshipType: "consecutive interior"
+  },
+  {
+    positionA: "the lower-right angle at the first intersection",
+    positionB: "the upper-right angle at the second intersection",
+    relationshipType: "consecutive interior"
+  }
+]);
+
+function generateTransversalAnglePairVariables(random) {
+  const pair = randomChoice(random, TRANSVERSAL_ANGLE_PAIRS);
+
+  return {
+    angleDescriptionA: pair.positionA,
+    angleDescriptionB: pair.positionB,
+    relationshipType: pair.relationshipType
+  };
+}
+
+function generateParallelLinesAngleMeasureVariables(random) {
+  const relationshipType = randomChoice(random, [
+    "corresponding",
+    "alternate interior",
+    "alternate exterior",
+    "consecutive interior"
+  ]);
+
+  const isCongruentRelationship = relationshipType !== "consecutive interior";
+
+  const knownAngleMeasure = isCongruentRelationship
+    ? randomInteger(random, 15, 165)
+    : randomInteger(random, 25, 155);
+
+  const unknownAngleMeasure = isCongruentRelationship
+    ? knownAngleMeasure
+    : 180 - knownAngleMeasure;
+
+  return {
+    relationshipType,
+    knownAngleMeasure,
+    unknownAngleMeasure
+  };
+}
+
+// Slopes are stored as exact integer fractions {numerator,
+// denominator} to keep parallel/perpendicular comparisons exact —
+// floating point slopes could otherwise produce false "neither"
+// classifications due to rounding.
+const SLOPE_FRACTIONS = Object.freeze([
+  [1, 1],
+  [2, 1],
+  [3, 1],
+  [4, 1],
+  [1, 2],
+  [1, 3],
+  [2, 3],
+  [3, 4]
+]);
+
+function formatSlopeFraction(numerator, denominator) {
+  if (denominator === 1) {
+    return String(numerator);
+  }
+
+  return `${numerator}/${denominator}`;
+}
+
+function negativeReciprocal([numerator, denominator]) {
+  // Negative reciprocal of n/d is -d/n. Keep the denominator
+  // positive by convention so formatting stays predictable.
+  if (numerator < 0) {
+    return [denominator, -numerator];
+  }
+
+  return [-denominator, numerator];
+}
+
+function slopesAreEqual([nA, dA], [nB, dB]) {
+  return nA * dB === nB * dA;
+}
+
+function generateLineRelationshipVariables(random) {
+  const relationshipType = randomChoice(random, [
+    "parallel",
+    "perpendicular",
+    "neither"
+  ]);
+
+  const [baseNumerator, baseDenominator] = randomChoice(
+    random,
+    SLOPE_FRACTIONS
+  );
+
+  const signA = randomChoice(random, [1, -1]);
+  const slopeAFraction = [signA * baseNumerator, baseDenominator];
+
+  let slopeBFraction;
+
+  if (relationshipType === "parallel") {
+    slopeBFraction = slopeAFraction;
+  } else if (relationshipType === "perpendicular") {
+    slopeBFraction = negativeReciprocal(slopeAFraction);
+  } else {
+    // "neither": keep choosing a random slope until it is
+    // provably neither equal to nor the negative reciprocal of
+    // slopeA, so the "neither" case is never accidentally correct
+    // under a different label.
+    const perpendicular = negativeReciprocal(slopeAFraction);
+    let candidate;
+    let attempts = 0;
+
+    do {
+      const [candidateNumerator, candidateDenominator] = randomChoice(
+        random,
+        SLOPE_FRACTIONS
+      );
+      const candidateSign = randomChoice(random, [1, -1]);
+      candidate = [
+        candidateSign * candidateNumerator,
+        candidateDenominator
+      ];
+      attempts += 1;
+    } while (
+      (slopesAreEqual(candidate, slopeAFraction) ||
+        slopesAreEqual(candidate, perpendicular)) &&
+      attempts < 20
+    );
+
+    slopeBFraction = candidate;
+  }
+
+  return {
+    relationshipType,
+    slopeANumerator: slopeAFraction[0],
+    slopeADenominator: slopeAFraction[1],
+    slopeBNumerator: slopeBFraction[0],
+    slopeBDenominator: slopeBFraction[1],
+    slopeA: formatSlopeFraction(slopeAFraction[0], slopeAFraction[1]),
+    slopeB: formatSlopeFraction(slopeBFraction[0], slopeBFraction[1])
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -1808,7 +2006,16 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateRotationVariables,
 
   identify_dilation_from_scale_factor:
-    generateDilationVariables
+    generateDilationVariables,
+
+  identify_angle_pair_type_from_transversal:
+    generateTransversalAnglePairVariables,
+
+  angle_measure_from_parallel_lines:
+    generateParallelLinesAngleMeasureVariables,
+
+  classify_line_relationship_from_slopes:
+    generateLineRelationshipVariables
 });
 
 export class GeometryVariableGenerator {
