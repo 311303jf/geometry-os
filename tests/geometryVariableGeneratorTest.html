@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Geometry OS — Geometry Variable Generator Test
+  </title>
+
+  <style>
+    body {
+      margin: 32px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #17202a;
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    button {
+      padding: 12px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    pre {
+      margin-top: 20px;
+      padding: 20px;
+      min-height: 120px;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 8px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Variable Generator Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Variable Generator Test
+  </button>
+
+  <pre id="output">Ready.</pre>
+
+  <script>
+    const button =
+      document.getElementById("runTestButton");
+
+    const output =
+      document.getElementById("output");
+
+    const templateCases = [
+      {
+        templateId:
+          "identify_point_from_description",
+        problemTypeId:
+          "identify_point"
+      },
+      {
+        templateId:
+          "identify_line_from_labels",
+        problemTypeId:
+          "identify_line"
+      },
+      {
+        templateId:
+          "identify_segment_from_endpoints",
+        problemTypeId:
+          "identify_segment"
+      },
+      {
+        templateId:
+          "identify_ray_from_endpoint",
+        problemTypeId:
+          "identify_ray"
+      },
+      {
+        templateId:
+          "identify_plane_from_points",
+        problemTypeId:
+          "identify_plane"
+      },
+      {
+        templateId:
+          "identify_angle_from_rays",
+        problemTypeId:
+          "identify_angle"
+      },
+      {
+        templateId:
+          "classify_angle_by_measure",
+        problemTypeId:
+          "classify_angle"
+      },
+      {
+        templateId:
+          "measure_angle_from_relationship",
+        problemTypeId:
+          "measure_angle"
+      },
+      {
+        templateId:
+          "identify_complementary_angle_pair",
+        problemTypeId:
+          "identify_complementary_angles"
+      },
+      {
+        templateId:
+          "identify_supplementary_angle_pair",
+        problemTypeId:
+          "identify_supplementary_angles"
+      },
+      {
+        templateId:
+          "identify_vertical_angle_pair",
+        problemTypeId:
+          "identify_vertical_angles"
+      },
+      {
+        templateId:
+          "identify_adjacent_angle_pair",
+        problemTypeId:
+          "identify_adjacent_angles"
+      },
+      {
+        templateId:
+          "classify_polygon_by_sides",
+        problemTypeId:
+          "classify_polygon"
+      },
+      {
+        templateId:
+          "identify_polygon_from_attributes",
+        problemTypeId:
+          "identify_polygon"
+      },
+      {
+        templateId:
+          "classify_triangle_by_sides",
+        problemTypeId:
+          "classify_triangle"
+      },
+      {
+        templateId:
+          "classify_triangle_by_angles",
+        problemTypeId:
+          "classify_triangle"
+      },
+      {
+        templateId:
+          "triangle_angle_sum_missing_angle",
+        problemTypeId:
+          "triangle_angle_sum"
+      },
+      {
+        templateId:
+          "distance_between_two_points",
+        problemTypeId:
+          "distance_formula"
+      },
+      {
+        templateId:
+          "midpoint_between_two_points",
+        problemTypeId:
+          "midpoint"
+      },
+      {
+        templateId:
+          "identify_translation_from_rule",
+        problemTypeId:
+          "identify_translation"
+      },
+      {
+        templateId:
+          "identify_reflection_from_rule",
+        problemTypeId:
+          "identify_reflection"
+      },
+      {
+        templateId:
+          "identify_rotation_from_rule",
+        problemTypeId:
+          "identify_rotation"
+      },
+      {
+        templateId:
+          "identify_dilation_from_scale_factor",
+        problemTypeId:
+          "identify_dilation"
+      }
+    ];
+
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function deepEqual(first, second) {
+      return JSON.stringify(first) ===
+        JSON.stringify(second);
+    }
+
+    function validateMathematics(
+      templateId,
+      variables
+    ) {
+      switch (templateId) {
+        case "classify_angle_by_measure":
+          return (
+            variables.angleMeasure > 0 &&
+            variables.angleMeasure <= 180
+          );
+
+        case "measure_angle_from_relationship":
+          if (
+            variables.relationshipType ===
+            "complementary"
+          ) {
+            return (
+              variables.knownAngle +
+              variables.unknownAngle === 90
+            );
+          }
+
+          if (
+            variables.relationshipType ===
+            "supplementary"
+          ) {
+            return (
+              variables.knownAngle +
+              variables.unknownAngle === 180
+            );
+          }
+
+          return (
+            variables.knownAngle ===
+            variables.unknownAngle
+          );
+
+        case "identify_complementary_angle_pair":
+          return (
+            variables.angleA +
+            variables.angleB === 90
+          );
+
+        case "identify_supplementary_angle_pair":
+          return (
+            variables.angleA +
+            variables.angleB === 180
+          );
+
+        case "identify_vertical_angle_pair":
+          return (
+            variables.angleMeasure ===
+            variables.verticalAngleMeasure
+          );
+
+        case "classify_triangle_by_sides":
+          return (
+            variables.sideA +
+              variables.sideB >
+              variables.sideC &&
+            variables.sideA +
+              variables.sideC >
+              variables.sideB &&
+            variables.sideB +
+              variables.sideC >
+              variables.sideA
+          );
+
+        case "classify_triangle_by_angles":
+          return (
+            variables.angleA +
+            variables.angleB +
+            variables.angleC === 180
+          );
+
+        case "triangle_angle_sum_missing_angle":
+          return (
+            variables.angleA +
+            variables.angleB +
+            variables.missingAngle === 180
+          );
+
+        case "distance_between_two_points": {
+          const horizontalChange =
+            variables.x2 - variables.x1;
+
+          const verticalChange =
+            variables.y2 - variables.y1;
+
+          const distance =
+            Math.sqrt(
+              horizontalChange ** 2 +
+              verticalChange ** 2
+            );
+
+          return Number.isInteger(distance);
+        }
+
+        case "midpoint_between_two_points":
+          return (
+            (
+              variables.x1 +
+              variables.x2
+            ) / 2 === variables.midpointX &&
+            (
+              variables.y1 +
+              variables.y2
+            ) / 2 === variables.midpointY
+          );
+
+        case "identify_translation_from_rule":
+        case "identify_reflection_from_rule":
+        case "identify_rotation_from_rule":
+        case "identify_dilation_from_scale_factor":
+          return (
+            Number.isFinite(
+              variables.imageX
+            ) &&
+            Number.isFinite(
+              variables.imageY
+            )
+          );
+
+        default:
+          return true;
+      }
+    }
+
+    button.addEventListener(
+      "click",
+      async () => {
+        button.disabled = true;
+
+        output.textContent =
+          "Loading Geometry OS modules...";
+
+        try {
+          const resolverModule =
+            await import(
+              "../src/geometry/templates/geometryTemplateResolver.js"
+            );
+
+          const generatorModule =
+            await import(
+              "../src/geometry/generation/geometryVariableGenerator.js"
+            );
+
+          const {
+            geometryTemplateResolver
+          } = resolverModule;
+
+          const {
+            geometryVariableGenerator
+          } = generatorModule;
+
+          assert(
+            geometryTemplateResolver &&
+            typeof geometryTemplateResolver
+              .resolve === "function",
+            "Geometry Template Resolver did not load correctly."
+          );
+
+          assert(
+            geometryVariableGenerator &&
+            typeof geometryVariableGenerator
+              .generate === "function",
+            "Geometry Variable Generator did not load correctly."
+          );
+
+          output.textContent =
+            "Modules loaded. Running certification...";
+
+          const records = templateCases.map(
+            (templateCase, index) => {
+              const resolution =
+                geometryTemplateResolver.resolve({
+                  templateId:
+                    templateCase.templateId,
+
+                  problemTypeId:
+                    templateCase.problemTypeId
+                });
+
+              assert(
+                resolution.resolved === true,
+                `Template resolution failed for ${templateCase.templateId}. Errors: ${(resolution.errors || []).join(" ")}`
+              );
+
+              const result =
+                geometryVariableGenerator.generate(
+                  resolution,
+                  {
+                    seed:
+                      `certification-${templateCase.templateId}`,
+
+                    generationIndex:
+                      index
+                  }
+                );
+
+              assert(
+                result.generated === true,
+                `Variable generation failed for ${templateCase.templateId}. Errors: ${(result.errors || []).join(" ")}`
+              );
+
+              assert(
+                result.status ===
+                  "geometry_variables_generated",
+                `Incorrect status for ${templateCase.templateId}.`
+              );
+
+              assert(
+                result.templateId ===
+                  templateCase.templateId,
+                `Incorrect templateId for ${templateCase.templateId}.`
+              );
+
+              assert(
+                result.problemTypeId ===
+                  templateCase.problemTypeId,
+                `Incorrect problemTypeId for ${templateCase.templateId}.`
+              );
+
+              assert(
+                result.requiredFieldsSatisfied ===
+                  true,
+                `Required fields were not satisfied for ${templateCase.templateId}.`
+              );
+
+              assert(
+                result.variables &&
+                typeof result.variables ===
+                  "object" &&
+                !Array.isArray(
+                  result.variables
+                ),
+                `No valid variable object was generated for ${templateCase.templateId}.`
+              );
+
+              assert(
+                Object.keys(
+                  result.variables
+                ).length > 0,
+                `Empty variables were generated for ${templateCase.templateId}.`
+              );
+
+              assert(
+                validateMathematics(
+                  templateCase.templateId,
+                  result.variables
+                ),
+                `Mathematical validation failed for ${templateCase.templateId}. Variables: ${JSON.stringify(result.variables)}`
+              );
+
+              return {
+                templateId:
+                  result.templateId,
+
+                problemTypeId:
+                  result.problemTypeId,
+
+                generated:
+                  result.generated,
+
+                requiredFieldsSatisfied:
+                  result.requiredFieldsSatisfied,
+
+                mathematicalCheck:
+                  true,
+
+                generatedFieldCount:
+                  result.generatedFieldCount
+              };
+            }
+          );
+
+          const deterministicResolution =
+            geometryTemplateResolver.resolve({
+              templateId:
+                "triangle_angle_sum_missing_angle",
+
+              problemTypeId:
+                "triangle_angle_sum"
+            });
+
+          const deterministicFirst =
+            geometryVariableGenerator.generate(
+              deterministicResolution,
+              {
+                seed:
+                  "deterministic-test",
+
+                generationIndex:
+                  5
+              }
+            );
+
+          const deterministicSecond =
+            geometryVariableGenerator.generate(
+              deterministicResolution,
+              {
+                seed:
+                  "deterministic-test",
+
+                generationIndex:
+                  5
+              }
+            );
+
+          const variationFirst =
+            geometryVariableGenerator.generate(
+              deterministicResolution,
+              {
+                seed:
+                  "variation-test-1",
+
+                generationIndex:
+                  1
+              }
+            );
+
+          const variationSecond =
+            geometryVariableGenerator.generate(
+              deterministicResolution,
+              {
+                seed:
+                  "variation-test-2",
+
+                generationIndex:
+                  2
+              }
+            );
+
+          const invalidTemplate =
+            geometryVariableGenerator.generate({
+              templateId:
+                "invalid_geometry_template"
+            });
+
+          const missingTemplate =
+            geometryVariableGenerator.generate({});
+
+          const protectedCopyResolution =
+            geometryTemplateResolver.resolve({
+              templateId:
+                "midpoint_between_two_points",
+
+              problemTypeId:
+                "midpoint"
+            });
+
+          const originalResolution =
+            JSON.stringify(
+              protectedCopyResolution
+            );
+
+          geometryVariableGenerator.generate(
+            protectedCopyResolution,
+            {
+              seed:
+                "protected-copy-test"
+            }
+          );
+
+          assert(
+            JSON.stringify(
+              protectedCopyResolution
+            ) === originalResolution,
+            "The resolved template input was mutated."
+          );
+
+          assert(
+            deepEqual(
+              deterministicFirst.variables,
+              deterministicSecond.variables
+            ),
+            "Seeded generation is not deterministic."
+          );
+
+          assert(
+            !deepEqual(
+              variationFirst.variables,
+              variationSecond.variables
+            ),
+            "Different seeds did not produce variable variation."
+          );
+
+          assert(
+            invalidTemplate.generated ===
+              false,
+            "Invalid templateId was not rejected."
+          );
+
+          assert(
+            invalidTemplate.status ===
+              "geometry_variables_rejected",
+            "Invalid template rejection status is incorrect."
+          );
+
+          assert(
+            missingTemplate.generated ===
+              false,
+            "Missing templateId was not rejected."
+          );
+
+          const supportedTemplateIds =
+            geometryVariableGenerator
+              .getSupportedTemplateIds();
+
+          assert(
+            supportedTemplateIds.length ===
+              23,
+            "Supported template count must equal 23."
+          );
+
+          assert(
+            new Set(
+              supportedTemplateIds
+            ).size === 23,
+            "Supported template IDs must be unique."
+          );
+
+          const result = {
+            test:
+              "Geometry Variable Generator v1.1.1",
+
+            generatorVersion:
+              geometryVariableGenerator
+                .getGeneratorVersion(),
+
+            certifiedTemplateCount:
+              templateCases.length,
+
+            supportedTemplateCount:
+              supportedTemplateIds.length,
+
+            generatedTemplateCount:
+              records.filter(
+                (record) =>
+                  record.generated
+              ).length,
+
+            allCertifiedTemplatesGenerated:
+              records.every(
+                (record) =>
+                  record.generated
+              ),
+
+            allRequiredFieldsSatisfied:
+              records.every(
+                (record) =>
+                  record
+                    .requiredFieldsSatisfied
+              ),
+
+            allMathematicalChecksPassed:
+              records.every(
+                (record) =>
+                  record.mathematicalCheck
+              ),
+
+            deterministicGeneration:
+              deepEqual(
+                deterministicFirst.variables,
+                deterministicSecond.variables
+              ),
+
+            controlledVariation:
+              !deepEqual(
+                variationFirst.variables,
+                variationSecond.variables
+              ),
+
+            invalidTemplateRejected:
+              invalidTemplate.generated ===
+                false,
+
+            invalidTemplateErrorCount:
+              invalidTemplate.errors.length,
+
+            missingTemplateRejected:
+              missingTemplate.generated ===
+                false,
+
+            missingTemplateErrorCount:
+              missingTemplate.errors.length,
+
+            protectedInput:
+              JSON.stringify(
+                protectedCopyResolution
+              ) === originalResolution,
+
+            stableResultShape: [
+              "generatorVersion",
+              "status",
+              "generated",
+              "templateId",
+              "problemTypeId",
+              "generationIndex",
+              "seed",
+              "requiredFields",
+              "generatedFieldCount",
+              "requiredFieldsSatisfied",
+              "variables",
+              "errors"
+            ].every((field) =>
+              Object.prototype
+                .hasOwnProperty.call(
+                  deterministicFirst,
+                  field
+                )
+            ),
+
+            calculatesCorrectAnswer:
+              false,
+
+            generatesDistractors:
+              false,
+
+            rendersPrompt:
+              false,
+
+            generatesExplanation:
+              false,
+
+            sampleTriangleVariables:
+              deterministicFirst.variables,
+
+            generationRecords:
+              records,
+
+            pass: true
+          };
+
+          output.textContent =
+            "PASS — Geometry Variable Generator v1.1.1\n\n" +
+            JSON.stringify(
+              result,
+              null,
+              2
+            );
+        } catch (error) {
+          const failureResult = {
+            test:
+              "Geometry Variable Generator v1.1.1",
+
+            pass: false,
+
+            errorName:
+              error &&
+              error.name
+                ? error.name
+                : "Error",
+
+            error:
+              error instanceof Error
+                ? error.message
+                : String(error),
+
+            stack:
+              error instanceof Error
+                ? error.stack
+                : null,
+
+            diagnostic:
+              "Verify that geometryVariableGenerator.js exists at src/geometry/generation/geometryVariableGenerator.js and that the page is opened through the project web server rather than directly with file://."
+          };
+
+          output.textContent =
+            "FAIL — Geometry Variable Generator v1.1.1\n\n" +
+            JSON.stringify(
+              failureResult,
+              null,
+              2
+            );
+        } finally {
+          button.disabled = false;
+        }
+      }
+    );
+  </script>
+</body>
+</html>
