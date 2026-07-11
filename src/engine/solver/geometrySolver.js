@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.5.0";
+const SOLVER_VERSION = "v1.6.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -82,7 +82,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_triangle_similarity_postulate",
   "similar_polygon_scale_factor_calculation",
   "similar_polygon_missing_side_length",
-  "triangle_proportionality_missing_segment"
+  "triangle_proportionality_missing_segment",
+  "inscribed_angle_arc_measure",
+  "circle_equation_from_center_radius",
+  "tangent_segment_length",
+  "intersecting_chords_missing_segment"
 ]);
 
 function protectedCopy(value) {
@@ -529,6 +533,32 @@ function solveTriangleProportionality(variables) {
   return { answerFormat: "numeric_value", correctAnswer };
 }
 
+// --- Chapter 10: Circles ---
+
+function solveInscribedAngleArcMeasure(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveCircleEquation(variables) {
+  const correctAnswer = variables.equation;
+
+  return { answerFormat: "classification_label", correctAnswer };
+}
+
+function solveTangentSegmentLength(variables) {
+  const correctAnswer = variables.otherTangentLength;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveIntersectingChords(variables) {
+  const correctAnswer = variables.segmentS;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -609,7 +639,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveSimilarPolygonMissingSide,
 
   triangle_proportionality_missing_segment:
-    solveTriangleProportionality
+    solveTriangleProportionality,
+
+  inscribed_angle_arc_measure:
+    solveInscribedAngleArcMeasure,
+
+  circle_equation_from_center_radius:
+    solveCircleEquation,
+
+  tangent_segment_length:
+    solveTangentSegmentLength,
+
+  intersecting_chords_missing_segment:
+    solveIntersectingChords
 });
 
 export class GeometrySolver {

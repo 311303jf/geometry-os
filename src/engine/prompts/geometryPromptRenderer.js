@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.5.0";
+const RENDERER_VERSION = "v1.6.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -76,7 +76,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_triangle_similarity_postulate",
   "similar_polygon_scale_factor_calculation",
   "similar_polygon_missing_side_length",
-  "triangle_proportionality_missing_segment"
+  "triangle_proportionality_missing_segment",
+  "inscribed_angle_arc_measure",
+  "circle_equation_from_center_radius",
+  "tangent_segment_length",
+  "intersecting_chords_missing_segment"
 ]);
 
 function protectedCopy(value) {
@@ -366,6 +370,28 @@ function renderTriangleProportionality(variables) {
   return `In triangle ABC, segment DE is parallel to side BC, with point D on side AB and point E on side AC. If AD = ${variables.segmentAD}, DB = ${variables.segmentDB}, and AE = ${variables.segmentAE}, what is the length of EC?`;
 }
 
+// --- Chapter 10: Circles ---
+
+function renderInscribedAngleArcMeasure(variables) {
+  if (variables.scenario === "find_arc") {
+    return `An inscribed angle in a circle measures ${variables.knownMeasure}\u00B0. What is the measure of the intercepted arc?`;
+  }
+
+  return `An inscribed angle in a circle intercepts an arc measuring ${variables.knownMeasure}\u00B0. What is the measure of the inscribed angle?`;
+}
+
+function renderCircleEquation(variables) {
+  return `A circle has its center at (${variables.centerX}, ${variables.centerY}) and a radius of ${variables.radius}. Which equation represents this circle in standard form?`;
+}
+
+function renderTangentSegmentLength(variables) {
+  return `Two tangent segments are drawn to a circle from the same external point. One tangent segment measures ${variables.givenTangentLength}. What is the length of the other tangent segment?`;
+}
+
+function renderIntersectingChords(variables) {
+  return `Two chords intersect inside a circle. One chord is divided into segments of length ${variables.segmentP} and ${variables.segmentQ}. The other chord is divided into segments of length ${variables.segmentR} and an unknown length. What is the length of the unknown segment?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -446,7 +472,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderSimilarPolygonMissingSide,
 
   triangle_proportionality_missing_segment:
-    renderTriangleProportionality
+    renderTriangleProportionality,
+
+  inscribed_angle_arc_measure:
+    renderInscribedAngleArcMeasure,
+
+  circle_equation_from_center_radius:
+    renderCircleEquation,
+
+  tangent_segment_length:
+    renderTangentSegmentLength,
+
+  intersecting_chords_missing_segment:
+    renderIntersectingChords
 });
 
 function extractInput(input = {}) {

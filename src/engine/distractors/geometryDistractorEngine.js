@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.5.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.6.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -80,7 +80,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_triangle_similarity_postulate",
   "similar_polygon_scale_factor_calculation",
   "similar_polygon_missing_side_length",
-  "triangle_proportionality_missing_segment"
+  "triangle_proportionality_missing_segment",
+  "inscribed_angle_arc_measure",
+  "circle_equation_from_center_radius",
+  "tangent_segment_length",
+  "intersecting_chords_missing_segment"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -987,6 +991,148 @@ function distractTriangleProportionality(variables, correctAnswer) {
   });
 }
 
+// --- Chapter 10: Circles ---
+
+function distractInscribedAngleArcMeasure(variables, correctAnswer) {
+  const known = variables.knownMeasure;
+
+  if (variables.scenario === "find_arc") {
+    // Correct answer is known*2. Errors: forgetting to double at
+    // all, halving instead of doubling (reciprocal error), and
+    // confusing the arc with its reflex (major arc) counterpart.
+    return buildNumericDistractors({
+      correctAnswer,
+      pool: [known, Math.round(known / 2), 360 - known * 2],
+      min: 1,
+      max: 359
+    });
+  }
+
+  // find_inscribed_angle: correct answer is known/2. Errors:
+  // forgetting to halve at all, doubling instead of halving, and a
+  // generic 180-based formula confusion.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [known, known * 2, 180 - known / 2],
+    min: 1,
+    max: 179
+  });
+}
+
+// Local copy of the circle-equation term formatter (mirrors
+// formatCircleEquationTerm in the Variable Generator) — kept
+// separate rather than imported, consistent with this file's
+// existing pattern of small self-contained helpers (e.g.
+// greatestCommonDivisorForDistractors) to avoid cross-file coupling
+// between certified engines.
+function formatCircleEquationTermForDistractor(variableName, value) {
+  if (value === 0) {
+    return `${variableName}\u00B2`;
+  }
+
+  const sign = value > 0 ? "-" : "+";
+
+  return `(${variableName} ${sign} ${Math.abs(value)})\u00B2`;
+}
+
+function distractCircleEquation(variables, correctAnswer) {
+  const { centerX, centerY, radius, radiusSquared } = variables;
+
+  // Sign-flip error: forgetting that the standard form uses (x - h),
+  // so both center coordinates get the wrong sign.
+  const signFlipped =
+    `${formatCircleEquationTermForDistractor("x", -centerX)} + ` +
+    `${formatCircleEquationTermForDistractor("y", -centerY)} = ${radiusSquared}`;
+
+  // Forgot to square the radius on the right-hand side.
+  const radiusNotSquared =
+    `${formatCircleEquationTermForDistractor("x", centerX)} + ` +
+    `${formatCircleEquationTermForDistractor("y", centerY)} = ${radius}`;
+
+  // Swapped which coordinate goes with x and which goes with y.
+  const swappedCenters =
+    `${formatCircleEquationTermForDistractor("x", centerY)} + ` +
+    `${formatCircleEquationTermForDistractor("y", centerX)} = ${radiusSquared}`;
+
+  return buildFromPool({
+    pool: [signFlipped, radiusNotSquared, swappedCenters],
+    correctAnswer,
+    fallbackGenerator: (i) => {
+      // Extra grounded fallbacks. Sign-flip variants (onlyXFlipped,
+      // onlyYFlipped, signFlipped, swappedCenters) can silently
+      // collide with each other or with the correct answer in two
+      // real edge cases found by stress-testing: centerX === centerY
+      // (swap becomes a no-op) and, more subtly, a center coordinate
+      // of exactly 0 — JavaScript treats -0 === 0, so "flipping the
+      // sign" of a 0 coordinate produces the same term as not
+      // flipping it at all, silently degenerating several
+      // "different" distractors into duplicates of the correct
+      // answer when the circle is centered on an axis or the
+      // origin. RHS-only variants (wrong radius value, keeping the
+      // same center terms as the correct answer) can never degenerate
+      // this way, so they're offered first as the more reliable
+      // fallback source.
+      const diameterSquared = (radius * 2) ** 2;
+
+      const diameterSquaredOnRhs =
+        `${formatCircleEquationTermForDistractor("x", centerX)} + ` +
+        `${formatCircleEquationTermForDistractor("y", centerY)} = ${diameterSquared}`;
+
+      const radiusSquaredMinusOne =
+        `${formatCircleEquationTermForDistractor("x", centerX)} + ` +
+        `${formatCircleEquationTermForDistractor("y", centerY)} = ${radiusSquared - 1}`;
+
+      const radiusSquaredPlusOne =
+        `${formatCircleEquationTermForDistractor("x", centerX)} + ` +
+        `${formatCircleEquationTermForDistractor("y", centerY)} = ${radiusSquared + 1}`;
+
+      const onlyXFlipped =
+        `${formatCircleEquationTermForDistractor("x", -centerX)} + ` +
+        `${formatCircleEquationTermForDistractor("y", centerY)} = ${radiusSquared}`;
+
+      const onlyYFlipped =
+        `${formatCircleEquationTermForDistractor("x", centerX)} + ` +
+        `${formatCircleEquationTermForDistractor("y", -centerY)} = ${radiusSquared}`;
+
+      const fallbacks = [
+        diameterSquaredOnRhs,
+        radiusSquaredPlusOne,
+        radiusSquaredMinusOne,
+        onlyXFlipped,
+        onlyYFlipped
+      ];
+
+      return fallbacks[i];
+    }
+  });
+}
+
+function distractTangentSegmentLength(variables, correctAnswer) {
+  const given = variables.givenTangentLength;
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [given * 2, Math.round(given / 2)],
+    min: 1
+  });
+}
+
+function distractIntersectingChords(variables, correctAnswer) {
+  const { segmentP, segmentQ, segmentR } = variables;
+
+  const pool = [
+    segmentP * segmentQ - segmentR, // subtracted instead of dividing
+    segmentR, // repeated a known segment length
+    segmentP + segmentQ // added instead of using the product relationship
+  ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1
+  });
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -1075,7 +1221,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractSimilarPolygonMissingSide(v, correct),
 
   triangle_proportionality_missing_segment: (v, correct) =>
-    distractTriangleProportionality(v, correct)
+    distractTriangleProportionality(v, correct),
+
+  inscribed_angle_arc_measure: (v, correct) =>
+    distractInscribedAngleArcMeasure(v, correct),
+
+  circle_equation_from_center_radius: (v, correct) =>
+    distractCircleEquation(v, correct),
+
+  tangent_segment_length: (v, correct) =>
+    distractTangentSegmentLength(v, correct),
+
+  intersecting_chords_missing_segment: (v, correct) =>
+    distractIntersectingChords(v, correct)
 });
 
 function extractInput(input = {}) {
