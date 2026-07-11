@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.3.0
+ * Geometry Variable Generator v1.4.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.3.0";
+const GENERATOR_VERSION = "v1.4.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -84,7 +84,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pythagorean_theorem_missing_side",
   "special_right_triangle_45_45_90_missing_side",
   "special_right_triangle_30_60_90_missing_side",
-  "right_triangle_trig_ratio_from_sides"
+  "right_triangle_trig_ratio_from_sides",
+  "polygon_interior_angle_sum_calculation",
+  "regular_polygon_interior_angle_measure",
+  "parallelogram_angle_relationship_measure",
+  "quadrilateral_diagonal_bisection_length"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2102,6 +2106,71 @@ function generateRightTriangleTrigRatioVariables(random) {
   };
 }
 
+// --- Chapter 7: Quadrilaterals and Other Polygons ---
+
+// A curated set of side counts where (n-2)*180/n is an exact
+// integer, so regular-polygon interior angle answers are never
+// rounded — verified independently with a standalone script before
+// writing this code (not just trusted by construction).
+const REGULAR_POLYGON_SIDE_COUNTS = Object.freeze([
+  3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20, 24
+]);
+
+// Broader set of side counts for the plain interior-angle-SUM
+// template, where no division is needed so any polygon works.
+const POLYGON_SUM_SIDE_COUNTS = Object.freeze([
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 20
+]);
+
+function generatePolygonInteriorAngleSum(random) {
+  const numberOfSides = randomChoice(random, POLYGON_SUM_SIDE_COUNTS);
+  const angleSum = (numberOfSides - 2) * 180;
+
+  return {
+    numberOfSides,
+    angleSum
+  };
+}
+
+function generateRegularPolygonInteriorAngle(random) {
+  const numberOfSides = randomChoice(random, REGULAR_POLYGON_SIDE_COUNTS);
+  const interiorAngleMeasure = ((numberOfSides - 2) * 180) / numberOfSides;
+
+  return {
+    numberOfSides,
+    interiorAngleMeasure
+  };
+}
+
+function generateParallelogramAngleRelationship(random) {
+  const relationshipType = randomChoice(random, [
+    "consecutive",
+    "opposite"
+  ]);
+
+  const knownAngleMeasure = randomInteger(random, 20, 160);
+
+  const relatedAngleMeasure =
+    relationshipType === "consecutive"
+      ? 180 - knownAngleMeasure
+      : knownAngleMeasure;
+
+  return {
+    relationshipType,
+    knownAngleMeasure,
+    relatedAngleMeasure
+  };
+}
+
+function generateQuadrilateralDiagonalBisection(random) {
+  const givenSegmentLength = randomInteger(random, 3, 40);
+
+  return {
+    givenSegmentLength,
+    otherSegmentLength: givenSegmentLength
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2191,7 +2260,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateSpecialRightTriangle306090Variables,
 
   right_triangle_trig_ratio_from_sides:
-    generateRightTriangleTrigRatioVariables
+    generateRightTriangleTrigRatioVariables,
+
+  polygon_interior_angle_sum_calculation:
+    generatePolygonInteriorAngleSum,
+
+  regular_polygon_interior_angle_measure:
+    generateRegularPolygonInteriorAngle,
+
+  parallelogram_angle_relationship_measure:
+    generateParallelogramAngleRelationship,
+
+  quadrilateral_diagonal_bisection_length:
+    generateQuadrilateralDiagonalBisection
 });
 
 export class GeometryVariableGenerator {

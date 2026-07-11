@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.1.0";
+    this.version = "v1.2.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -446,6 +446,59 @@ export class GeometryTemplateRegistry {
           "legB",
           "hypotenuse",
           "ratioType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "polygon_interior_angle_sum_calculation",
+        problemTypeId: "polygon_interior_angle_sum",
+        templateFamily: "polygon_angle_measurement",
+        promptPattern:
+          "What is the sum of the interior angle measures of a polygon with the given number of sides?",
+        requiredFields: [
+          "numberOfSides"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "regular_polygon_interior_angle_measure",
+        problemTypeId: "regular_polygon_interior_angle",
+        templateFamily: "polygon_angle_measurement",
+        promptPattern:
+          "What is the measure of one interior angle of a regular polygon with the given number of sides?",
+        requiredFields: [
+          "numberOfSides"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "parallelogram_angle_relationship_measure",
+        problemTypeId: "parallelogram_angle_relationship",
+        templateFamily: "parallelogram_properties",
+        promptPattern:
+          "In a parallelogram, one angle has the given measure. What is the measure of the related angle?",
+        requiredFields: [
+          "knownAngleMeasure",
+          "relationshipType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "quadrilateral_diagonal_bisection_length",
+        problemTypeId: "quadrilateral_diagonal_bisection",
+        templateFamily: "parallelogram_properties",
+        promptPattern:
+          "In a parallelogram, the diagonals intersect at a point. Given the length of one half of a diagonal, what is the length of the other half?",
+        requiredFields: [
+          "givenSegmentLength"
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",

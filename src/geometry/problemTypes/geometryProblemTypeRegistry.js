@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.5";
+    this.version = "v1.0.6";
 
     this.problemTypes = [
       {
@@ -246,6 +246,38 @@ export class GeometryProblemTypeRegistry {
         conceptId: "right_triangles",
         family: "trigonometric_ratios",
         description: "Find the sine, cosine, or tangent ratio of an acute angle in a right triangle, expressed as an exact reduced fraction.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "polygon_interior_angle_sum",
+        conceptId: "quadrilaterals",
+        family: "polygon_angle_measurement",
+        description: "Find the sum of the interior angle measures of a polygon.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "regular_polygon_interior_angle",
+        conceptId: "quadrilaterals",
+        family: "polygon_angle_measurement",
+        description: "Find the measure of one interior angle of a regular polygon.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "parallelogram_angle_relationship",
+        conceptId: "quadrilaterals",
+        family: "parallelogram_properties",
+        description: "Find a related angle measure in a parallelogram using consecutive (supplementary) or opposite (congruent) angle relationships.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "quadrilateral_diagonal_bisection",
+        conceptId: "quadrilaterals",
+        family: "parallelogram_properties",
+        description: "Use the property that the diagonals of a parallelogram bisect each other to find a segment length.",
         expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
