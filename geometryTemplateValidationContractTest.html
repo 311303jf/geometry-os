@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>
+    Geometry OS — Geometry Template Validation Contract Test
+  </title>
+</head>
+
+<body>
+  <h1>
+    Geometry OS — Geometry Template Validation Contract Test
+  </h1>
+
+  <button id="runTestButton">
+    Run Geometry Template Validation Contract Test
+  </button>
+
+  <pre id="output"></pre>
+
+  <script type="module">
+    import {
+      geometryTemplateValidationContract
+    } from "./src/geometry/templates/geometryTemplateValidationContract.js";
+
+    const button =
+      document.getElementById("runTestButton");
+
+    const output =
+      document.getElementById("output");
+
+    button.addEventListener("click", () => {
+      try {
+        const contractValidation =
+          geometryTemplateValidationContract
+            .validateContract();
+
+        const registryValidation =
+          geometryTemplateValidationContract
+            .validateRegistry();
+
+        const templatesWithProblemTypes =
+          geometryTemplateValidationContract
+            .getTemplatesWithProblemTypes();
+
+        const disconnectedTemplates =
+          geometryTemplateValidationContract
+            .getDisconnectedTemplates();
+
+        const answerFormatMismatches =
+          geometryTemplateValidationContract
+            .getAnswerFormatMismatches();
+
+        const invalidFigureMetadataTemplates =
+          geometryTemplateValidationContract
+            .getInvalidFigureMetadataTemplates();
+
+        const figureRequirementOverrides =
+          geometryTemplateValidationContract
+            .getFigureRequirementOverrides();
+
+        const classifyAngleConnection =
+          templatesWithProblemTypes.find(
+            (entry) =>
+              entry.template.templateId ===
+              "classify_angle_by_measure"
+          );
+
+        const validTemplateValidation =
+          geometryTemplateValidationContract
+            .validateTemplate({
+              templateId:
+                "valid_test_template",
+              problemTypeId:
+                "classify_angle",
+              templateFamily:
+                "angle_classification",
+              promptPattern:
+                "How should the angle be classified?",
+              requiredFields: [
+                "angleMeasure"
+              ],
+              outputType:
+                "multiple_choice",
+              expectedAnswerFormat:
+                "classification_label",
+              requiresFigure:
+                false
+            });
+
+        const validFigureOverrideValidation =
+          geometryTemplateValidationContract
+            .validateTemplate({
+              templateId:
+                "valid_figure_override_template",
+              problemTypeId:
+                "classify_triangle",
+              templateFamily:
+                "triangle_classification",
+              promptPattern:
+                "Classify the triangle with side lengths 5, 5, and 8.",
+              requiredFields: [
+                "sideLengthA",
+                "sideLengthB",
+                "sideLengthC"
+              ],
+              outputType:
+                "multiple_choice",
+              expectedAnswerFormat:
+                "classification_label",
+              requiresFigure:
+                false
+            });
+
+        const invalidProblemTypeValidation =
+          geometryTemplateValidationContract
+            .validateTemplate({
+              templateId:
+                "invalid_problem_type_template",
+              problemTypeId:
+                "missing_problem_type",
+              templateFamily:
+                "test_family",
+              promptPattern:
+                "Test prompt.",
+              requiredFields: [
+                "testField"
+              ],
+              outputType:
+                "multiple_choice",
+              expectedAnswerFormat:
+                "classification_label",
+              requiresFigure:
+                false
+            });
+
+        const invalidAnswerFormatValidation =
+          geometryTemplateValidationContract
+            .validateTemplate({
+              templateId:
+                "invalid_answer_format_template",
+              problemTypeId:
+                "classify_angle",
+              templateFamily:
+                "angle_classification",
+              promptPattern:
+                "Test prompt.",
+              requiredFields: [
+                "angleMeasure"
+              ],
+              outputType:
+                "multiple_choice",
+              expectedAnswerFormat:
+                "numeric_value",
+              requiresFigure:
+                false
+            });
+
+        const invalidFigureMetadataValidation =
+          geometryTemplateValidationContract
+            .validateTemplate({
+              templateId:
+                "invalid_figure_metadata_template",
+              problemTypeId:
+                "identify_point",
+              templateFamily:
+                "foundational_identification",
+              promptPattern:
+                "Test prompt.",
+              requiredFields: [
+                "pointLabel"
+              ],
+              outputType:
+                "multiple_choice",
+              expectedAnswerFormat:
+                "geometry_object_name",
+              requiresFigure:
+                "yes"
+            });
+
+        const duplicateFieldsValidation =
+          geometryTemplateValidationContract
+            .validateTemplate({
+              templateId:
+                "duplicate_fields_template",
+              problemTypeId:
+                "classify_angle",
+              templateFamily:
+                "angle_classification",
+              promptPattern:
+                "Test prompt.",
+              requiredFields: [
+                "angleMeasure",
+                "angleMeasure"
+              ],
+              outputType:
+                "multiple_choice",
+              expectedAnswerFormat:
+                "classification_label",
+              requiresFigure:
+                false
+            });
+
+        const protectedCopy = (() => {
+          const firstEntries =
+            geometryTemplateValidationContract
+              .getTemplatesWithProblemTypes();
+
+          firstEntries[0]
+            .template
+            .requiredFields
+            .push("mutated_field");
+
+          firstEntries[0]
+            .problemType
+            .description =
+            "mutated description";
+
+          const secondEntries =
+            geometryTemplateValidationContract
+              .getTemplatesWithProblemTypes();
+
+          return (
+            secondEntries[0]
+              .template
+              .requiredFields
+              .includes("mutated_field") ===
+              false &&
+
+            secondEntries[0]
+              .problemType
+              .description !==
+              "mutated description"
+          );
+        })();
+
+        const result = {
+          test:
+            "Geometry Template Validation Contract v1.0.10",
+
+          validationContractVersion:
+            registryValidation
+              .validationContractVersion,
+
+          templateRegistryVersion:
+            registryValidation
+              .templateRegistryVersion,
+
+          problemTypeRegistryVersion:
+            registryValidation
+              .problemTypeRegistryVersion,
+
+          templateCount:
+            registryValidation
+              .templateCount,
+
+          templateFamilyCount:
+            registryValidation
+              .templateFamilyCount,
+
+          connectedTemplateCount:
+            registryValidation
+              .connectedTemplateCount,
+
+          compatibleAnswerFormatCount:
+            registryValidation
+              .compatibleAnswerFormatCount,
+
+          validFigureMetadataCount:
+            registryValidation
+              .validFigureMetadataCount,
+
+          templateFigureOverrideCount:
+            registryValidation
+              .templateFigureOverrideCount,
+
+          templatesWithProblemTypesReturnsArray:
+            Array.isArray(
+              templatesWithProblemTypes
+            ),
+
+          disconnectedTemplateCount:
+            disconnectedTemplates.length,
+
+          answerFormatMismatchCount:
+            answerFormatMismatches.length,
+
+          invalidFigureMetadataCount:
+            invalidFigureMetadataTemplates.length,
+
+          figureRequirementOverrideCount:
+            figureRequirementOverrides.length,
+
+          classifyAngleConnected:
+            Boolean(
+              classifyAngleConnection
+            ),
+
+          classifyAngleConnectedProblemTypeId:
+            classifyAngleConnection
+              ?.problemType
+              ?.problemTypeId || null,
+
+          validTemplateAccepted:
+            validTemplateValidation.valid,
+
+          validFigureOverrideAccepted:
+            validFigureOverrideValidation.valid,
+
+          invalidProblemTypeRejected:
+            invalidProblemTypeValidation
+              .valid === false,
+
+          invalidProblemTypeErrorCount:
+            invalidProblemTypeValidation
+              .errors.length,
+
+          invalidAnswerFormatRejected:
+            invalidAnswerFormatValidation
+              .valid === false,
+
+          invalidAnswerFormatErrorCount:
+            invalidAnswerFormatValidation
+              .errors.length,
+
+          invalidFigureMetadataRejected:
+            invalidFigureMetadataValidation
+              .valid === false,
+
+          invalidFigureMetadataErrorCount:
+            invalidFigureMetadataValidation
+              .errors.length,
+
+          duplicateFieldsRejected:
+            duplicateFieldsValidation
+              .valid === false,
+
+          duplicateFieldsErrorCount:
+            duplicateFieldsValidation
+              .errors.length,
+
+          protectedCopy,
+
+          validationPassed:
+            contractValidation.valid,
+
+          validationErrors:
+            contractValidation.errors,
+
+          pass:
+            contractValidation.valid === true &&
+
+            registryValidation.valid === true &&
+
+            registryValidation
+              .validationContractVersion ===
+              "v1.0.10" &&
+
+            registryValidation
+              .templateRegistryVersion ===
+              "v1.0.9" &&
+
+            registryValidation
+              .problemTypeRegistryVersion ===
+              "v1.0.3" &&
+
+            registryValidation
+              .templateCount ===
+              23 &&
+
+            registryValidation
+              .templateFamilyCount ===
+              11 &&
+
+            registryValidation
+              .connectedTemplateCount ===
+              23 &&
+
+            registryValidation
+              .compatibleAnswerFormatCount ===
+              23 &&
+
+            registryValidation
+              .validFigureMetadataCount ===
+              23 &&
+
+            registryValidation
+              .templateFigureOverrideCount ===
+              7 &&
+
+            Array.isArray(
+              templatesWithProblemTypes
+            ) === true &&
+
+            disconnectedTemplates.length ===
+              0 &&
+
+            answerFormatMismatches.length ===
+              0 &&
+
+            invalidFigureMetadataTemplates.length ===
+              0 &&
+
+            figureRequirementOverrides.length ===
+              7 &&
+
+            Boolean(
+              classifyAngleConnection
+            ) === true &&
+
+            classifyAngleConnection
+              .problemType
+              .problemTypeId ===
+              "classify_angle" &&
+
+            validTemplateValidation.valid ===
+              true &&
+
+            validFigureOverrideValidation.valid ===
+              true &&
+
+            invalidProblemTypeValidation
+              .valid === false &&
+
+            invalidProblemTypeValidation
+              .errors.length > 0 &&
+
+            invalidAnswerFormatValidation
+              .valid === false &&
+
+            invalidAnswerFormatValidation
+              .errors.length > 0 &&
+
+            invalidFigureMetadataValidation
+              .valid === false &&
+
+            invalidFigureMetadataValidation
+              .errors.length > 0 &&
+
+            duplicateFieldsValidation
+              .valid === false &&
+
+            duplicateFieldsValidation
+              .errors.length > 0 &&
+
+            protectedCopy === true
+        };
+
+        output.textContent =
+          JSON.stringify(
+            result,
+            null,
+            2
+          );
+      } catch (error) {
+        output.textContent =
+          JSON.stringify(
+            {
+              test:
+                "Geometry Template Validation Contract v1.0.10",
+              pass: false,
+              error: error.message
+            },
+            null,
+            2
+          );
+      }
+    });
+  </script>
+</body>
+</html>
