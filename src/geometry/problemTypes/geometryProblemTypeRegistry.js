@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.8";
+    this.version = "v1.0.9";
 
     this.problemTypes = [
       {
@@ -342,6 +342,38 @@ export class GeometryProblemTypeRegistry {
         conceptId: "similarity",
         family: "proportionality_theorems",
         description: "Use the Triangle Proportionality Theorem (side-splitter) to find a missing segment length.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "inscribed_angle_arc_relationship",
+        conceptId: "circles",
+        family: "circle_angle_measurement",
+        description: "Use the Inscribed Angle Theorem (an inscribed angle is half its intercepted arc) to find a missing angle or arc measure.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "circle_equation",
+        conceptId: "circles",
+        family: "circles_in_coordinate_plane",
+        description: "Write the standard-form equation of a circle from its center and radius.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "tangent_segment_congruence",
+        conceptId: "circles",
+        family: "circle_segment_relationships",
+        description: "Use the property that two tangent segments from the same external point to a circle are congruent.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "intersecting_chords_segments",
+        conceptId: "circles",
+        family: "circle_segment_relationships",
+        description: "Use the Intersecting Chords Theorem (the products of the two segments of each chord are equal) to find a missing segment length.",
         expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }

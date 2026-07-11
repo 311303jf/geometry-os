@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.6.0
+ * Geometry Variable Generator v1.7.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.6.0";
+const GENERATOR_VERSION = "v1.7.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -96,7 +96,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_triangle_similarity_postulate",
   "similar_polygon_scale_factor_calculation",
   "similar_polygon_missing_side_length",
-  "triangle_proportionality_missing_segment"
+  "triangle_proportionality_missing_segment",
+  "inscribed_angle_arc_measure",
+  "circle_equation_from_center_radius",
+  "tangent_segment_length",
+  "intersecting_chords_missing_segment"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2406,6 +2410,115 @@ function generateTriangleProportionality(random) {
   };
 }
 
+// --- Chapter 10: Circles ---
+
+function generateInscribedAngleArcMeasure(random) {
+  const scenario = randomChoice(random, [
+    "find_arc",
+    "find_inscribed_angle"
+  ]);
+
+  if (scenario === "find_arc") {
+    const inscribedAngleMeasure = randomInteger(random, 10, 170);
+    const arcMeasure = inscribedAngleMeasure * 2;
+
+    return {
+      scenario,
+      knownMeasure: inscribedAngleMeasure,
+      answerValue: arcMeasure
+    };
+  }
+
+  // find_inscribed_angle: the arc must be an even number so the
+  // resulting inscribed angle is always a whole number.
+  const arcMeasure = randomInteger(random, 5, 170) * 2;
+  const inscribedAngleMeasure = arcMeasure / 2;
+
+  return {
+    scenario,
+    knownMeasure: arcMeasure,
+    answerValue: inscribedAngleMeasure
+  };
+}
+
+// Formats a "x - h" style term for a circle equation, correctly
+// collapsing the double-negative into a plus sign when h is
+// negative (e.g. h = -3 must render as "x + 3", not "x - -3").
+function formatCircleEquationTerm(variableName, value) {
+  if (value === 0) {
+    return `${variableName}\u00B2`;
+  }
+
+  const sign = value > 0 ? "-" : "+";
+
+  return `(${variableName} ${sign} ${Math.abs(value)})\u00B2`;
+}
+
+function generateCircleEquation(random) {
+  const centerX = randomInteger(random, -9, 9);
+  const centerY = randomInteger(random, -9, 9);
+  const radius = randomInteger(random, 2, 12);
+  const radiusSquared = radius * radius;
+
+  const equation =
+    `${formatCircleEquationTerm("x", centerX)} + ` +
+    `${formatCircleEquationTerm("y", centerY)} = ${radiusSquared}`;
+
+  return {
+    centerX,
+    centerY,
+    radius,
+    radiusSquared,
+    equation
+  };
+}
+
+function generateTangentSegmentLength(random) {
+  const givenTangentLength = randomInteger(random, 3, 40);
+
+  return {
+    givenTangentLength,
+    otherTangentLength: givenTangentLength
+  };
+}
+
+function integerDivisorsExcludingTrivial(product) {
+  const divisors = [];
+
+  for (let candidate = 2; candidate < product; candidate += 1) {
+    if (product % candidate === 0) {
+      divisors.push(candidate);
+    }
+  }
+
+  if (divisors.length === 0) {
+    for (let candidate = 1; candidate <= product; candidate += 1) {
+      if (product % candidate === 0) {
+        divisors.push(candidate);
+      }
+    }
+  }
+
+  return divisors;
+}
+
+function generateIntersectingChordsSegments(random) {
+  const segmentP = randomInteger(random, 2, 12);
+  const segmentQ = randomInteger(random, 2, 12);
+  const product = segmentP * segmentQ;
+
+  const divisors = integerDivisorsExcludingTrivial(product);
+  const segmentR = randomChoice(random, divisors);
+  const segmentS = product / segmentR;
+
+  return {
+    segmentP,
+    segmentQ,
+    segmentR,
+    segmentS
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2531,7 +2644,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateSimilarPolygonMissingSide,
 
   triangle_proportionality_missing_segment:
-    generateTriangleProportionality
+    generateTriangleProportionality,
+
+  inscribed_angle_arc_measure:
+    generateInscribedAngleArcMeasure,
+
+  circle_equation_from_center_radius:
+    generateCircleEquation,
+
+  tangent_segment_length:
+    generateTangentSegmentLength,
+
+  intersecting_chords_missing_segment:
+    generateIntersectingChordsSegments
 });
 
 export class GeometryVariableGenerator {

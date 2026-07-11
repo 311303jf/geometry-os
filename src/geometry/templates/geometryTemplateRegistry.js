@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.4.0";
+    this.version = "v1.5.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -613,6 +613,63 @@ export class GeometryTemplateRegistry {
           "segmentAD",
           "segmentDB",
           "segmentAE"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "inscribed_angle_arc_measure",
+        problemTypeId: "inscribed_angle_arc_relationship",
+        templateFamily: "circle_angle_measurement",
+        promptPattern:
+          "An inscribed angle and its intercepted arc are related by the Inscribed Angle Theorem. Given one known measure, what is the measure of the requested angle or arc?",
+        requiredFields: [
+          "knownMeasure",
+          "scenario"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "circle_equation_from_center_radius",
+        problemTypeId: "circle_equation",
+        templateFamily: "circles_in_coordinate_plane",
+        promptPattern:
+          "A circle has the given center and radius. Which equation represents this circle in standard form?",
+        requiredFields: [
+          "centerX",
+          "centerY",
+          "radius"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "tangent_segment_length",
+        problemTypeId: "tangent_segment_congruence",
+        templateFamily: "circle_segment_relationships",
+        promptPattern:
+          "Two tangent segments are drawn to a circle from the same external point. Given the length of one tangent segment, what is the length of the other?",
+        requiredFields: [
+          "givenTangentLength"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "intersecting_chords_missing_segment",
+        problemTypeId: "intersecting_chords_segments",
+        templateFamily: "circle_segment_relationships",
+        promptPattern:
+          "Two chords intersect inside a circle. Given three of the four resulting segment lengths, what is the length of the fourth segment?",
+        requiredFields: [
+          "segmentP",
+          "segmentQ",
+          "segmentR"
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",
