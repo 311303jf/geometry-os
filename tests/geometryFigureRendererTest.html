@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Geometry Figure Renderer Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+    .figure-card { margin-top: 16px; padding: 16px; background: #ffffff; border: 1px solid #d5dbe0; border-radius: 8px; }
+    .figure-card h3 { margin-top: 0; }
+    .figure-card svg { max-width: 100%; height: auto; background: #fafafa; --text-primary: #17202a; }
+    .figure-card svg text.t { font-size: 16px; font-weight: 700; fill: var(--text-primary); }
+    .figure-card svg text.ts { font-size: 14px; fill: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Figure Renderer Test</h1>
+  <p>Runs each of the 12 figure-required templates through 15 seeds (180 total runs), verifying well-formed SVG with no leaked undefined/NaN text, then renders one live example of each below.</p>
+  <button id="runTestButton">Run Geometry Figure Renderer Test</button>
+  <pre id="output">Ready.</pre>
+  <div id="figures"></div>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+    const figuresContainer = document.getElementById("figures");
+
+    const problemTypeByTemplate = {
+      identify_point_from_description: "identify_point",
+      identify_line_from_labels: "identify_line",
+      identify_segment_from_endpoints: "identify_segment",
+      identify_ray_from_endpoint: "identify_ray",
+      identify_plane_from_points: "identify_plane",
+      identify_angle_from_rays: "identify_angle",
+      measure_angle_from_relationship: "measure_angle",
+      identify_complementary_angle_pair: "identify_complementary_angles",
+      identify_supplementary_angle_pair: "identify_supplementary_angles",
+      identify_vertical_angle_pair: "identify_vertical_angles",
+      identify_adjacent_angle_pair: "identify_adjacent_angles",
+      identify_polygon_from_attributes: "identify_polygon"
+    };
+
+    const SEEDS_PER_TEMPLATE = 15;
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+      figuresContainer.innerHTML = "";
+
+      try {
+        const resolverModule = await import("../src/geometry/templates/geometryTemplateResolver.js");
+        const generatorModule = await import("../src/geometry/generation/geometryVariableGenerator.js");
+        const figureModule = await import("../src/engine/figures/geometryFigureRenderer.js");
+
+        const { geometryTemplateResolver } = resolverModule;
+        const { geometryVariableGenerator } = generatorModule;
+        const { geometryFigureRenderer } = figureModule;
+
+        assert(geometryFigureRenderer && typeof geometryFigureRenderer.render === "function", "Geometry Figure Renderer did not load correctly.");
+
+        const templateIds = geometryFigureRenderer.getSupportedTemplateIds();
+        assert(templateIds.length === 12, "Supported template count must equal 12.");
+
+        output.textContent = `Modules loaded. Running ${templateIds.length} templates x ${SEEDS_PER_TEMPLATE} seeds...`;
+
+        const failures = [];
+        let totalRuns = 0;
+        const exampleByTemplate = {};
+
+        templateIds.forEach((templateId) => {
+          const problemTypeId = problemTypeByTemplate[templateId];
+
+          for (let seedIndex = 0; seedIndex < SEEDS_PER_TEMPLATE; seedIndex++) {
+            totalRuns += 1;
+
+            const resolution = geometryTemplateResolver.resolve({ templateId, problemTypeId });
+            if (!resolution.resolved) { failures.push({ templateId, seedIndex, stage: "resolver" }); continue; }
+
+            const generation = geometryVariableGenerator.generate(resolution, {
+              seed: `figure-certification-${templateId}-${seedIndex}`,
+              generationIndex: seedIndex
+            });
+            if (!generation.generated) { failures.push({ templateId, seedIndex, stage: "generator" }); continue; }
+
+            const figure = geometryFigureRenderer.render({ templateId, variables: generation.variables });
+
+            const valid = figure.rendered && typeof figure.svg === "string" &&
+              figure.svg.startsWith("<svg") && figure.svg.endsWith("</svg>") &&
+              !figure.svg.includes("undefined") && !figure.svg.includes("NaN");
+
+            if (!valid) {
+              failures.push({ templateId, seedIndex, stage: "figure", errors: figure.errors });
+              continue;
+            }
+
+            if (!exampleByTemplate[templateId]) {
+              exampleByTemplate[templateId] = figure.svg;
+            }
+          }
+        });
+
+        assert(failures.length === 0, `Figure rendering failed for ${failures.length} of ${totalRuns} runs. First failure: ${JSON.stringify(failures[0])}`);
+
+        const result = {
+          test: "Geometry Figure Renderer",
+          rendererVersion: geometryFigureRenderer.getRendererVersion(),
+          certifiedTemplateCount: templateIds.length,
+          seedsPerTemplate: SEEDS_PER_TEMPLATE,
+          totalRuns,
+          failureCount: failures.length,
+          allRunsPassed: failures.length === 0,
+          pass: true
+        };
+
+        output.textContent = "PASS — Geometry Figure Renderer " + result.rendererVersion + " (" + totalRuns + " runs, 0 failures)\n\n" + JSON.stringify(result, null, 2);
+
+        templateIds.forEach((templateId) => {
+          const card = document.createElement("div");
+          card.className = "figure-card";
+          const heading = document.createElement("h3");
+          heading.textContent = templateId;
+          card.appendChild(heading);
+          const svgContainer = document.createElement("div");
+          svgContainer.innerHTML = exampleByTemplate[templateId];
+          card.appendChild(svgContainer);
+          figuresContainer.appendChild(card);
+        });
+      } catch (error) {
+        const failureResult = {
+          test: "Geometry Figure Renderer",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null,
+          diagnostic: "Verify that geometryFigureRenderer.js exists at src/engine/figures/geometryFigureRenderer.js and that the page is opened through the project web server rather than directly with file://."
+        };
+        output.textContent = "FAIL — Geometry Figure Renderer\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
