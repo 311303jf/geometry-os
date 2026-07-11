@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.5.0
+ * Geometry Variable Generator v1.6.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.5.0";
+const GENERATOR_VERSION = "v1.6.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -92,7 +92,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "triangle_exterior_angle_measure",
   "identify_triangle_congruence_postulate",
   "isosceles_triangle_angle_measure",
-  "triangle_inequality_check"
+  "triangle_inequality_check",
+  "identify_triangle_similarity_postulate",
+  "similar_polygon_scale_factor_calculation",
+  "similar_polygon_missing_side_length",
+  "triangle_proportionality_missing_segment"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2287,6 +2291,121 @@ function generateTriangleInequalityCheck(random) {
   };
 }
 
+// --- Chapter 8: Similarity ---
+
+// Distinct from formatReducedFraction (used by Chapter 9 trig
+// ratios, where a fraction display like "5/1" would never actually
+// occur since the hypotenuse always exceeds a leg). Scale factors
+// commonly DO reduce to whole numbers (e.g. 3/1), which should
+// display as a plain integer "3", not "3/1".
+function formatScaleFactor(numerator, denominator) {
+  const divisor = greatestCommonDivisor(numerator, denominator);
+  const reducedNumerator = numerator / divisor;
+  const reducedDenominator = denominator / divisor;
+
+  return reducedDenominator === 1
+    ? String(reducedNumerator)
+    : `${reducedNumerator}/${reducedDenominator}`;
+}
+
+// Curated (description, postulate) pairs for triangle similarity.
+// Includes a real congruence-postulate name (ASA) as a distractor
+// source at the solving layer — see distractTriangleSimilarityPostulate
+// in the Distractor Engine — to test whether a student confuses
+// similarity requirements (proportional) with congruence
+// requirements (equal).
+const SIMILARITY_POSTULATE_CASES = Object.freeze([
+  {
+    description:
+      "two pairs of corresponding angles are congruent",
+    postulateType: "AA~"
+  },
+  {
+    description:
+      "all three pairs of corresponding sides are proportional",
+    postulateType: "SSS~"
+  },
+  {
+    description:
+      "two pairs of corresponding sides are proportional and the included angles are congruent",
+    postulateType: "SAS~"
+  }
+]);
+
+function generateTriangleSimilarityPostulate(random) {
+  const testCase = randomChoice(random, SIMILARITY_POSTULATE_CASES);
+
+  return {
+    givenInformation: testCase.description,
+    postulateType: testCase.postulateType
+  };
+}
+
+function generateSimilarPolygonScaleFactor(random) {
+  const denominator = randomChoice(random, [1, 2, 3, 4]);
+  const originalMultiplier = randomInteger(random, 1, 6);
+  const sideLengthOriginal = denominator * originalMultiplier;
+
+  let numerator = randomInteger(random, 1, 6);
+
+  while (numerator === denominator) {
+    numerator = randomInteger(random, 1, 6);
+  }
+
+  const sideLengthImage =
+    (sideLengthOriginal * numerator) / denominator;
+
+  const scaleFactor = formatScaleFactor(numerator, denominator);
+
+  return {
+    sideLengthOriginal,
+    sideLengthImage,
+    scaleFactor
+  };
+}
+
+function generateSimilarPolygonMissingSide(random) {
+  const denominator = randomChoice(random, [1, 2, 3, 4]);
+  let numerator = randomInteger(random, 1, 6);
+
+  while (numerator === denominator) {
+    numerator = randomInteger(random, 1, 6);
+  }
+
+  const knownSideMultiplier = randomInteger(random, 1, 8);
+  const knownSideLength = denominator * knownSideMultiplier;
+
+  const missingSideLength =
+    (knownSideLength * numerator) / denominator;
+
+  const scaleFactorDisplay = formatScaleFactor(
+    numerator,
+    denominator
+  );
+
+  return {
+    scaleFactorDisplay,
+    knownSideLength,
+    missingSideLength
+  };
+}
+
+function generateTriangleProportionality(random) {
+  const segmentAD = randomInteger(random, 2, 10);
+  const ratio = randomInteger(random, 1, 4);
+  const segmentDB = segmentAD * ratio;
+
+  const segmentAE = randomInteger(random, 2, 15);
+  const segmentEC = segmentAE * ratio;
+
+  return {
+    segmentAD,
+    segmentDB,
+    segmentAE,
+    segmentEC
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2400,7 +2519,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateIsoscelesTriangleAngle,
 
   triangle_inequality_check:
-    generateTriangleInequalityCheck
+    generateTriangleInequalityCheck,
+
+  identify_triangle_similarity_postulate:
+    generateTriangleSimilarityPostulate,
+
+  similar_polygon_scale_factor_calculation:
+    generateSimilarPolygonScaleFactor,
+
+  similar_polygon_missing_side_length:
+    generateSimilarPolygonMissingSide,
+
+  triangle_proportionality_missing_segment:
+    generateTriangleProportionality
 });
 
 export class GeometryVariableGenerator {

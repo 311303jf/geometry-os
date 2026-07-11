@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.3.0";
+    this.version = "v1.4.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -559,6 +559,63 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "identify_triangle_similarity_postulate",
+        problemTypeId: "triangle_similarity_postulate",
+        templateFamily: "triangle_similarity",
+        promptPattern:
+          "Two triangles have the given corresponding parts. Which postulate or theorem proves the triangles are similar?",
+        requiredFields: [
+          "givenInformation",
+          "postulateType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "similar_polygon_scale_factor_calculation",
+        problemTypeId: "similar_polygon_scale_factor",
+        templateFamily: "similar_polygons",
+        promptPattern:
+          "Two polygons are similar. Given the lengths of a pair of corresponding sides, what is the scale factor from the first polygon to the second?",
+        requiredFields: [
+          "sideLengthOriginal",
+          "sideLengthImage"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "similar_polygon_missing_side_length",
+        problemTypeId: "similar_polygon_missing_side",
+        templateFamily: "similar_polygons",
+        promptPattern:
+          "Two figures are similar with the given scale factor. Given one side length in the original figure, what is the length of the corresponding side in the image?",
+        requiredFields: [
+          "scaleFactorDisplay",
+          "knownSideLength"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "triangle_proportionality_missing_segment",
+        problemTypeId: "triangle_proportionality",
+        templateFamily: "proportionality_theorems",
+        promptPattern:
+          "In a triangle, a segment parallel to one side divides the other two sides proportionally. Given three of the four resulting segment lengths, what is the length of the fourth segment?",
+        requiredFields: [
+          "segmentAD",
+          "segmentDB",
+          "segmentAE"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
     ];

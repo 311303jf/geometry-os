@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.7";
+    this.version = "v1.0.8";
 
     this.problemTypes = [
       {
@@ -311,6 +311,38 @@ export class GeometryProblemTypeRegistry {
         family: "triangle_inequality",
         description: "Use the Triangle Inequality Theorem to determine whether three given side lengths can form a triangle.",
         expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "triangle_similarity_postulate",
+        conceptId: "similarity",
+        family: "triangle_similarity",
+        description: "Identify which postulate or theorem (AA, SSS~, or SAS~) proves two triangles similar from the given corresponding parts.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "similar_polygon_scale_factor",
+        conceptId: "similarity",
+        family: "similar_polygons",
+        description: "Find the scale factor between two similar polygons from a pair of corresponding side lengths.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "similar_polygon_missing_side",
+        conceptId: "similarity",
+        family: "similar_polygons",
+        description: "Find a missing corresponding side length in a similar polygon, given the scale factor.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "triangle_proportionality",
+        conceptId: "similarity",
+        family: "proportionality_theorems",
+        description: "Use the Triangle Proportionality Theorem (side-splitter) to find a missing segment length.",
+        expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
     ];
