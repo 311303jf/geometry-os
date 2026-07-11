@@ -472,11 +472,25 @@ function distractMidpoint(variables) {
       // Extra grounded fallbacks for edge cases where a pool formula
       // coincidentally matches the correct answer (e.g. when x1 or
       // y1 is 0): only moved one endpoint, or only averaged one axis.
+      // A real, confirmed case found by stress testing: when the
+      // midpoint is exactly the origin (0,0) with x1=-x2 and
+      // y1=-y2, FOUR of the seven candidate formulas here
+      // simultaneously collapse to (0,0) — not just one collision
+      // like the earlier circle-equation bug, since the symmetry
+      // affects the "forgot to divide" formula AND both
+      // single-axis-divided fallbacks AND the coordinate swap all
+      // at once. The last two fallbacks below are pure numeric
+      // offsets of the correct midpoint with no dependence on
+      // x1/y1/x2/y2 symmetry, guaranteeing they can never collide
+      // via this failure mode.
       const fallbacks = [
         `(${x2}, ${y2})`, // used endpoint B instead of the midpoint
         `(${x1}, ${y1})`, // used endpoint A instead of the midpoint
         `(${(x1 + x2) / 2}, ${y1 + y2})`, // divided only the x-axis
-        `(${x1 + x2}, ${(y1 + y2) / 2})` // divided only the y-axis
+        `(${x1 + x2}, ${(y1 + y2) / 2})`, // divided only the y-axis
+        `(${midpointX + 1}, ${midpointY})`, // offset x by 1 (symmetry-proof)
+        `(${midpointX}, ${midpointY + 1})`, // offset y by 1 (symmetry-proof)
+        `(${midpointX + 1}, ${midpointY + 1})` // offset both by 1 (symmetry-proof)
       ];
 
       return fallbacks[i];

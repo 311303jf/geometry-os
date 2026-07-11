@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Geometry Quiz Composer Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+    .sample { margin-top: 16px; padding: 16px 20px; background: #ffffff; border: 1px solid #d5dbe0; border-radius: 8px; }
+    .sample ul { list-style: none; padding-left: 0; }
+    .sample li { padding: 4px 0; }
+    .sample li.correct { font-weight: 700; color: #146c2e; }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Quiz Composer Test</h1>
+  <p>Composes full quizzes of varying sizes (1, 5, 10, 20, 30, and all 53) across 30 seeds each (180 quizzes total), verifying determinism, no accidental template repeats, correct rejection when questionCount exceeds the eligible pool, and correct filtering by real conceptId. Also includes a dedicated 1,000-seed stress test for midpoint_between_two_points — the template where a real distractor-collision bug (origin-centered, symmetric endpoints) was found and fixed during this feature's development.</p>
+  <button id="runTestButton">Run Quiz Composer Test</button>
+  <pre id="output">Ready.</pre>
+  <div id="samples"></div>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+    const samplesContainer = document.getElementById("samples");
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    function renderSample(question) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "sample";
+      const heading = document.createElement("h3");
+      heading.textContent = `Q${question.questionNumber} — ${question.templateId}`;
+      wrapper.appendChild(heading);
+      const prompt = document.createElement("p");
+      prompt.textContent = question.promptText;
+      wrapper.appendChild(prompt);
+      const list = document.createElement("ul");
+      question.choices.forEach((choice) => {
+        const item = document.createElement("li");
+        item.textContent = `${choice.label}) ${JSON.stringify(choice.text)}`;
+        if (choice.isCorrect) item.className = "correct";
+        list.appendChild(item);
+      });
+      wrapper.appendChild(list);
+      samplesContainer.appendChild(wrapper);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+      samplesContainer.innerHTML = "";
+
+      try {
+        const composerModule = await import("../src/engine/geometryQuizComposer.js");
+        const distractorModule = await import("../src/engine/distractors/geometryDistractorEngine.js");
+        const resolverModule = await import("../src/geometry/templates/geometryTemplateResolver.js");
+        const generatorModule = await import("../src/geometry/generation/geometryVariableGenerator.js");
+        const solverModule = await import("../src/engine/solver/geometrySolver.js");
+        const problemTypeModule = await import("../src/geometry/problemTypes/geometryProblemTypeRegistry.js");
+
+        const { geometryQuizComposer } = composerModule;
+        const { geometryDistractorEngine } = distractorModule;
+        const { geometryTemplateResolver } = resolverModule;
+        const { geometryVariableGenerator } = generatorModule;
+        const { geometrySolver } = solverModule;
+        const { geometryProblemTypeRegistry } = problemTypeModule;
+
+        assert(geometryQuizComposer && typeof geometryQuizComposer.compose === "function", "Geometry Quiz Composer did not load correctly.");
+
+        output.textContent = "Modules loaded. Composing 180 quizzes across 6 sizes x 30 seeds...";
+
+        let totalQuizzes = 0;
+        const quizFailures = [];
+        let firstQuiz = null;
+
+        [1, 5, 10, 20, 30, 53].forEach((size) => {
+          for (let seedIndex = 0; seedIndex < 30; seedIndex++) {
+            totalQuizzes += 1;
+            const result = geometryQuizComposer.compose({ questionCount: size, seed: `composer-test-${size}-${seedIndex}` });
+            const ok = result.composed &&
+              result.quiz.questions.length === size &&
+              result.quiz.questions.every((q) => q.choices.length === 4 && q.choices.filter((c) => c.isCorrect).length === 1) &&
+              new Set(result.quiz.templateIdsUsed).size === size;
+            if (!ok) {
+              quizFailures.push({ size, seedIndex, errors: result.errors });
+            } else if (!firstQuiz) {
+              firstQuiz = result.quiz;
+            }
+          }
+        });
+
+        assert(quizFailures.length === 0, `Quiz composition failed for ${quizFailures.length} of ${totalQuizzes} quizzes. First failure: ${JSON.stringify(quizFailures[0])}`);
+
+        output.textContent = "Quiz composition OK. Testing determinism, rejection, and concept filtering...";
+
+        const quizA = geometryQuizComposer.compose({ questionCount: 10, seed: "determinism-check" });
+        const quizB = geometryQuizComposer.compose({ questionCount: 10, seed: "determinism-check" });
+        assert(JSON.stringify(quizA.quiz.templateIdsUsed) === JSON.stringify(quizB.quiz.templateIdsUsed), "Same seed did not produce the same quiz.");
+
+        const tooMany = geometryQuizComposer.compose({ questionCount: 999, seed: "too-many-check" });
+        assert(tooMany.composed === false, "Requesting more questions than available templates (without allowRepeatTemplates) was not rejected.");
+
+        const withRepeats = geometryQuizComposer.compose({ questionCount: 100, seed: "repeats-check", allowRepeatTemplates: true });
+        assert(withRepeats.composed && withRepeats.quiz.questionCount === 100, "allowRepeatTemplates=true did not permit exceeding the template pool size.");
+
+        const allConcepts = [...new Set(geometryProblemTypeRegistry.listProblemTypes().map((p) => p.conceptId))];
+        let conceptFailures = 0;
+        allConcepts.forEach((concept) => {
+          const result = geometryQuizComposer.compose({ questionCount: 1, seed: `concept-check-${concept}`, conceptIds: [concept] });
+          if (!result.composed) conceptFailures += 1;
+        });
+        assert(conceptFailures === 0, `${conceptFailures} of ${allConcepts.length} real conceptIds failed to filter correctly.`);
+
+        output.textContent = `Composer checks OK. Running dedicated 1,000-seed stress test for midpoint_between_two_points (the template where a real bug was found)...`;
+
+        let midpointFailures = 0;
+        for (let seed = 0; seed < 1000; seed++) {
+          const resolution = geometryTemplateResolver.resolve({ templateId: "midpoint_between_two_points", problemTypeId: "midpoint" });
+          const generation = geometryVariableGenerator.generate(resolution, { seed: `midpoint-massive-${seed}`, generationIndex: seed });
+          const solveResult = geometrySolver.solve({ templateId: "midpoint_between_two_points", problemTypeId: "midpoint", variables: generation.variables });
+          const distractorResult = geometryDistractorEngine.generate({ templateId: "midpoint_between_two_points", problemTypeId: "midpoint", variables: generation.variables, correctAnswer: solveResult.correctAnswer, acceptableAnswers: solveResult.acceptableAnswers });
+          const ok = distractorResult.generated && distractorResult.distractors.length === 3 &&
+            new Set([...distractorResult.distractors, solveResult.correctAnswer].map((d) => JSON.stringify(d))).size === 4;
+          if (!ok) midpointFailures += 1;
+        }
+
+        assert(midpointFailures === 0, `midpoint_between_two_points stress test failed for ${midpointFailures} of 1000 seeds.`);
+
+        // Explicit forced edge case: origin-centered, fully symmetric midpoint
+        const originVariables = { x1: -6, y1: -2, x2: 6, y2: 2, midpointX: 0, midpointY: 0 };
+        const originCorrect = "(0, 0)";
+        const originDistractors = geometryDistractorEngine.generate({
+          templateId: "midpoint_between_two_points",
+          problemTypeId: "midpoint",
+          variables: originVariables,
+          correctAnswer: originCorrect,
+          acceptableAnswers: [originCorrect]
+        });
+        const originOk = originDistractors.generated && originDistractors.distractors.length === 3 &&
+          new Set([...originDistractors.distractors, originCorrect].map((d) => JSON.stringify(d))).size === 4;
+        assert(originOk, "Forced origin-centered symmetric midpoint edge case failed.");
+
+        const result = {
+          test: "Geometry Quiz Composer",
+          composerVersion: geometryQuizComposer.getComposerVersion(),
+          totalQuizzesComposed: totalQuizzes,
+          quizFailureCount: quizFailures.length,
+          deterministic: true,
+          rejectsExcessiveQuestionCount: true,
+          allowRepeatTemplatesWorks: true,
+          conceptFiltersTestedCount: allConcepts.length,
+          conceptFilterFailures: conceptFailures,
+          midpointStressSeeds: 1000,
+          midpointStressFailures: midpointFailures,
+          midpointOriginEdgeCaseFixed: originOk,
+          pass: true
+        };
+
+        output.textContent = "PASS — Geometry Quiz Composer " + result.composerVersion + " (" + totalQuizzes + " quizzes, 0 failures; midpoint stress: 1000/1000; origin edge case fixed)\n\n" + JSON.stringify(result, null, 2);
+
+        if (firstQuiz) {
+          firstQuiz.questions.slice(0, 5).forEach((q) => renderSample(q));
+        }
+      } catch (error) {
+        const failureResult = {
+          test: "Geometry Quiz Composer",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null
+        };
+        output.textContent = "FAIL — Geometry Quiz Composer\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
