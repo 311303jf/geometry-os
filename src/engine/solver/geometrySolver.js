@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.2.0";
+const SOLVER_VERSION = "v1.3.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -70,7 +70,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pythagorean_theorem_missing_side",
   "special_right_triangle_45_45_90_missing_side",
   "special_right_triangle_30_60_90_missing_side",
-  "right_triangle_trig_ratio_from_sides"
+  "right_triangle_trig_ratio_from_sides",
+  "polygon_interior_angle_sum_calculation",
+  "regular_polygon_interior_angle_measure",
+  "parallelogram_angle_relationship_measure",
+  "quadrilateral_diagonal_bisection_length"
 ]);
 
 function protectedCopy(value) {
@@ -439,6 +443,32 @@ function solveRightTriangleTrigRatio(variables) {
   return { answerFormat: "numeric_value", correctAnswer };
 }
 
+// --- Chapter 7: Quadrilaterals and Other Polygons ---
+
+function solvePolygonInteriorAngleSum(variables) {
+  const correctAnswer = variables.angleSum;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveRegularPolygonInteriorAngle(variables) {
+  const correctAnswer = variables.interiorAngleMeasure;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveParallelogramAngleRelationship(variables) {
+  const correctAnswer = variables.relatedAngleMeasure;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveQuadrilateralDiagonalBisection(variables) {
+  const correctAnswer = variables.otherSegmentLength;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -483,7 +513,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveSpecialRightTriangle306090,
 
   right_triangle_trig_ratio_from_sides:
-    solveRightTriangleTrigRatio
+    solveRightTriangleTrigRatio,
+
+  polygon_interior_angle_sum_calculation:
+    solvePolygonInteriorAngleSum,
+
+  regular_polygon_interior_angle_measure:
+    solveRegularPolygonInteriorAngle,
+
+  parallelogram_angle_relationship_measure:
+    solveParallelogramAngleRelationship,
+
+  quadrilateral_diagonal_bisection_length:
+    solveQuadrilateralDiagonalBisection
 });
 
 export class GeometrySolver {

@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.2.0";
+const RENDERER_VERSION = "v1.3.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -64,7 +64,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pythagorean_theorem_missing_side",
   "special_right_triangle_45_45_90_missing_side",
   "special_right_triangle_30_60_90_missing_side",
-  "right_triangle_trig_ratio_from_sides"
+  "right_triangle_trig_ratio_from_sides",
+  "polygon_interior_angle_sum_calculation",
+  "regular_polygon_interior_angle_measure",
+  "parallelogram_angle_relationship_measure",
+  "quadrilateral_diagonal_bisection_length"
 ]);
 
 function protectedCopy(value) {
@@ -291,6 +295,29 @@ function renderRightTriangleTrigRatio(variables) {
   return `A right triangle has legs measuring ${variables.legA} and ${variables.legB}, and a hypotenuse measuring ${variables.hypotenuse}. Angle A is opposite the side measuring ${variables.legA}. What is the ${ratioLabel} of angle A, expressed as a reduced fraction?`;
 }
 
+// --- Chapter 7: Quadrilaterals and Other Polygons ---
+
+function renderPolygonInteriorAngleSum(variables) {
+  return `What is the sum of the interior angle measures of a polygon with ${variables.numberOfSides} sides?`;
+}
+
+function renderRegularPolygonInteriorAngle(variables) {
+  return `What is the measure of one interior angle of a regular polygon with ${variables.numberOfSides} sides?`;
+}
+
+function renderParallelogramAngleRelationship(variables) {
+  const relationshipPhrase =
+    variables.relationshipType === "consecutive"
+      ? "consecutive angle (the angle sharing a side with it)"
+      : "opposite angle (the angle across the parallelogram from it)";
+
+  return `In a parallelogram, one angle measures ${variables.knownAngleMeasure}\u00B0. What is the measure of its ${relationshipPhrase}?`;
+}
+
+function renderQuadrilateralDiagonalBisection(variables) {
+  return `In parallelogram ABCD, the diagonals intersect at point E. If one half of a diagonal measures ${variables.givenSegmentLength}, what is the length of the other half of that same diagonal?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -335,7 +362,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderSpecialRightTriangle306090,
 
   right_triangle_trig_ratio_from_sides:
-    renderRightTriangleTrigRatio
+    renderRightTriangleTrigRatio,
+
+  polygon_interior_angle_sum_calculation:
+    renderPolygonInteriorAngleSum,
+
+  regular_polygon_interior_angle_measure:
+    renderRegularPolygonInteriorAngle,
+
+  parallelogram_angle_relationship_measure:
+    renderParallelogramAngleRelationship,
+
+  quadrilateral_diagonal_bisection_length:
+    renderQuadrilateralDiagonalBisection
 });
 
 function extractInput(input = {}) {

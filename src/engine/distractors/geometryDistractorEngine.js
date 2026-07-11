@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.2.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.3.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -68,7 +68,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pythagorean_theorem_missing_side",
   "special_right_triangle_45_45_90_missing_side",
   "special_right_triangle_30_60_90_missing_side",
-  "right_triangle_trig_ratio_from_sides"
+  "right_triangle_trig_ratio_from_sides",
+  "polygon_interior_angle_sum_calculation",
+  "regular_polygon_interior_angle_measure",
+  "parallelogram_angle_relationship_measure",
+  "quadrilateral_diagonal_bisection_length"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -736,6 +740,72 @@ function distractRightTriangleTrigRatio(variables, correctAnswer) {
   ).slice(0, 3);
 }
 
+// --- Chapter 7: Quadrilaterals and Other Polygons ---
+
+function distractPolygonInteriorAngleSum(variables, correctAnswer) {
+  const n = variables.numberOfSides;
+
+  const pool = [
+    n * 180, // forgot to subtract 2 from the number of sides
+    (n - 1) * 180, // subtracted 1 instead of 2
+    (n - 2) * 90 // used 90 instead of 180
+  ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 180
+  });
+}
+
+function distractRegularPolygonInteriorAngle(variables, correctAnswer) {
+  const n = variables.numberOfSides;
+
+  const pool = [
+    (n - 2) * 180, // forgot the final division by n (gave the angle SUM instead)
+    360 / n // used the exterior-angle formula instead of the interior one
+  ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1,
+    max: 179
+  });
+}
+
+function distractParallelogramAngleRelationship(variables, correctAnswer) {
+  const known = variables.knownAngleMeasure;
+
+  // The single highest-value distractor: the answer a student gets
+  // by applying the WRONG relationship (treating consecutive angles
+  // as congruent instead of supplementary, or vice versa).
+  const wrongRuleAnswer =
+    variables.relationshipType === "consecutive" ? known : 180 - known;
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [wrongRuleAnswer],
+    min: 1,
+    max: 179
+  });
+}
+
+function distractQuadrilateralDiagonalBisection(variables, correctAnswer) {
+  const given = variables.givenSegmentLength;
+
+  const pool = [
+    given * 2, // confused "the other half" with "the whole diagonal"
+    Math.round(given / 2) // divided by 2 again, a second time by mistake
+  ];
+
+  return buildNumericDistractors({
+    correctAnswer,
+    pool,
+    min: 1
+  });
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -788,7 +858,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractSpecialRightTriangle306090(v),
 
   right_triangle_trig_ratio_from_sides: (v, correct) =>
-    distractRightTriangleTrigRatio(v, correct)
+    distractRightTriangleTrigRatio(v, correct),
+
+  polygon_interior_angle_sum_calculation: (v, correct) =>
+    distractPolygonInteriorAngleSum(v, correct),
+
+  regular_polygon_interior_angle_measure: (v, correct) =>
+    distractRegularPolygonInteriorAngle(v, correct),
+
+  parallelogram_angle_relationship_measure: (v, correct) =>
+    distractParallelogramAngleRelationship(v, correct),
+
+  quadrilateral_diagonal_bisection_length: (v, correct) =>
+    distractQuadrilateralDiagonalBisection(v, correct)
 });
 
 function extractInput(input = {}) {
