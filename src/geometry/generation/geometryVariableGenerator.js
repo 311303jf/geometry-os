@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.8.0
+ * Geometry Variable Generator v1.9.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.8.0";
+const GENERATOR_VERSION = "v1.9.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -104,7 +104,10 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "circle_circumference_and_area_calculation",
   "arc_length_or_sector_area_calculation",
   "prism_or_cylinder_volume_calculation",
-  "sphere_surface_area_or_volume_calculation"
+  "sphere_surface_area_or_volume_calculation",
+  "identify_conditional_statement_transformation",
+  "identify_conditional_statement_part",
+  "identify_algebraic_reasoning_property"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2644,6 +2647,166 @@ function generateSphereSurfaceAreaOrVolume(random) {
   };
 }
 
+// --- Chapter 2: Reasoning and Proofs ---
+
+// Curated (p, q) conditional statement pairs, each with pre-authored
+// negations (notP, notQ) rather than auto-generated grammar, to
+// avoid the risk of producing grammatically broken or ambiguous
+// negated statements. Each pair represents a plausible geometric
+// implication.
+const CONDITIONAL_STATEMENT_PAIRS = Object.freeze([
+  {
+    p: "a polygon has exactly three sides",
+    notP: "a polygon does not have exactly three sides",
+    q: "the polygon is a triangle",
+    notQ: "the polygon is not a triangle"
+  },
+  {
+    p: "an angle measures exactly 90 degrees",
+    notP: "an angle does not measure exactly 90 degrees",
+    q: "the angle is a right angle",
+    notQ: "the angle is not a right angle"
+  },
+  {
+    p: "two angles are vertical angles",
+    notP: "two angles are not vertical angles",
+    q: "the two angles are congruent",
+    notQ: "the two angles are not congruent"
+  },
+  {
+    p: "a quadrilateral is a square",
+    notP: "a quadrilateral is not a square",
+    q: "the quadrilateral is a rectangle",
+    notQ: "the quadrilateral is not a rectangle"
+  },
+  {
+    p: "two lines are perpendicular",
+    notP: "two lines are not perpendicular",
+    q: "the two lines intersect at a right angle",
+    notQ: "the two lines do not intersect at a right angle"
+  },
+  {
+    p: "a triangle has three congruent sides",
+    notP: "a triangle does not have three congruent sides",
+    q: "the triangle is equilateral",
+    notQ: "the triangle is not equilateral"
+  },
+  {
+    p: "a number is divisible by 4",
+    notP: "a number is not divisible by 4",
+    q: "the number is divisible by 2",
+    notQ: "the number is not divisible by 2"
+  },
+  {
+    p: "a shape is a square",
+    notP: "a shape is not a square",
+    q: "the shape has four right angles",
+    notQ: "the shape does not have four right angles"
+  }
+]);
+
+function generateConditionalStatementTransformation(random) {
+  const pair = randomChoice(random, CONDITIONAL_STATEMENT_PAIRS);
+
+  const originalStatement = `If ${pair.p}, then ${pair.q}.`;
+  const converseStatement = `If ${pair.q}, then ${pair.p}.`;
+  const inverseStatement = `If ${pair.notP}, then ${pair.notQ}.`;
+  const contrapositiveStatement = `If ${pair.notQ}, then ${pair.notP}.`;
+
+  const transformationType = randomChoice(random, [
+    "converse",
+    "inverse",
+    "contrapositive"
+  ]);
+
+  const transformedStatement = {
+    converse: converseStatement,
+    inverse: inverseStatement,
+    contrapositive: contrapositiveStatement
+  }[transformationType];
+
+  return {
+    originalStatement,
+    transformedStatement,
+    transformationType,
+    converseStatement,
+    inverseStatement,
+    contrapositiveStatement
+  };
+}
+
+function generateConditionalStatementPart(random) {
+  const pair = randomChoice(random, CONDITIONAL_STATEMENT_PAIRS);
+
+  const originalStatement = `If ${pair.p}, then ${pair.q}.`;
+  const scenario = randomChoice(random, ["hypothesis", "conclusion"]);
+
+  const answerValue = scenario === "hypothesis" ? pair.p : pair.q;
+
+  return {
+    originalStatement,
+    scenario,
+    hypothesis: pair.p,
+    conclusion: pair.q,
+    negatedHypothesis: pair.notP,
+    negatedConclusion: pair.notQ,
+    answerValue
+  };
+}
+
+const ALGEBRAIC_PROPERTY_LABELS = Object.freeze([
+  "Addition Property of Equality",
+  "Subtraction Property of Equality",
+  "Multiplication Property of Equality",
+  "Division Property of Equality",
+  "Distributive Property"
+]);
+
+function generateAlgebraicReasoningProperty(random) {
+  const propertyType = randomChoice(random, ALGEBRAIC_PROPERTY_LABELS);
+
+  let beforeEquation;
+  let afterEquation;
+
+  if (propertyType === "Addition Property of Equality") {
+    const constant = randomInteger(random, 2, 15);
+    // solution must exceed constant so the intermediate "before"
+    // value (solution - constant) is always positive, avoiding a
+    // confusing negative-number equation like "x - 15 = -10".
+    const solution = randomInteger(random, constant + 5, constant + 25);
+    beforeEquation = `x - ${constant} = ${solution - constant}`;
+    afterEquation = `x = ${solution}`;
+  } else if (propertyType === "Subtraction Property of Equality") {
+    const constant = randomInteger(random, 2, 15);
+    const solution = randomInteger(random, 5, 30);
+    beforeEquation = `x + ${constant} = ${solution + constant}`;
+    afterEquation = `x = ${solution}`;
+  } else if (propertyType === "Multiplication Property of Equality") {
+    const divisor = randomInteger(random, 2, 9);
+    const quotient = randomInteger(random, 2, 15);
+    beforeEquation = `x/${divisor} = ${quotient}`;
+    afterEquation = `x = ${divisor * quotient}`;
+  } else if (propertyType === "Division Property of Equality") {
+    const coefficient = randomInteger(random, 2, 9);
+    const solution = randomInteger(random, 2, 15);
+    beforeEquation = `${coefficient}x = ${coefficient * solution}`;
+    afterEquation = `x = ${solution}`;
+  } else {
+    // Distributive Property
+    const coefficient = randomInteger(random, 2, 6);
+    const term = randomInteger(random, 1, 10);
+    const total = randomInteger(random, 10, 60);
+    beforeEquation = `${coefficient}(x + ${term}) = ${total}`;
+    afterEquation = `${coefficient}x + ${coefficient * term} = ${total}`;
+  }
+
+  return {
+    beforeEquation,
+    afterEquation,
+    propertyType
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2793,7 +2956,16 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generatePrismOrCylinderVolume,
 
   sphere_surface_area_or_volume_calculation:
-    generateSphereSurfaceAreaOrVolume
+    generateSphereSurfaceAreaOrVolume,
+
+  identify_conditional_statement_transformation:
+    generateConditionalStatementTransformation,
+
+  identify_conditional_statement_part:
+    generateConditionalStatementPart,
+
+  identify_algebraic_reasoning_property:
+    generateAlgebraicReasoningProperty
 });
 
 export class GeometryVariableGenerator {

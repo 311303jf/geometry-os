@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.6.0";
+    this.version = "v1.7.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -732,6 +732,50 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "identify_conditional_statement_transformation",
+        problemTypeId: "conditional_statement_transformation",
+        templateFamily: "conditional_statements",
+        promptPattern:
+          "A conditional statement is given, along with a transformed version of it. What type of statement is the transformed version?",
+        requiredFields: [
+          "originalStatement",
+          "transformedStatement",
+          "transformationType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "identify_conditional_statement_part",
+        problemTypeId: "conditional_statement_parts",
+        templateFamily: "conditional_statements",
+        promptPattern:
+          "A conditional statement is given. Identify the requested part of the statement.",
+        requiredFields: [
+          "originalStatement",
+          "scenario"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "identify_algebraic_reasoning_property",
+        problemTypeId: "algebraic_reasoning_property",
+        templateFamily: "algebraic_reasoning",
+        promptPattern:
+          "An equation is transformed into a new equation in one step. Which property of equality justifies this step?",
+        requiredFields: [
+          "beforeEquation",
+          "afterEquation",
+          "propertyType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
         requiresFigure: false
       }
     ];

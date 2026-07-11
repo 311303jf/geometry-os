@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.10";
+    this.version = "v1.0.11";
 
     this.problemTypes = [
       {
@@ -407,6 +407,30 @@ export class GeometryProblemTypeRegistry {
         family: "volume_measurement",
         description: "Find the surface area or volume of a sphere from its radius, expressed exactly in terms of pi.",
         expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "conditional_statement_transformation",
+        conceptId: "reasoning_and_proofs",
+        family: "conditional_statements",
+        description: "Classify a transformed conditional statement as its converse, inverse, or contrapositive.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "conditional_statement_parts",
+        conceptId: "reasoning_and_proofs",
+        family: "conditional_statements",
+        description: "Identify the hypothesis or conclusion of a conditional statement.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "algebraic_reasoning_property",
+        conceptId: "reasoning_and_proofs",
+        family: "algebraic_reasoning",
+        description: "Identify the algebraic property of equality that justifies a given step.",
+        expectedAnswerFormat: "classification_label",
         requiresFigure: false
       }
     ];
