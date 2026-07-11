@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.2.0";
+    this.version = "v1.3.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -502,6 +502,63 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "triangle_exterior_angle_measure",
+        problemTypeId: "triangle_exterior_angle",
+        templateFamily: "triangle_measurement",
+        promptPattern:
+          "A triangle has two remote interior angles with the given measures. What is the measure of the exterior angle at the third vertex?",
+        requiredFields: [
+          "remoteAngleA",
+          "remoteAngleB"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "identify_triangle_congruence_postulate",
+        problemTypeId: "triangle_congruence_postulate",
+        templateFamily: "triangle_congruence",
+        promptPattern:
+          "Two triangles have the given corresponding parts marked congruent. Which postulate or theorem proves the triangles are congruent?",
+        requiredFields: [
+          "givenInformation",
+          "postulateType"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "isosceles_triangle_angle_measure",
+        problemTypeId: "isosceles_triangle_angle",
+        templateFamily: "triangle_measurement",
+        promptPattern:
+          "An isosceles triangle has the given known angle measure. What is the measure of the requested angle?",
+        requiredFields: [
+          "baseAngleMeasure",
+          "scenario"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "triangle_inequality_check",
+        problemTypeId: "triangle_inequality_validity",
+        templateFamily: "triangle_inequality",
+        promptPattern:
+          "Three segments have the given lengths. Can they form a triangle?",
+        requiredFields: [
+          "sideA",
+          "sideB",
+          "sideC"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "classification_label",
         requiresFigure: false
       }
     ];

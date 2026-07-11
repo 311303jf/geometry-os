@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.6";
+    this.version = "v1.0.7";
 
     this.problemTypes = [
       {
@@ -279,6 +279,38 @@ export class GeometryProblemTypeRegistry {
         family: "parallelogram_properties",
         description: "Use the property that the diagonals of a parallelogram bisect each other to find a segment length.",
         expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "triangle_exterior_angle",
+        conceptId: "triangles",
+        family: "triangle_measurement",
+        description: "Use the Triangle Exterior Angle Theorem to find an exterior angle measure from the two remote interior angles.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "triangle_congruence_postulate",
+        conceptId: "triangles",
+        family: "triangle_congruence",
+        description: "Identify which postulate or theorem (SSS, SAS, ASA, or AAS) proves two triangles congruent from the given corresponding parts.",
+        expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "isosceles_triangle_angle",
+        conceptId: "triangles",
+        family: "triangle_measurement",
+        description: "Use the Base Angles Theorem to find a missing angle measure in an isosceles triangle.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "triangle_inequality_validity",
+        conceptId: "triangles",
+        family: "triangle_inequality",
+        description: "Use the Triangle Inequality Theorem to determine whether three given side lengths can form a triangle.",
+        expectedAnswerFormat: "classification_label",
         requiresFigure: false
       }
     ];

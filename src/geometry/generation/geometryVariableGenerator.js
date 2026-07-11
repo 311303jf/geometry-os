@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.4.0
+ * Geometry Variable Generator v1.5.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.4.0";
+const GENERATOR_VERSION = "v1.5.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -88,7 +88,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "polygon_interior_angle_sum_calculation",
   "regular_polygon_interior_angle_measure",
   "parallelogram_angle_relationship_measure",
-  "quadrilateral_diagonal_bisection_length"
+  "quadrilateral_diagonal_bisection_length",
+  "triangle_exterior_angle_measure",
+  "identify_triangle_congruence_postulate",
+  "isosceles_triangle_angle_measure",
+  "triangle_inequality_check"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2171,6 +2175,118 @@ function generateQuadrilateralDiagonalBisection(random) {
   };
 }
 
+// --- Chapters 5-6: Congruent Triangles and Relationships Within Triangles ---
+
+function generateTriangleExteriorAngle(random) {
+  const remoteAngleA = randomInteger(random, 20, 70);
+  const remoteAngleB = randomInteger(random, 20, 70);
+  const exteriorAngleMeasure = remoteAngleA + remoteAngleB;
+
+  return {
+    remoteAngleA,
+    remoteAngleB,
+    exteriorAngleMeasure
+  };
+}
+
+// Curated (description, postulate) pairs — verified to match the
+// standard SSS/SAS/ASA/AAS congruence postulates exactly as taught,
+// including the included-vs-non-included distinction between ASA
+// and AAS, which is the single most commonly tested distinction in
+// this unit.
+const CONGRUENCE_POSTULATE_CASES = Object.freeze([
+  {
+    description:
+      "all three pairs of corresponding sides are congruent",
+    postulateType: "SSS"
+  },
+  {
+    description:
+      "two pairs of corresponding sides and the included angle between them are congruent",
+    postulateType: "SAS"
+  },
+  {
+    description:
+      "two pairs of corresponding angles and the included side between them are congruent",
+    postulateType: "ASA"
+  },
+  {
+    description:
+      "two pairs of corresponding angles and a non-included side are congruent",
+    postulateType: "AAS"
+  }
+]);
+
+function generateTriangleCongruencePostulate(random) {
+  const testCase = randomChoice(random, CONGRUENCE_POSTULATE_CASES);
+
+  return {
+    givenInformation: testCase.description,
+    postulateType: testCase.postulateType
+  };
+}
+
+function generateIsoscelesTriangleAngle(random) {
+  const scenario = randomChoice(random, [
+    "find_other_base",
+    "find_vertex"
+  ]);
+
+  const baseAngleMeasure = randomInteger(random, 10, 89);
+
+  if (scenario === "find_other_base") {
+    // Base Angles Theorem: the two base angles of an isosceles
+    // triangle are always congruent.
+    return {
+      scenario,
+      baseAngleMeasure,
+      answerValue: baseAngleMeasure
+    };
+  }
+
+  // find_vertex: the vertex angle is whatever remains after both
+  // congruent base angles are subtracted from 180.
+  const vertexAngleMeasure = 180 - baseAngleMeasure * 2;
+
+  return {
+    scenario,
+    baseAngleMeasure,
+    answerValue: vertexAngleMeasure
+  };
+}
+
+function generateTriangleInequalityCheck(random) {
+  const isValid = randomChoice(random, [true, false]);
+
+  const sideA = randomInteger(random, 3, 20);
+  const sideB = randomInteger(random, 3, 20);
+
+  let sideC;
+
+  if (isValid) {
+    // Must satisfy |a-b| < c < a+b strictly. Retry until a valid
+    // integer c is found (the range always contains at least one
+    // integer given sideA/sideB >= 3).
+    const lowerBound = Math.abs(sideA - sideB);
+    const upperBound = sideA + sideB;
+
+    do {
+      sideC = randomInteger(random, lowerBound + 1, upperBound - 1);
+    } while (sideC <= lowerBound || sideC >= upperBound);
+  } else {
+    // Deliberately violate the inequality: make the third side at
+    // least as long as the sum of the other two.
+    sideC = sideA + sideB + randomInteger(random, 1, 10);
+  }
+
+  return {
+    sideA,
+    sideB,
+    sideC,
+    validityLabel: isValid ? "valid triangle" : "not a valid triangle"
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2272,7 +2388,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateParallelogramAngleRelationship,
 
   quadrilateral_diagonal_bisection_length:
-    generateQuadrilateralDiagonalBisection
+    generateQuadrilateralDiagonalBisection,
+
+  triangle_exterior_angle_measure:
+    generateTriangleExteriorAngle,
+
+  identify_triangle_congruence_postulate:
+    generateTriangleCongruencePostulate,
+
+  isosceles_triangle_angle_measure:
+    generateIsoscelesTriangleAngle,
+
+  triangle_inequality_check:
+    generateTriangleInequalityCheck
 });
 
 export class GeometryVariableGenerator {
