@@ -1,0 +1,611 @@
+From 3d71dd422225e6cb6160d9f1ad45fe6100747ac0 Mon Sep 17 00:00:00 2001
+From: "Mr. Figueredo" <311303@dadeschools.net>
+Date: Sun, 12 Jul 2026 03:03:48 +0000
+Subject: [PATCH 2/2] Add Solver, Distractor Engine, and Prompt Renderer
+ support for pyramid/cone/trapezoid/rhombus templates
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Completes the full 5-stage pipeline for the 4 new templates added in
+the previous commit, closing the identified gaps in pyramid/cone
+volume and surface area, and trapezoid/rhombus properties.
+
+Solver (v1.8.0 -> v1.9.0): all four templates return a pre-computed
+exact value from the generator.
+
+Distractor Engine (v1.8.0 -> v1.9.0), each grounded in a real error,
+reusing the shared buildPiCoefficientDistractors helper (built during
+Chapters 11-12) for the two pi-based templates:
+- pyramid_or_cone_volume: forgetting to divide by 3 (using the
+  PRISM/CYLINDER volume formula instead — the single most common real
+  mix-up between these related solids), forgetting to square the
+  base dimension, and dividing by 2 instead of 3.
+- cone_surface_area: forgetting the base circle (lateral surface area
+  only), forgetting the lateral surface (base circle only), and
+  confusing the height with the slant height — a genuine, very common
+  mix-up specific to cones.
+- trapezoid_midsegment: for the 'find midsegment' scenario, forgetting
+  to divide by 2, and subtracting instead of adding; for 'find missing
+  base', forgetting to double the midsegment, and forgetting to
+  subtract the known base.
+- rhombus_diagonal_angle: forgetting to halve at all, confusing with a
+  supplementary relationship (180 - angle), and doubling instead of
+  halving.
+
+Prompt Renderer (v1.8.0 -> v1.9.0): fully-specified text-only
+questions for all four templates.
+
+Verification:
+- 4 new templates x 40 seeds = 160 runs through the full 5-stage
+  pipeline, 0 failures.
+- Re-ran at 100 seeds x 4 templates (400 runs), 0 failures.
+- Full regression: all 57 certified templates (53 previous + 4 new)
+  re-verified through the complete 5-stage pipeline, 57/57 pass.
+- Confirmed the Quiz Composer + Quiz Printer work end-to-end with
+  these new templates included, using a concept-filtered
+  ('surface_area_and_volume' + 'quadrilaterals') 8-question quiz —
+  also confirmed the Composer's rejection logic correctly fires when
+  requesting more questions (20) than that filtered pool actually
+  contains (10 templates).
+
+This closes the previously-identified real gaps in pyramid/cone
+volume and surface area (Chapter 12) and trapezoid/rhombus properties
+(Chapter 7), bringing the certified pipeline to 57 templates.
+---
+ .../distractors/geometryDistractorEngine.js   | 133 ++++++++++-
+ src/engine/prompts/geometryPromptRenderer.js  |  48 +++-
+ src/engine/solver/geometrySolver.js           |  46 +++-
+ .../geometryExtendedCoveragePipelineTest.html | 217 ++++++++++++++++++
+ 4 files changed, 435 insertions(+), 9 deletions(-)
+ create mode 100644 tests/geometryExtendedCoveragePipelineTest.html
+
+diff --git a/src/engine/distractors/geometryDistractorEngine.js b/src/engine/distractors/geometryDistractorEngine.js
+index aef6cfc..0dcb26d 100644
+--- a/src/engine/distractors/geometryDistractorEngine.js
++++ b/src/engine/distractors/geometryDistractorEngine.js
+@@ -31,7 +31,7 @@
+  * - render prompts or choice ordering/shuffling
+  */
+ 
+-const DISTRACTOR_ENGINE_VERSION = "v1.8.0";
++const DISTRACTOR_ENGINE_VERSION = "v1.9.0";
+ 
+ const DISTRACTOR_STATUS = Object.freeze({
+   GENERATED: "geometry_distractors_generated",
+@@ -91,7 +91,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
+   "sphere_surface_area_or_volume_calculation",
+   "identify_conditional_statement_transformation",
+   "identify_conditional_statement_part",
+-  "identify_algebraic_reasoning_property"
++  "identify_algebraic_reasoning_property",
++  "pyramid_or_cone_volume_calculation",
++  "cone_surface_area_calculation",
++  "trapezoid_midsegment_calculation",
++  "rhombus_diagonal_angle_measure"
+ ]);
+ 
+ // Mirrored from geometryVariableGenerator.js — the generator only
+@@ -1373,6 +1377,117 @@ function distractAlgebraicReasoningProperty(variables) {
+     .slice(0, 3);
+ }
+ 
++// --- Extended Chapter 7 / Chapter 12 coverage ---
++
++function distractPyramidOrConeVolume(variables, correctAnswer) {
++  const { dimensionOne, dimensionTwo } = variables;
++
++  if (variables.scenario === "square_pyramid") {
++    // Correct answer is (s^2 * h) / 3. Errors: forgot to divide by
++    // 3 (used the rectangular PRISM volume formula instead — the
++    // single most common real mix-up between pyramids and prisms),
++    // forgot to square the side, and divided by 2 instead of 3.
++    return buildNumericDistractors({
++      correctAnswer,
++      pool: [
++        dimensionOne * dimensionOne * dimensionTwo,
++        dimensionOne * dimensionTwo,
++        (dimensionOne * dimensionOne * dimensionTwo) / 2
++      ],
++      min: 1
++    });
++  }
++
++  // cone: correct answer is (pi * r^2 * h) / 3, as "Nπ". Errors:
++  // forgot to divide by 3 (CYLINDER volume formula — the equivalent
++  // common mix-up for cones), forgot to square the radius, divided
++  // by 2 instead of 3.
++  const correctCoefficient =
++    (dimensionOne * dimensionOne * dimensionTwo) / 3;
++
++  return buildPiCoefficientDistractors({
++    correctAnswer,
++    coefficientPool: [
++      dimensionOne * dimensionOne * dimensionTwo,
++      dimensionOne * dimensionTwo,
++      (dimensionOne * dimensionOne * dimensionTwo) / 2
++    ],
++    correctCoefficient
++  });
++}
++
++function distractConeSurfaceArea(variables, correctAnswer) {
++  const { radius, height, slantHeight } = variables;
++
++  const correctCoefficient = radius * (radius + slantHeight);
++
++  // Error family: forgot the base circle (lateral surface area
++  // only — a very real, common omission), forgot the lateral
++  // surface (used only the base circle's area), and confused the
++  // height with the slant height (a genuine, common mix-up between
++  // the cone's vertical height and its slant height).
++  return buildPiCoefficientDistractors({
++    correctAnswer,
++    coefficientPool: [
++      radius * slantHeight,
++      radius * radius,
++      radius * (radius + height)
++    ],
++    correctCoefficient
++  });
++}
++
++function distractTrapezoidMidsegment(variables, correctAnswer) {
++  const { knownValueOne, knownValueTwo } = variables;
++
++  if (variables.scenario === "find_midsegment") {
++    // Correct answer is (b1 + b2) / 2. Errors: forgot to divide by
++    // 2 (gave the raw sum), subtracted instead of added, subtracted
++    // then divided by 2.
++    return buildNumericDistractors({
++      correctAnswer,
++      pool: [
++        knownValueOne + knownValueTwo,
++        Math.abs(knownValueOne - knownValueTwo),
++        Math.abs(knownValueOne - knownValueTwo) / 2
++      ],
++      min: 1
++    });
++  }
++
++  // find_missing_base: correct answer is 2*midsegment - knownBase.
++  // Errors: forgot to double the midsegment first, doubled the
++  // midsegment but forgot to subtract the known base, and simply
++  // repeated the known base value.
++  return buildNumericDistractors({
++    correctAnswer,
++    pool: [
++      knownValueOne - knownValueTwo,
++      knownValueOne * 2,
++      knownValueTwo
++    ],
++    min: 1
++  });
++}
++
++function distractRhombusDiagonalAngle(variables, correctAnswer) {
++  const { vertexAngleMeasure } = variables;
++
++  // Correct answer is vertexAngleMeasure / 2. Errors: forgot to
++  // halve at all, confused with a supplementary relationship
++  // (180 - vertex angle), and doubled instead of halved.
++  return buildNumericDistractors({
++    correctAnswer,
++    pool: [
++      vertexAngleMeasure,
++      180 - vertexAngleMeasure,
++      vertexAngleMeasure * 2
++    ],
++    min: 1,
++    max: 359
++  });
++}
++
+ const TEMPLATE_DISTRACTORS = Object.freeze({
+   identify_point_from_description: (v) => distractPoint(v),
+   identify_line_from_labels: (v) => distractLine(v),
+@@ -1494,7 +1609,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
+     distractConditionalStatementPart(v),
+ 
+   identify_algebraic_reasoning_property: (v) =>
+-    distractAlgebraicReasoningProperty(v)
++    distractAlgebraicReasoningProperty(v),
++
++  pyramid_or_cone_volume_calculation: (v, correct) =>
++    distractPyramidOrConeVolume(v, correct),
++
++  cone_surface_area_calculation: (v, correct) =>
++    distractConeSurfaceArea(v, correct),
++
++  trapezoid_midsegment_calculation: (v, correct) =>
++    distractTrapezoidMidsegment(v, correct),
++
++  rhombus_diagonal_angle_measure: (v, correct) =>
++    distractRhombusDiagonalAngle(v, correct)
+ });
+ 
+ function extractInput(input = {}) {
+diff --git a/src/engine/prompts/geometryPromptRenderer.js b/src/engine/prompts/geometryPromptRenderer.js
+index 08661da..e46fdfc 100644
+--- a/src/engine/prompts/geometryPromptRenderer.js
++++ b/src/engine/prompts/geometryPromptRenderer.js
+@@ -25,7 +25,7 @@
+  * - certify or validate question quality (see questionQualityGate.js)
+  */
+ 
+-const RENDERER_VERSION = "v1.8.0";
++const RENDERER_VERSION = "v1.9.0";
+ 
+ const RENDER_STATUS = Object.freeze({
+   RENDERED: "geometry_prompt_rendered",
+@@ -87,7 +87,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
+   "sphere_surface_area_or_volume_calculation",
+   "identify_conditional_statement_transformation",
+   "identify_conditional_statement_part",
+-  "identify_algebraic_reasoning_property"
++  "identify_algebraic_reasoning_property",
++  "pyramid_or_cone_volume_calculation",
++  "cone_surface_area_calculation",
++  "trapezoid_midsegment_calculation",
++  "rhombus_diagonal_angle_measure"
+ ]);
+ 
+ function protectedCopy(value) {
+@@ -447,6 +451,32 @@ function renderAlgebraicReasoningProperty(variables) {
+   return `An equation ${variables.beforeEquation} is transformed in one step into ${variables.afterEquation}. Which property of equality justifies this step?`;
+ }
+ 
++// --- Extended Chapter 7 / Chapter 12 coverage ---
++
++function renderPyramidOrConeVolume(variables) {
++  if (variables.scenario === "square_pyramid") {
++    return `A square pyramid has a base side length of ${variables.dimensionOne} and a height of ${variables.dimensionTwo}. What is its volume?`;
++  }
++
++  return `A cone has a radius of ${variables.dimensionOne} and a height of ${variables.dimensionTwo}. What is its volume, expressed exactly in terms of \u03C0?`;
++}
++
++function renderConeSurfaceArea(variables) {
++  return `A cone has a radius of ${variables.radius} and a height of ${variables.height}. What is its total surface area, expressed exactly in terms of \u03C0?`;
++}
++
++function renderTrapezoidMidsegment(variables) {
++  if (variables.scenario === "find_midsegment") {
++    return `A trapezoid has parallel base lengths of ${variables.knownValueOne} and ${variables.knownValueTwo}. What is the length of the midsegment?`;
++  }
++
++  return `A trapezoid has a midsegment length of ${variables.knownValueOne} and one base length of ${variables.knownValueTwo}. What is the length of the other base?`;
++}
++
++function renderRhombusDiagonalAngle(variables) {
++  return `In a rhombus, a diagonal bisects a vertex angle measuring ${variables.vertexAngleMeasure}\u00B0. What is the measure of each resulting half-angle?`;
++}
++
+ const TEMPLATE_RENDERERS = Object.freeze({
+   identify_point_from_description: renderIdentifyPoint,
+   identify_line_from_labels: renderIdentifyLine,
+@@ -560,7 +590,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
+     renderConditionalStatementPart,
+ 
+   identify_algebraic_reasoning_property:
+-    renderAlgebraicReasoningProperty
++    renderAlgebraicReasoningProperty,
++
++  pyramid_or_cone_volume_calculation:
++    renderPyramidOrConeVolume,
++
++  cone_surface_area_calculation:
++    renderConeSurfaceArea,
++
++  trapezoid_midsegment_calculation:
++    renderTrapezoidMidsegment,
++
++  rhombus_diagonal_angle_measure:
++    renderRhombusDiagonalAngle
+ });
+ 
+ function extractInput(input = {}) {
+diff --git a/src/engine/solver/geometrySolver.js b/src/engine/solver/geometrySolver.js
+index c4c5808..f68b0d9 100644
+--- a/src/engine/solver/geometrySolver.js
++++ b/src/engine/solver/geometrySolver.js
+@@ -33,7 +33,7 @@
+  * doesn't match the intended question design.
+  */
+ 
+-const SOLVER_VERSION = "v1.8.0";
++const SOLVER_VERSION = "v1.9.0";
+ 
+ const SOLVE_STATUS = Object.freeze({
+   SOLVED: "geometry_answer_solved",
+@@ -93,7 +93,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
+   "sphere_surface_area_or_volume_calculation",
+   "identify_conditional_statement_transformation",
+   "identify_conditional_statement_part",
+-  "identify_algebraic_reasoning_property"
++  "identify_algebraic_reasoning_property",
++  "pyramid_or_cone_volume_calculation",
++  "cone_surface_area_calculation",
++  "trapezoid_midsegment_calculation",
++  "rhombus_diagonal_angle_measure"
+ ]);
+ 
+ function protectedCopy(value) {
+@@ -612,6 +616,30 @@ function solveAlgebraicReasoningProperty(variables) {
+   return { answerFormat: "classification_label", correctAnswer };
+ }
+ 
++function solvePyramidOrConeVolume(variables) {
++  const correctAnswer = variables.answerValue;
++
++  return { answerFormat: "numeric_value", correctAnswer };
++}
++
++function solveConeSurfaceArea(variables) {
++  const correctAnswer = variables.answerValue;
++
++  return { answerFormat: "radical_value", correctAnswer };
++}
++
++function solveTrapezoidMidsegment(variables) {
++  const correctAnswer = variables.answerValue;
++
++  return { answerFormat: "numeric_value", correctAnswer };
++}
++
++function solveRhombusDiagonalAngle(variables) {
++  const correctAnswer = variables.answerValue;
++
++  return { answerFormat: "numeric_degrees", correctAnswer };
++}
++
+ const TEMPLATE_SOLVERS = Object.freeze({
+   identify_point_from_description: solveIdentifyPoint,
+   identify_line_from_labels: solveIdentifyLine,
+@@ -725,7 +753,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
+     solveConditionalStatementPart,
+ 
+   identify_algebraic_reasoning_property:
+-    solveAlgebraicReasoningProperty
++    solveAlgebraicReasoningProperty,
++
++  pyramid_or_cone_volume_calculation:
++    solvePyramidOrConeVolume,
++
++  cone_surface_area_calculation:
++    solveConeSurfaceArea,
++
++  trapezoid_midsegment_calculation:
++    solveTrapezoidMidsegment,
++
++  rhombus_diagonal_angle_measure:
++    solveRhombusDiagonalAngle
+ });
+ 
+ export class GeometrySolver {
+diff --git a/tests/geometryExtendedCoveragePipelineTest.html b/tests/geometryExtendedCoveragePipelineTest.html
+new file mode 100644
+index 0000000..ce8048f
+--- /dev/null
++++ b/tests/geometryExtendedCoveragePipelineTest.html
+@@ -0,0 +1,217 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++  <title>Geometry OS — Extended Coverage Pipeline Test (Pyramids/Cones/Trapezoids/Rhombi)</title>
++  <style>
++    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
++    h1 { margin-bottom: 16px; }
++    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
++    button:disabled { cursor: wait; opacity: 0.7; }
++    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
++    .sample { margin-top: 16px; padding: 16px 20px; background: #ffffff; border: 1px solid #d5dbe0; border-radius: 8px; }
++    .sample ul { list-style: none; padding-left: 0; }
++    .sample li { padding: 4px 0; }
++    .sample li.correct { font-weight: 700; color: #146c2e; }
++  </style>
++</head>
++<body>
++  <h1>Geometry OS — Extended Coverage Pipeline Test</h1>
++  <p>Covers 4 new templates closing real gaps: pyramid/cone volume, cone surface area, trapezoid midsegment, and rhombus diagonal angle bisection. Runs the full pipeline across 40 seeds each (160 total runs), plus a full 57-template regression check and a Quiz Composer/Printer end-to-end check with concept filtering.</p>
++  <button id="runTestButton">Run Extended Coverage Pipeline Test</button>
++  <pre id="output">Ready.</pre>
++  <div id="samples"></div>
++
++  <script>
++    const button = document.getElementById("runTestButton");
++    const output = document.getElementById("output");
++    const samplesContainer = document.getElementById("samples");
++
++    const newTemplates = [
++      "pyramid_or_cone_volume_calculation",
++      "cone_surface_area_calculation",
++      "trapezoid_midsegment_calculation",
++      "rhombus_diagonal_angle_measure"
++    ];
++
++    const SEEDS_PER_NEW_TEMPLATE = 40;
++
++    function assert(condition, message) {
++      if (!condition) throw new Error(message);
++    }
++
++    function renderSample(rendered) {
++      const wrapper = document.createElement("div");
++      wrapper.className = "sample";
++      const heading = document.createElement("h3");
++      heading.textContent = rendered.templateId;
++      wrapper.appendChild(heading);
++      const prompt = document.createElement("p");
++      prompt.textContent = rendered.promptText;
++      wrapper.appendChild(prompt);
++      const list = document.createElement("ul");
++      rendered.choices.forEach((choice) => {
++        const item = document.createElement("li");
++        item.textContent = `${choice.label}) ${JSON.stringify(choice.text)}`;
++        if (choice.isCorrect) item.className = "correct";
++        list.appendChild(item);
++      });
++      wrapper.appendChild(list);
++      samplesContainer.appendChild(wrapper);
++    }
++
++    button.addEventListener("click", async () => {
++      button.disabled = true;
++      output.textContent = "Loading Geometry OS modules...";
++      samplesContainer.innerHTML = "";
++
++      try {
++        const resolverModule = await import("../src/geometry/templates/geometryTemplateResolver.js");
++        const generatorModule = await import("../src/geometry/generation/geometryVariableGenerator.js");
++        const solverModule = await import("../src/engine/solver/geometrySolver.js");
++        const distractorModule = await import("../src/engine/distractors/geometryDistractorEngine.js");
++        const rendererModule = await import("../src/engine/prompts/geometryPromptRenderer.js");
++        const validationModule = await import("../src/geometry/templates/geometryTemplateValidationContract.js");
++        const composerModule = await import("../src/engine/geometryQuizComposer.js");
++        const printerModule = await import("../src/engine/geometryQuizPrinter.js");
++
++        const { geometryTemplateResolver } = resolverModule;
++        const { geometryVariableGenerator } = generatorModule;
++        const { geometrySolver } = solverModule;
++        const { geometryDistractorEngine } = distractorModule;
++        const { geometryPromptRenderer } = rendererModule;
++        const { geometryTemplateValidationContract } = validationModule;
++        const { geometryQuizComposer } = composerModule;
++        const { geometryQuizPrinter } = printerModule;
++
++        output.textContent = "Modules loaded. Validating registry...";
++
++        const registryValidation = geometryTemplateValidationContract.validateRegistry();
++        assert(registryValidation.valid, `Registry validation failed: ${JSON.stringify(registryValidation.errors)}`);
++        assert(registryValidation.templateCount === 57, `Expected 57 certified templates, found ${registryValidation.templateCount}.`);
++
++        output.textContent = `Registry OK (57 templates). Running new-template pipeline (${newTemplates.length} templates x ${SEEDS_PER_NEW_TEMPLATE} seeds)...`;
++
++        const failures = [];
++        let totalRuns = 0;
++        const exampleByTemplate = {};
++
++        newTemplates.forEach((templateId) => {
++          for (let seedIndex = 0; seedIndex < SEEDS_PER_NEW_TEMPLATE; seedIndex++) {
++            totalRuns += 1;
++
++            const resolution = geometryTemplateResolver.resolve({ templateId });
++            if (!resolution.resolved) { failures.push({ templateId, seedIndex, stage: "resolver", errors: resolution.errors }); continue; }
++
++            const generation = geometryVariableGenerator.generate(resolution, {
++              seed: `ext-test-${templateId}-${seedIndex}`,
++              generationIndex: seedIndex
++            });
++            if (!generation.generated) { failures.push({ templateId, seedIndex, stage: "generator", errors: generation.errors }); continue; }
++
++            const solveResult = geometrySolver.solve({
++              templateId,
++              problemTypeId: resolution.problemTypeId,
++              variables: generation.variables
++            });
++            if (!solveResult.solved) { failures.push({ templateId, seedIndex, stage: "solver", errors: solveResult.errors }); continue; }
++
++            const distractorResult = geometryDistractorEngine.generate({
++              templateId,
++              problemTypeId: resolution.problemTypeId,
++              variables: generation.variables,
++              correctAnswer: solveResult.correctAnswer,
++              acceptableAnswers: solveResult.acceptableAnswers
++            });
++            const distractorsValid = distractorResult.generated &&
++              Array.isArray(distractorResult.distractors) &&
++              distractorResult.distractors.length === 3 &&
++              new Set(distractorResult.distractors.map((d) => JSON.stringify(d))).size === 3;
++            if (!distractorsValid) { failures.push({ templateId, seedIndex, stage: "distractors", errors: distractorResult.errors }); continue; }
++
++            const rendered = geometryPromptRenderer.render({
++              templateId,
++              problemTypeId: resolution.problemTypeId,
++              variables: generation.variables,
++              correctAnswer: solveResult.correctAnswer,
++              distractors: distractorResult.distractors,
++              seed: `ext-render-${templateId}-${seedIndex}`
++            });
++
++            const valid = rendered.rendered &&
++              rendered.choices.length === 4 &&
++              rendered.choices.filter((c) => c.isCorrect).length === 1 &&
++              !rendered.promptText.includes("undefined") &&
++              !rendered.promptText.includes("NaN");
++
++            if (!valid) { failures.push({ templateId, seedIndex, stage: "renderer" }); continue; }
++
++            if (!exampleByTemplate[templateId]) {
++              exampleByTemplate[templateId] = rendered;
++            }
++          }
++        });
++
++        assert(failures.length === 0, `Pipeline failed for ${failures.length} of ${totalRuns} runs. First failure: ${JSON.stringify(failures[0])}`);
++
++        output.textContent = "New-template pipeline OK. Running full 57-template regression...";
++
++        const allTemplateIds = geometryVariableGenerator.getSupportedTemplateIds();
++        let regressionPass = 0;
++        allTemplateIds.forEach((templateId, index) => {
++          const resolution = geometryTemplateResolver.resolve({ templateId });
++          const generation = geometryVariableGenerator.generate(resolution, { seed: `regression57-${templateId}`, generationIndex: index });
++          const solveResult = geometrySolver.solve({ templateId, problemTypeId: resolution.problemTypeId, variables: generation.variables });
++          const distractorResult = geometryDistractorEngine.generate({ templateId, problemTypeId: resolution.problemTypeId, variables: generation.variables, correctAnswer: solveResult.correctAnswer, acceptableAnswers: solveResult.acceptableAnswers });
++          const rendered = geometryPromptRenderer.render({ templateId, problemTypeId: resolution.problemTypeId, variables: generation.variables, correctAnswer: solveResult.correctAnswer, distractors: distractorResult.distractors, seed: `regression57-render-${templateId}` });
++          if (resolution.resolved && generation.generated && solveResult.solved && distractorResult.generated && rendered.rendered && rendered.choices.length === 4) {
++            regressionPass += 1;
++          }
++        });
++
++        assert(regressionPass === allTemplateIds.length, `Full regression failed: only ${regressionPass}/${allTemplateIds.length} templates passed the complete pipeline.`);
++
++        output.textContent = "Regression OK. Testing Quiz Composer + Printer with concept filtering...";
++
++        const quiz = geometryQuizComposer.compose({ questionCount: 8, seed: "ext-quiz-check", conceptIds: ["surface_area_and_volume", "quadrilaterals"] });
++        assert(quiz.composed, "Quiz Composer failed with the surface_area_and_volume + quadrilaterals concept filter.");
++
++        const printed = geometryQuizPrinter.renderHtml(quiz.quiz, { title: "Extended Coverage Sample Quiz" });
++        assert(printed.rendered, "Quiz Printer failed to render the extended-coverage quiz.");
++
++        const result = {
++          test: "Extended Coverage (Pyramids/Cones/Trapezoids/Rhombi) Pipeline",
++          registryTemplateCount: registryValidation.templateCount,
++          registryValid: registryValidation.valid,
++          newTemplateCount: newTemplates.length,
++          seedsPerTemplate: SEEDS_PER_NEW_TEMPLATE,
++          totalNewTemplateRuns: totalRuns,
++          newTemplateFailureCount: failures.length,
++          fullRegressionTemplateCount: allTemplateIds.length,
++          fullRegressionPassCount: regressionPass,
++          quizComposerAndPrinterOk: true,
++          pass: true
++        };
++
++        output.textContent = "PASS — Extended Coverage Pipeline (" + totalRuns + " runs, 0 failures; full 57-template regression: " + regressionPass + "/" + allTemplateIds.length + "; Quiz Composer/Printer OK)\n\n" + JSON.stringify(result, null, 2);
++
++        newTemplates.forEach((templateId) => {
++          if (exampleByTemplate[templateId]) renderSample(exampleByTemplate[templateId]);
++        });
++      } catch (error) {
++        const failureResult = {
++          test: "Extended Coverage Pipeline",
++          pass: false,
++          errorName: error && error.name ? error.name : "Error",
++          error: error instanceof Error ? error.message : String(error),
++          stack: error instanceof Error ? error.stack : null
++        };
++        output.textContent = "FAIL — Extended Coverage Pipeline\n\n" + JSON.stringify(failureResult, null, 2);
++      } finally {
++        button.disabled = false;
++      }
++    });
++  </script>
++</body>
++</html>
+-- 
+2.43.0
+

@@ -1,0 +1,198 @@
+From aa48f566b53a166717556a24f857f9ec492b655c Mon Sep 17 00:00:00 2001
+From: "Mr. Figueredo" <311303@dadeschools.net>
+Date: Sun, 12 Jul 2026 02:18:14 +0000
+Subject: [PATCH 2/2] Fix real rendering bug: figure SVGs invisible lines/rays
+ when actually opened in a browser
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Reported by Mr. Figueredo after opening real exported quiz files: a
+question with identify_adjacent_angle_pair showed only the angle
+degree numbers and a single dot, no rays; a question with
+identify_segment_from_endpoints showed the two labeled points but no
+line connecting them. Confirmed and reproduced by rendering the exact
+SVG output through a standalone renderer (@resvg/resvg-js) to see
+what a real, non-forgiving consumer does with this markup.
+
+Root cause (two layered problems, not one):
+
+1. Every stroke/fill in the Figure Renderer used var(--text-primary),
+   a CSS custom property, with NO fallback value and no definition
+   anywhere in the SVG itself. This is fine when the SVG is embedded
+   on a page that happens to define that variable (the *Test.html
+   files built during development all did, by convention borrowed
+   from the chat's Visualizer design system) — but breaks completely
+   anywhere else. Per CSS spec, an unresolvable var() makes the
+   property invalid: 'stroke' falls back to its initial value of
+   'none' (every line/ray/arc/segment/polygon outline disappears),
+   while 'fill' falls back to black (dots still render, which is
+   exactly the asymmetric symptom reported: points visible, lines
+   not). Text labels had NO fill attribute at all and relied
+   entirely on external '.t'/'.ts' CSS classes for color — those
+   classes were also never defined in geometryQuizPrinter.js, so
+   labels only appeared by the accident of unstyled SVG text
+   defaulting to black.
+
+2. The generated <svg> element itself had no xmlns attribute, making
+   it invalid as a standalone SVG document (fine when inline in an
+   HTML page, where the browser infers the namespace from context;
+   broken for anything that parses the SVG strictly on its own —
+   confirmed directly: resvg refused to parse it at all, 'document
+   does not have a root node').
+
+Fix: made every SVG this renderer produces fully self-contained,
+depending on ZERO external CSS or page context to render correctly
+anywhere — inline HTML, a standalone .svg file, a strict parser, a
+PDF converter, a pasted Word/Docs image:
+- Replaced every var(--text-primary) usage (lines, arcs, polylines,
+  circles, polygons) with a literal color constant
+  (FIGURE_INK_COLOR = '#1a1a1a').
+- Text labels now carry inline fill/font-size/font-weight/font-family
+  attributes directly on each <text> element, not left to an external
+  stylesheet class (the 't'/'ts' class names are kept only so an
+  embedding page COULD optionally restyle them, but nothing depends
+  on that).
+- Added the missing xmlns=http://www.w3.org/2000/svg to the root
+  <svg> element.
+- Also updated geometryQuizPrinter.js's embedded CSS as defense in
+  depth (defines --text-primary and the .t/.ts classes it was
+  missing), even though the Figure Renderer fix above makes this no
+  longer strictly necessary — belt and suspenders, since a future
+  consumer of raw figure SVG markup outside the Printer would still
+  benefit from every layer being correct independently.
+
+Verification:
+- Actually rendered the SVG output to PNG using a real, standalone
+  SVG renderer (not just inspecting the markup) for all 12
+  figure-required templates, and visually confirmed every one now
+  shows its lines/rays/arcs/dots/labels correctly — including the
+  exact two templates from the original bug report.
+- Stress-tested all 12 figure templates x 15 seeds (180 runs),
+  confirming the generated SVG contains xmlns, contains no remaining
+  var(--text-primary) reference, and contains the literal fill color
+  — not just 'did it render without throwing.'
+- Re-ran the full 53-template pipeline regression: 53/53 pass.
+- Regenerated the exact same sample quiz (same seed) Mr. Figueredo
+  had already opened and found the bug in, confirming the fix applies
+  to that specific quiz's questions.
+---
+ src/engine/figures/geometryFigureRenderer.js | 35 ++++++++++++++++----
+ src/engine/geometryQuizPrinter.js            | 17 ++++++++++
+ 2 files changed, 45 insertions(+), 7 deletions(-)
+
+diff --git a/src/engine/figures/geometryFigureRenderer.js b/src/engine/figures/geometryFigureRenderer.js
+index 764808e..018bef9 100644
+--- a/src/engine/figures/geometryFigureRenderer.js
++++ b/src/engine/figures/geometryFigureRenderer.js
+@@ -122,10 +122,22 @@ function pointsToSvgString(points) {
+   return points.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+ }
+ 
++// A literal color, not a CSS custom property. The original version
++// used var(--text-primary), which silently depends on whatever page
++// embeds the SVG to define that variable — a real bug found when a
++// generated quiz was actually opened in a browser: dots rendered
++// (fill's invalid-var fallback is black) but every line/ray/arc did
++// NOT (stroke's invalid-var fallback is "none", i.e. invisible).
++// Every SVG this renderer produces must be self-contained and render
++// correctly with zero external CSS, since it may be embedded in a
++// browser page, pasted into a document, converted to PDF, or opened
++// as a standalone .svg file.
++const FIGURE_INK_COLOR = "#1a1a1a";
++
+ function polylineSvg(points) {
+   return (
+     `<polyline points="${pointsToSvgString(points)}" fill="none" ` +
+-    'stroke="var(--text-primary)" stroke-width="1.5"/>'
++    `stroke="${FIGURE_INK_COLOR}" stroke-width="1.5"/>`
+   );
+ }
+ 
+@@ -136,24 +148,33 @@ function lineSvg(x1, y1, x2, y2, { arrowStart = false, arrowEnd = false } = {})
+ 
+   return (
+     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ` +
+-    `stroke="var(--text-primary)" stroke-width="2" ${markers.join(" ")}/>`
++    `stroke="${FIGURE_INK_COLOR}" stroke-width="2" ${markers.join(" ")}/>`
+   );
+ }
+ 
+ function dotSvg(x, y, r = 5) {
+-  return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--text-primary)"/>`;
++  return `<circle cx="${x}" cy="${y}" r="${r}" fill="${FIGURE_INK_COLOR}"/>`;
+ }
+ 
+ function labelSvg(x, y, text, { size = "t", anchor = "middle" } = {}) {
++  // font-size/font-weight/fill are set directly as attributes, not
++  // left to an external "t"/"ts" CSS class (the class is kept only
++  // so an embedding page CAN optionally restyle labels, but nothing
++  // here depends on that class existing).
++  const fontSize = size === "ts" ? 14 : 16;
++  const fontWeight = size === "ts" ? 400 : 700;
++
+   return (
+-    `<text class="${size}" x="${x}" y="${y}" text-anchor="${anchor}">` +
++    `<text class="${size}" x="${x}" y="${y}" text-anchor="${anchor}" ` +
++    `fill="${FIGURE_INK_COLOR}" font-size="${fontSize}" font-weight="${fontWeight}" ` +
++    `font-family="Arial, Helvetica, sans-serif">` +
+     `${escapeXml(text)}</text>`
+   );
+ }
+ 
+ function svgWrap(width, height, title, desc, body) {
+   return (
+-    `<svg width="100%" viewBox="0 0 ${width} ${height}" role="img">` +
++    `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${width} ${height}" role="img">` +
+     `<title>${escapeXml(title)}</title><desc>${escapeXml(desc)}</desc>` +
+     ARROW_MARKER_DEFS +
+     body +
+@@ -245,7 +266,7 @@ function renderRay(variables) {
+ function renderPlane(variables) {
+   const poly =
+     '<polygon points="140,80 400,105 365,225 105,200" fill="none" ' +
+-    'stroke="var(--text-primary)" stroke-width="1.5" stroke-dasharray="4 3"/>';
++    `stroke="${FIGURE_INK_COLOR}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+ 
+   const body =
+     poly +
+@@ -460,7 +481,7 @@ function renderPolygonFromAttributes(variables) {
+   const polygonSvg =
+     '<polygon points="' +
+     pointsToSvgString(points) +
+-    '" fill="none" stroke="var(--text-primary)" stroke-width="2"/>';
++    `" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+ 
+   const dots = points.map((p) => dotSvg(p[0], p[1], 4)).join("");
+ 
+diff --git a/src/engine/geometryQuizPrinter.js b/src/engine/geometryQuizPrinter.js
+index 65422f0..396b4cd 100644
+--- a/src/engine/geometryQuizPrinter.js
++++ b/src/engine/geometryQuizPrinter.js
+@@ -86,6 +86,23 @@ const BASE_STYLES = `
+   .question-figure svg {
+     max-width: 100%;
+     height: auto;
++    /* The Figure Renderer's SVGs reference this custom property for
++       every stroke/fill (lines, points, text). Without it defined
++       here, var(--text-primary) resolves to an INVALID value: stroke
++       falls back to its initial value of "none" (rays/segments/
++       arcs become invisible), while fill falls back to black (dots
++       still show) — which is exactly the bug a real exported quiz
++       revealed: points visible, lines and angle values not. */
++    --text-primary: #1a1a1a;
++  }
++  .question-figure svg text.t {
++    font-size: 16px;
++    font-weight: 700;
++    fill: var(--text-primary);
++  }
++  .question-figure svg text.ts {
++    font-size: 14px;
++    fill: var(--text-primary);
+   }
+   .choices {
+     list-style: none;
+-- 
+2.43.0
+
