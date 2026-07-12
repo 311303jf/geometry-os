@@ -122,10 +122,22 @@ function pointsToSvgString(points) {
   return points.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
 }
 
+// A literal color, not a CSS custom property. The original version
+// used var(--text-primary), which silently depends on whatever page
+// embeds the SVG to define that variable — a real bug found when a
+// generated quiz was actually opened in a browser: dots rendered
+// (fill's invalid-var fallback is black) but every line/ray/arc did
+// NOT (stroke's invalid-var fallback is "none", i.e. invisible).
+// Every SVG this renderer produces must be self-contained and render
+// correctly with zero external CSS, since it may be embedded in a
+// browser page, pasted into a document, converted to PDF, or opened
+// as a standalone .svg file.
+const FIGURE_INK_COLOR = "#1a1a1a";
+
 function polylineSvg(points) {
   return (
     `<polyline points="${pointsToSvgString(points)}" fill="none" ` +
-    'stroke="var(--text-primary)" stroke-width="1.5"/>'
+    `stroke="${FIGURE_INK_COLOR}" stroke-width="1.5"/>`
   );
 }
 
@@ -136,24 +148,33 @@ function lineSvg(x1, y1, x2, y2, { arrowStart = false, arrowEnd = false } = {}) 
 
   return (
     `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" ` +
-    `stroke="var(--text-primary)" stroke-width="2" ${markers.join(" ")}/>`
+    `stroke="${FIGURE_INK_COLOR}" stroke-width="2" ${markers.join(" ")}/>`
   );
 }
 
 function dotSvg(x, y, r = 5) {
-  return `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--text-primary)"/>`;
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="${FIGURE_INK_COLOR}"/>`;
 }
 
 function labelSvg(x, y, text, { size = "t", anchor = "middle" } = {}) {
+  // font-size/font-weight/fill are set directly as attributes, not
+  // left to an external "t"/"ts" CSS class (the class is kept only
+  // so an embedding page CAN optionally restyle labels, but nothing
+  // here depends on that class existing).
+  const fontSize = size === "ts" ? 14 : 16;
+  const fontWeight = size === "ts" ? 400 : 700;
+
   return (
-    `<text class="${size}" x="${x}" y="${y}" text-anchor="${anchor}">` +
+    `<text class="${size}" x="${x}" y="${y}" text-anchor="${anchor}" ` +
+    `fill="${FIGURE_INK_COLOR}" font-size="${fontSize}" font-weight="${fontWeight}" ` +
+    `font-family="Arial, Helvetica, sans-serif">` +
     `${escapeXml(text)}</text>`
   );
 }
 
 function svgWrap(width, height, title, desc, body) {
   return (
-    `<svg width="100%" viewBox="0 0 ${width} ${height}" role="img">` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${width} ${height}" role="img">` +
     `<title>${escapeXml(title)}</title><desc>${escapeXml(desc)}</desc>` +
     ARROW_MARKER_DEFS +
     body +
@@ -245,7 +266,7 @@ function renderRay(variables) {
 function renderPlane(variables) {
   const poly =
     '<polygon points="140,80 400,105 365,225 105,200" fill="none" ' +
-    'stroke="var(--text-primary)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    `stroke="${FIGURE_INK_COLOR}" stroke-width="1.5" stroke-dasharray="4 3"/>`;
 
   const body =
     poly +
@@ -460,7 +481,7 @@ function renderPolygonFromAttributes(variables) {
   const polygonSvg =
     '<polygon points="' +
     pointsToSvgString(points) +
-    '" fill="none" stroke="var(--text-primary)" stroke-width="2"/>';
+    `" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
 
   const dots = points.map((p) => dotSvg(p[0], p[1], 4)).join("");
 

@@ -86,6 +86,23 @@ const BASE_STYLES = `
   .question-figure svg {
     max-width: 100%;
     height: auto;
+    /* The Figure Renderer's SVGs reference this custom property for
+       every stroke/fill (lines, points, text). Without it defined
+       here, var(--text-primary) resolves to an INVALID value: stroke
+       falls back to its initial value of "none" (rays/segments/
+       arcs become invisible), while fill falls back to black (dots
+       still show) — which is exactly the bug a real exported quiz
+       revealed: points visible, lines and angle values not. */
+    --text-primary: #1a1a1a;
+  }
+  .question-figure svg text.t {
+    font-size: 16px;
+    font-weight: 700;
+    fill: var(--text-primary);
+  }
+  .question-figure svg text.ts {
+    font-size: 14px;
+    fill: var(--text-primary);
   }
   .choices {
     list-style: none;
