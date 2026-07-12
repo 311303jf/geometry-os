@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.9.0";
+const RENDERER_VERSION = "v1.10.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -91,7 +91,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pyramid_or_cone_volume_calculation",
   "cone_surface_area_calculation",
   "trapezoid_midsegment_calculation",
-  "rhombus_diagonal_angle_measure"
+  "rhombus_diagonal_angle_measure",
+  "circle_angle_two_chords_calculation",
+  "circle_angle_exterior_calculation",
+  "tangent_chord_angle_calculation",
+  "right_triangle_altitude_geometric_mean_calculation"
 ]);
 
 function protectedCopy(value) {
@@ -477,6 +481,24 @@ function renderRhombusDiagonalAngle(variables) {
   return `In a rhombus, a diagonal bisects a vertex angle measuring ${variables.vertexAngleMeasure}\u00B0. What is the measure of each resulting half-angle?`;
 }
 
+// --- Advanced circle angle relationships and similar right triangles ---
+
+function renderCircleAngleTwoChords(variables) {
+  return `Two chords intersect inside a circle. The two arcs intercepted by the angle and its vertical angle measure ${variables.arcOne}\u00B0 and ${variables.arcTwo}\u00B0. What is the measure of the angle formed at the intersection?`;
+}
+
+function renderCircleAngleExterior(variables) {
+  return `Two secants meet at a point outside a circle. The near arc measures ${variables.nearArc}\u00B0 and the far arc measures ${variables.farArc}\u00B0. What is the measure of the angle formed at their intersection?`;
+}
+
+function renderTangentChordAngle(variables) {
+  return `A tangent and a chord meet at the point of tangency on a circle, intercepting an arc measuring ${variables.interceptedArc}\u00B0. What is the measure of the angle formed between the tangent and the chord?`;
+}
+
+function renderRightTriangleAltitudeGeometricMean(variables) {
+  return `In a right triangle, the altitude drawn to the hypotenuse divides it into two segments measuring ${variables.segmentOne} and ${variables.segmentTwo}. What is the length of the altitude?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -602,7 +624,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderTrapezoidMidsegment,
 
   rhombus_diagonal_angle_measure:
-    renderRhombusDiagonalAngle
+    renderRhombusDiagonalAngle,
+
+  circle_angle_two_chords_calculation:
+    renderCircleAngleTwoChords,
+
+  circle_angle_exterior_calculation:
+    renderCircleAngleExterior,
+
+  tangent_chord_angle_calculation:
+    renderTangentChordAngle,
+
+  right_triangle_altitude_geometric_mean_calculation:
+    renderRightTriangleAltitudeGeometricMean
 });
 
 function extractInput(input = {}) {

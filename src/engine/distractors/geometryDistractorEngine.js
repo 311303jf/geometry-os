@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.9.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.10.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -95,7 +95,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pyramid_or_cone_volume_calculation",
   "cone_surface_area_calculation",
   "trapezoid_midsegment_calculation",
-  "rhombus_diagonal_angle_measure"
+  "rhombus_diagonal_angle_measure",
+  "circle_angle_two_chords_calculation",
+  "circle_angle_exterior_calculation",
+  "tangent_chord_angle_calculation",
+  "right_triangle_altitude_geometric_mean_calculation"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -1488,6 +1492,86 @@ function distractRhombusDiagonalAngle(variables, correctAnswer) {
   });
 }
 
+// --- Advanced circle angle relationships and similar right triangles ---
+
+function distractCircleAngleTwoChords(variables, correctAnswer) {
+  const { arcOne, arcTwo } = variables;
+
+  // The single highest-value distractor: the EXTERIOR-angle formula
+  // (half the DIFFERENCE instead of half the SUM) — confusing the
+  // two-chords-inside-the-circle theorem with the
+  // secants-outside-the-circle theorem is the most common real
+  // error for this topic, since both involve "half of something
+  // with the two arcs." Also: forgetting to halve at all, and using
+  // only one arc.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      Math.abs(arcOne - arcTwo) / 2,
+      arcOne + arcTwo,
+      arcOne
+    ],
+    min: 1,
+    max: 179
+  });
+}
+
+function distractCircleAngleExterior(variables, correctAnswer) {
+  const { nearArc, farArc } = variables;
+
+  // The companion confusion to the one above: using the
+  // INTERIOR-angle formula (half the SUM instead of half the
+  // DIFFERENCE). Also: forgetting to halve the difference, and
+  // using only the far arc.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      (farArc + nearArc) / 2,
+      farArc - nearArc,
+      farArc
+    ],
+    min: 1,
+    max: 179
+  });
+}
+
+function distractTangentChordAngle(variables, correctAnswer) {
+  const { interceptedArc } = variables;
+
+  // Correct answer is interceptedArc / 2. Errors: forgot to halve,
+  // used the OTHER (major) arc instead (360 - intercepted) then
+  // halved it, and doubled instead of halved.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      interceptedArc,
+      (360 - interceptedArc) / 2,
+      interceptedArc * 2
+    ],
+    min: 1,
+    max: 359
+  });
+}
+
+function distractRightTriangleAltitudeGeometricMean(variables, correctAnswer) {
+  const { segmentOne, segmentTwo } = variables;
+
+  // Correct answer is sqrt(segmentOne * segmentTwo). Errors:
+  // averaged the two segments instead of taking the geometric mean
+  // (a very common real confusion between arithmetic and geometric
+  // mean), multiplied without taking the square root, and simply
+  // added the two segments.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      (segmentOne + segmentTwo) / 2,
+      segmentOne * segmentTwo,
+      segmentOne + segmentTwo
+    ],
+    min: 1
+  });
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -1621,7 +1705,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractTrapezoidMidsegment(v, correct),
 
   rhombus_diagonal_angle_measure: (v, correct) =>
-    distractRhombusDiagonalAngle(v, correct)
+    distractRhombusDiagonalAngle(v, correct),
+
+  circle_angle_two_chords_calculation: (v, correct) =>
+    distractCircleAngleTwoChords(v, correct),
+
+  circle_angle_exterior_calculation: (v, correct) =>
+    distractCircleAngleExterior(v, correct),
+
+  tangent_chord_angle_calculation: (v, correct) =>
+    distractTangentChordAngle(v, correct),
+
+  right_triangle_altitude_geometric_mean_calculation: (v, correct) =>
+    distractRightTriangleAltitudeGeometricMean(v, correct)
 });
 
 function extractInput(input = {}) {

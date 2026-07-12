@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.9.0";
+const SOLVER_VERSION = "v1.10.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -97,7 +97,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pyramid_or_cone_volume_calculation",
   "cone_surface_area_calculation",
   "trapezoid_midsegment_calculation",
-  "rhombus_diagonal_angle_measure"
+  "rhombus_diagonal_angle_measure",
+  "circle_angle_two_chords_calculation",
+  "circle_angle_exterior_calculation",
+  "tangent_chord_angle_calculation",
+  "right_triangle_altitude_geometric_mean_calculation"
 ]);
 
 function protectedCopy(value) {
@@ -640,6 +644,30 @@ function solveRhombusDiagonalAngle(variables) {
   return { answerFormat: "numeric_degrees", correctAnswer };
 }
 
+function solveCircleAngleTwoChords(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveCircleAngleExterior(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveTangentChordAngle(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
+function solveRightTriangleAltitudeGeometricMean(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -765,7 +793,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveTrapezoidMidsegment,
 
   rhombus_diagonal_angle_measure:
-    solveRhombusDiagonalAngle
+    solveRhombusDiagonalAngle,
+
+  circle_angle_two_chords_calculation:
+    solveCircleAngleTwoChords,
+
+  circle_angle_exterior_calculation:
+    solveCircleAngleExterior,
+
+  tangent_chord_angle_calculation:
+    solveTangentChordAngle,
+
+  right_triangle_altitude_geometric_mean_calculation:
+    solveRightTriangleAltitudeGeometricMean
 });
 
 export class GeometrySolver {
