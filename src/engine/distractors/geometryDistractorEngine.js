@@ -31,7 +31,7 @@
  * - render prompts or choice ordering/shuffling
  */
 
-const DISTRACTOR_ENGINE_VERSION = "v1.8.0";
+const DISTRACTOR_ENGINE_VERSION = "v1.9.0";
 
 const DISTRACTOR_STATUS = Object.freeze({
   GENERATED: "geometry_distractors_generated",
@@ -91,7 +91,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "sphere_surface_area_or_volume_calculation",
   "identify_conditional_statement_transformation",
   "identify_conditional_statement_part",
-  "identify_algebraic_reasoning_property"
+  "identify_algebraic_reasoning_property",
+  "pyramid_or_cone_volume_calculation",
+  "cone_surface_area_calculation",
+  "trapezoid_midsegment_calculation",
+  "rhombus_diagonal_angle_measure"
 ]);
 
 // Mirrored from geometryVariableGenerator.js — the generator only
@@ -1373,6 +1377,117 @@ function distractAlgebraicReasoningProperty(variables) {
     .slice(0, 3);
 }
 
+// --- Extended Chapter 7 / Chapter 12 coverage ---
+
+function distractPyramidOrConeVolume(variables, correctAnswer) {
+  const { dimensionOne, dimensionTwo } = variables;
+
+  if (variables.scenario === "square_pyramid") {
+    // Correct answer is (s^2 * h) / 3. Errors: forgot to divide by
+    // 3 (used the rectangular PRISM volume formula instead — the
+    // single most common real mix-up between pyramids and prisms),
+    // forgot to square the side, and divided by 2 instead of 3.
+    return buildNumericDistractors({
+      correctAnswer,
+      pool: [
+        dimensionOne * dimensionOne * dimensionTwo,
+        dimensionOne * dimensionTwo,
+        (dimensionOne * dimensionOne * dimensionTwo) / 2
+      ],
+      min: 1
+    });
+  }
+
+  // cone: correct answer is (pi * r^2 * h) / 3, as "Nπ". Errors:
+  // forgot to divide by 3 (CYLINDER volume formula — the equivalent
+  // common mix-up for cones), forgot to square the radius, divided
+  // by 2 instead of 3.
+  const correctCoefficient =
+    (dimensionOne * dimensionOne * dimensionTwo) / 3;
+
+  return buildPiCoefficientDistractors({
+    correctAnswer,
+    coefficientPool: [
+      dimensionOne * dimensionOne * dimensionTwo,
+      dimensionOne * dimensionTwo,
+      (dimensionOne * dimensionOne * dimensionTwo) / 2
+    ],
+    correctCoefficient
+  });
+}
+
+function distractConeSurfaceArea(variables, correctAnswer) {
+  const { radius, height, slantHeight } = variables;
+
+  const correctCoefficient = radius * (radius + slantHeight);
+
+  // Error family: forgot the base circle (lateral surface area
+  // only — a very real, common omission), forgot the lateral
+  // surface (used only the base circle's area), and confused the
+  // height with the slant height (a genuine, common mix-up between
+  // the cone's vertical height and its slant height).
+  return buildPiCoefficientDistractors({
+    correctAnswer,
+    coefficientPool: [
+      radius * slantHeight,
+      radius * radius,
+      radius * (radius + height)
+    ],
+    correctCoefficient
+  });
+}
+
+function distractTrapezoidMidsegment(variables, correctAnswer) {
+  const { knownValueOne, knownValueTwo } = variables;
+
+  if (variables.scenario === "find_midsegment") {
+    // Correct answer is (b1 + b2) / 2. Errors: forgot to divide by
+    // 2 (gave the raw sum), subtracted instead of added, subtracted
+    // then divided by 2.
+    return buildNumericDistractors({
+      correctAnswer,
+      pool: [
+        knownValueOne + knownValueTwo,
+        Math.abs(knownValueOne - knownValueTwo),
+        Math.abs(knownValueOne - knownValueTwo) / 2
+      ],
+      min: 1
+    });
+  }
+
+  // find_missing_base: correct answer is 2*midsegment - knownBase.
+  // Errors: forgot to double the midsegment first, doubled the
+  // midsegment but forgot to subtract the known base, and simply
+  // repeated the known base value.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      knownValueOne - knownValueTwo,
+      knownValueOne * 2,
+      knownValueTwo
+    ],
+    min: 1
+  });
+}
+
+function distractRhombusDiagonalAngle(variables, correctAnswer) {
+  const { vertexAngleMeasure } = variables;
+
+  // Correct answer is vertexAngleMeasure / 2. Errors: forgot to
+  // halve at all, confused with a supplementary relationship
+  // (180 - vertex angle), and doubled instead of halved.
+  return buildNumericDistractors({
+    correctAnswer,
+    pool: [
+      vertexAngleMeasure,
+      180 - vertexAngleMeasure,
+      vertexAngleMeasure * 2
+    ],
+    min: 1,
+    max: 359
+  });
+}
+
 const TEMPLATE_DISTRACTORS = Object.freeze({
   identify_point_from_description: (v) => distractPoint(v),
   identify_line_from_labels: (v) => distractLine(v),
@@ -1494,7 +1609,19 @@ const TEMPLATE_DISTRACTORS = Object.freeze({
     distractConditionalStatementPart(v),
 
   identify_algebraic_reasoning_property: (v) =>
-    distractAlgebraicReasoningProperty(v)
+    distractAlgebraicReasoningProperty(v),
+
+  pyramid_or_cone_volume_calculation: (v, correct) =>
+    distractPyramidOrConeVolume(v, correct),
+
+  cone_surface_area_calculation: (v, correct) =>
+    distractConeSurfaceArea(v, correct),
+
+  trapezoid_midsegment_calculation: (v, correct) =>
+    distractTrapezoidMidsegment(v, correct),
+
+  rhombus_diagonal_angle_measure: (v, correct) =>
+    distractRhombusDiagonalAngle(v, correct)
 });
 
 function extractInput(input = {}) {

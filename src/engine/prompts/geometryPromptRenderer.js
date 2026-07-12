@@ -25,7 +25,7 @@
  * - certify or validate question quality (see questionQualityGate.js)
  */
 
-const RENDERER_VERSION = "v1.8.0";
+const RENDERER_VERSION = "v1.9.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_prompt_rendered",
@@ -87,7 +87,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "sphere_surface_area_or_volume_calculation",
   "identify_conditional_statement_transformation",
   "identify_conditional_statement_part",
-  "identify_algebraic_reasoning_property"
+  "identify_algebraic_reasoning_property",
+  "pyramid_or_cone_volume_calculation",
+  "cone_surface_area_calculation",
+  "trapezoid_midsegment_calculation",
+  "rhombus_diagonal_angle_measure"
 ]);
 
 function protectedCopy(value) {
@@ -447,6 +451,32 @@ function renderAlgebraicReasoningProperty(variables) {
   return `An equation ${variables.beforeEquation} is transformed in one step into ${variables.afterEquation}. Which property of equality justifies this step?`;
 }
 
+// --- Extended Chapter 7 / Chapter 12 coverage ---
+
+function renderPyramidOrConeVolume(variables) {
+  if (variables.scenario === "square_pyramid") {
+    return `A square pyramid has a base side length of ${variables.dimensionOne} and a height of ${variables.dimensionTwo}. What is its volume?`;
+  }
+
+  return `A cone has a radius of ${variables.dimensionOne} and a height of ${variables.dimensionTwo}. What is its volume, expressed exactly in terms of \u03C0?`;
+}
+
+function renderConeSurfaceArea(variables) {
+  return `A cone has a radius of ${variables.radius} and a height of ${variables.height}. What is its total surface area, expressed exactly in terms of \u03C0?`;
+}
+
+function renderTrapezoidMidsegment(variables) {
+  if (variables.scenario === "find_midsegment") {
+    return `A trapezoid has parallel base lengths of ${variables.knownValueOne} and ${variables.knownValueTwo}. What is the length of the midsegment?`;
+  }
+
+  return `A trapezoid has a midsegment length of ${variables.knownValueOne} and one base length of ${variables.knownValueTwo}. What is the length of the other base?`;
+}
+
+function renderRhombusDiagonalAngle(variables) {
+  return `In a rhombus, a diagonal bisects a vertex angle measuring ${variables.vertexAngleMeasure}\u00B0. What is the measure of each resulting half-angle?`;
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderIdentifyPoint,
   identify_line_from_labels: renderIdentifyLine,
@@ -560,7 +590,19 @@ const TEMPLATE_RENDERERS = Object.freeze({
     renderConditionalStatementPart,
 
   identify_algebraic_reasoning_property:
-    renderAlgebraicReasoningProperty
+    renderAlgebraicReasoningProperty,
+
+  pyramid_or_cone_volume_calculation:
+    renderPyramidOrConeVolume,
+
+  cone_surface_area_calculation:
+    renderConeSurfaceArea,
+
+  trapezoid_midsegment_calculation:
+    renderTrapezoidMidsegment,
+
+  rhombus_diagonal_angle_measure:
+    renderRhombusDiagonalAngle
 });
 
 function extractInput(input = {}) {

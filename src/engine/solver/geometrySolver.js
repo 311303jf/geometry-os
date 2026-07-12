@@ -33,7 +33,7 @@
  * doesn't match the intended question design.
  */
 
-const SOLVER_VERSION = "v1.8.0";
+const SOLVER_VERSION = "v1.9.0";
 
 const SOLVE_STATUS = Object.freeze({
   SOLVED: "geometry_answer_solved",
@@ -93,7 +93,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "sphere_surface_area_or_volume_calculation",
   "identify_conditional_statement_transformation",
   "identify_conditional_statement_part",
-  "identify_algebraic_reasoning_property"
+  "identify_algebraic_reasoning_property",
+  "pyramid_or_cone_volume_calculation",
+  "cone_surface_area_calculation",
+  "trapezoid_midsegment_calculation",
+  "rhombus_diagonal_angle_measure"
 ]);
 
 function protectedCopy(value) {
@@ -612,6 +616,30 @@ function solveAlgebraicReasoningProperty(variables) {
   return { answerFormat: "classification_label", correctAnswer };
 }
 
+function solvePyramidOrConeVolume(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveConeSurfaceArea(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "radical_value", correctAnswer };
+}
+
+function solveTrapezoidMidsegment(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_value", correctAnswer };
+}
+
+function solveRhombusDiagonalAngle(variables) {
+  const correctAnswer = variables.answerValue;
+
+  return { answerFormat: "numeric_degrees", correctAnswer };
+}
+
 const TEMPLATE_SOLVERS = Object.freeze({
   identify_point_from_description: solveIdentifyPoint,
   identify_line_from_labels: solveIdentifyLine,
@@ -725,7 +753,19 @@ const TEMPLATE_SOLVERS = Object.freeze({
     solveConditionalStatementPart,
 
   identify_algebraic_reasoning_property:
-    solveAlgebraicReasoningProperty
+    solveAlgebraicReasoningProperty,
+
+  pyramid_or_cone_volume_calculation:
+    solvePyramidOrConeVolume,
+
+  cone_surface_area_calculation:
+    solveConeSurfaceArea,
+
+  trapezoid_midsegment_calculation:
+    solveTrapezoidMidsegment,
+
+  rhombus_diagonal_angle_measure:
+    solveRhombusDiagonalAngle
 });
 
 export class GeometrySolver {
