@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.11";
+    this.version = "v1.0.12";
 
     this.problemTypes = [
       {
@@ -431,6 +431,38 @@ export class GeometryProblemTypeRegistry {
         family: "algebraic_reasoning",
         description: "Identify the algebraic property of equality that justifies a given step.",
         expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "pyramid_or_cone_volume",
+        conceptId: "surface_area_and_volume",
+        family: "volume_measurement",
+        description: "Find the volume of a square pyramid or a cone from its dimensions.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "cone_surface_area",
+        conceptId: "surface_area_and_volume",
+        family: "surface_area_measurement",
+        description: "Find the total surface area of a cone from its radius and height, expressed exactly in terms of pi.",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "trapezoid_midsegment",
+        conceptId: "quadrilaterals",
+        family: "trapezoid_properties",
+        description: "Use the Trapezoid Midsegment Theorem (the midsegment equals half the sum of the base lengths) to find a missing length.",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "rhombus_diagonal_angle",
+        conceptId: "quadrilaterals",
+        family: "special_parallelogram_properties",
+        description: "Use the property that a rhombus's diagonals bisect its vertex angles to find a missing angle measure.",
+        expectedAnswerFormat: "numeric_degrees",
         requiresFigure: false
       }
     ];

@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.7.0";
+    this.version = "v1.8.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -776,6 +776,63 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "classification_label",
+        requiresFigure: false
+      },
+      {
+        templateId: "pyramid_or_cone_volume_calculation",
+        problemTypeId: "pyramid_or_cone_volume",
+        templateFamily: "volume_measurement",
+        promptPattern:
+          "A solid has the given dimensions. What is its volume?",
+        requiredFields: [
+          "scenario",
+          "dimensionOne",
+          "dimensionTwo"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "cone_surface_area_calculation",
+        problemTypeId: "cone_surface_area",
+        templateFamily: "surface_area_measurement",
+        promptPattern:
+          "A cone has the given radius and height. What is its total surface area, expressed exactly in terms of pi?",
+        requiredFields: [
+          "radius",
+          "height"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "radical_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "trapezoid_midsegment_calculation",
+        problemTypeId: "trapezoid_midsegment",
+        templateFamily: "trapezoid_properties",
+        promptPattern:
+          "A trapezoid has the given known lengths. What is the length of the requested segment?",
+        requiredFields: [
+          "scenario",
+          "knownValueOne",
+          "knownValueTwo"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
+        requiresFigure: false
+      },
+      {
+        templateId: "rhombus_diagonal_angle_measure",
+        problemTypeId: "rhombus_diagonal_angle",
+        templateFamily: "special_parallelogram_properties",
+        promptPattern:
+          "In a rhombus, a diagonal bisects a vertex angle with the given measure. What is the measure of each resulting half-angle?",
+        requiredFields: [
+          "vertexAngleMeasure"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
         requiresFigure: false
       }
     ];

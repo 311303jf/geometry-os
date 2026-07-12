@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.9.0
+ * Geometry Variable Generator v1.10.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.9.0";
+const GENERATOR_VERSION = "v1.10.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -107,7 +107,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "sphere_surface_area_or_volume_calculation",
   "identify_conditional_statement_transformation",
   "identify_conditional_statement_part",
-  "identify_algebraic_reasoning_property"
+  "identify_algebraic_reasoning_property",
+  "pyramid_or_cone_volume_calculation",
+  "cone_surface_area_calculation",
+  "trapezoid_midsegment_calculation",
+  "rhombus_diagonal_angle_measure"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2807,6 +2811,108 @@ function generateAlgebraicReasoningProperty(random) {
   };
 }
 
+// --- Extended Chapter 7 / Chapter 12 coverage ---
+
+function generatePyramidOrConeVolume(random) {
+  const scenario = randomChoice(random, ["square_pyramid", "cone"]);
+
+  if (scenario === "square_pyramid") {
+    const side = randomInteger(random, 2, 15);
+    const height = 3 * randomInteger(random, 1, 8);
+
+    return {
+      scenario,
+      dimensionOne: side,
+      dimensionTwo: height,
+      answerValue: (side * side * height) / 3
+    };
+  }
+
+  // cone: radius and height constructed so radius^2 * height is
+  // always divisible by 3, guaranteeing an exact integer pi
+  // coefficient for (1/3)*pi*r^2*h.
+  const radius = 3 * randomInteger(random, 1, 6);
+  const height = randomInteger(random, 2, 15);
+  const coefficient = (radius * radius * height) / 3;
+
+  return {
+    scenario,
+    dimensionOne: radius,
+    dimensionTwo: height,
+    answerValue: `${coefficient}\u03C0`
+  };
+}
+
+function generateConeSurfaceArea(random) {
+  // Reuses the same certified Pythagorean-triple list as
+  // pythagorean_theorem_missing_side and right_triangle_trig_ratio,
+  // so the slant height (the hypotenuse of the right triangle formed
+  // by the radius and the height) is always an exact integer.
+  const [radius, height, slantHeight] = randomChoice(
+    random,
+    PYTHAGOREAN_TRIPLES
+  );
+
+  const coefficient = radius * (radius + slantHeight);
+
+  return {
+    radius,
+    height,
+    slantHeight,
+    answerValue: `${coefficient}\u03C0`
+  };
+}
+
+function generateTrapezoidMidsegment(random) {
+  const scenario = randomChoice(random, [
+    "find_midsegment",
+    "find_missing_base"
+  ]);
+
+  if (scenario === "find_midsegment") {
+    // Construct the two bases AROUND the intended midsegment value,
+    // rather than picking bases first and dividing — guarantees an
+    // exact integer midsegment with no parity/rounding concerns.
+    const midsegment = randomInteger(random, 5, 40);
+    const offset = randomInteger(random, 1, midsegment - 1);
+    const baseOne = midsegment - offset;
+    const baseTwo = midsegment + offset;
+
+    return {
+      scenario,
+      knownValueOne: baseOne,
+      knownValueTwo: baseTwo,
+      answerValue: midsegment
+    };
+  }
+
+  // find_missing_base: given the midsegment and one base, the other
+  // base is 2*midsegment - knownBase. Construct in the same
+  // "midsegment first" direction to guarantee a positive integer
+  // missing base.
+  const midsegment = randomInteger(random, 8, 40);
+  const offset = randomInteger(random, 1, midsegment - 1);
+  const knownBase = midsegment - offset;
+  const missingBase = midsegment + offset;
+
+  return {
+    scenario,
+    knownValueOne: midsegment,
+    knownValueTwo: knownBase,
+    answerValue: missingBase
+  };
+}
+
+function generateRhombusDiagonalAngle(random) {
+  const halfAngle = randomInteger(random, 5, 89);
+  const vertexAngleMeasure = halfAngle * 2;
+
+  return {
+    vertexAngleMeasure,
+    answerValue: halfAngle
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -2965,7 +3071,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateConditionalStatementPart,
 
   identify_algebraic_reasoning_property:
-    generateAlgebraicReasoningProperty
+    generateAlgebraicReasoningProperty,
+
+  pyramid_or_cone_volume_calculation:
+    generatePyramidOrConeVolume,
+
+  cone_surface_area_calculation:
+    generateConeSurfaceArea,
+
+  trapezoid_midsegment_calculation:
+    generateTrapezoidMidsegment,
+
+  rhombus_diagonal_angle_measure:
+    generateRhombusDiagonalAngle
 });
 
 export class GeometryVariableGenerator {
