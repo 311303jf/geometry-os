@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Geometry Quiz Printer Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; margin-right: 8px; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+    iframe { width: 100%; height: 600px; border: 1px solid #d5dbe0; border-radius: 8px; margin-top: 16px; background: white; }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Geometry Quiz Printer Test</h1>
+  <p>Composes quizzes of varying sizes (1, 5, 10, 25, 53) across 20 seeds each, renders all 3 versions (student, teacher, both) for each, and verifies well-formed, complete HTML documents with no leaked undefined/NaN text (300 total renders). Also previews a live 5-question student quiz below.</p>
+  <button id="runTestButton">Run Quiz Printer Test</button>
+  <pre id="output">Ready.</pre>
+  <div id="preview"></div>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+    const previewContainer = document.getElementById("preview");
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+      previewContainer.innerHTML = "";
+
+      try {
+        const composerModule = await import("../src/engine/geometryQuizComposer.js");
+        const printerModule = await import("../src/engine/geometryQuizPrinter.js");
+
+        const { geometryQuizComposer } = composerModule;
+        const { geometryQuizPrinter } = printerModule;
+
+        assert(geometryQuizPrinter && typeof geometryQuizPrinter.renderHtml === "function", "Geometry Quiz Printer did not load correctly.");
+
+        output.textContent = "Modules loaded. Running stress test (5 sizes x 20 seeds x 3 versions = 300 renders)...";
+
+        let total = 0;
+        const failures = [];
+
+        [1, 5, 10, 25, 53].forEach((size) => {
+          for (let seedIndex = 0; seedIndex < 20; seedIndex++) {
+            const quiz = geometryQuizComposer.compose({ questionCount: size, seed: `printer-test-${size}-${seedIndex}` });
+            if (!quiz.composed) { failures.push({ stage: "compose", size, seedIndex }); continue; }
+
+            ["student", "teacher", "both"].forEach((version) => {
+              total += 1;
+              const rendered = geometryQuizPrinter.renderHtml(quiz.quiz, { title: "Stress Test Quiz", version });
+              const ok = rendered.rendered &&
+                rendered.html.startsWith("<!DOCTYPE html>") &&
+                rendered.html.trim().endsWith("</html>") &&
+                !rendered.html.includes("undefined") &&
+                !rendered.html.includes("NaN");
+              if (!ok) failures.push({ stage: "render", size, seedIndex, version });
+            });
+          }
+        });
+
+        assert(failures.length === 0, `Printer failed for ${failures.length} of ${total} renders. First failure: ${JSON.stringify(failures[0])}`);
+
+        const result = {
+          test: "Geometry Quiz Printer",
+          printerVersion: geometryQuizPrinter.getPrinterVersion(),
+          totalRenders: total,
+          failureCount: failures.length,
+          pass: true
+        };
+
+        output.textContent = "PASS — Geometry Quiz Printer " + result.printerVersion + " (" + total + " renders across student/teacher/both versions, 0 failures)\n\n" + JSON.stringify(result, null, 2);
+
+        // Live preview: a real 5-question student quiz rendered in an iframe
+        const previewQuiz = geometryQuizComposer.compose({ questionCount: 5, seed: "live-preview" });
+        const previewHtml = geometryQuizPrinter.renderHtml(previewQuiz.quiz, { title: "Sample Practice Quiz — Geometry", version: "student" });
+
+        const heading = document.createElement("h2");
+        heading.textContent = "Live preview: 5-question student quiz";
+        previewContainer.appendChild(heading);
+
+        const iframe = document.createElement("iframe");
+        previewContainer.appendChild(iframe);
+        iframe.srcdoc = previewHtml.html;
+      } catch (error) {
+        const failureResult = {
+          test: "Geometry Quiz Printer",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null
+        };
+        output.textContent = "FAIL — Geometry Quiz Printer\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
