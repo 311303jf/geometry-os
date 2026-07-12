@@ -1,0 +1,295 @@
+# Geometry OS — Certified Question Pipeline (v1)
+
+**Status as of this writing:** 53 certified templates across 9 of the
+12 chapters of Big Ideas Math Geometry (Florida B.E.S.T. edition,
+©2023). This document describes the pipeline that actually exists in
+this repository today — not an aspiration, a working system.
+
+If you are picking this project back up after time away (or handing
+it to a collaborator, or another AI session), read this document
+first. It should let you understand and extend the system without
+re-deriving anything from commit archaeology.
+
+---
+
+## 1. The core idea
+
+> **AI generates. The pipeline certifies.**
+
+No question a student sees is ever "just trusted." Every question is
+the output of a chain of small, single-responsibility engines, each
+of which can be tested in isolation, and each of which has been
+stress-tested against dozens to hundreds of random seeds — not just
+one "happy path" example — because several real bugs in this
+codebase only appeared after 20+ seeds, and one appeared only after
+1,000 seeds and a hand-constructed edge case.
+
+The chain, for one question:
+
+```
+Geometry Template Registry        (the source of truth: which templates exist,
+      |                            what fields they require, what answer format)
+      v
+Geometry Template Resolver        (looks up one template by id, validates it)
+      |
+      v
+Geometry Variable Generator       (produces the random numbers/labels for
+      |                            one instance of that template, seeded —
+      |                            same seed always gives the same question)
+      v
+Geometry Solver                   (computes the correct answer from those
+      |                            variables)
+      v
+Geometry Distractor Engine        (produces exactly 3 wrong-but-plausible
+      |                            answers, each grounded in a real,
+      |                            named student error)
+      v
+Geometry Prompt Renderer          (turns the variables into a fully-specified
+      |                            question string, and shuffles the 4
+      |                            choices into A/B/C/D)
+      v
+Geometry Figure Renderer          (only for the 12 templates that need a
+                                   diagram — everything else is answerable
+                                   as text alone)
+```
+
+Two more layers sit on top of this chain, because chaining six engines
+by hand for every question is real integration burden:
+
+```
+Geometry Certified Question Factory   — one call, one complete question
+      |
+      v
+Geometry Quiz Composer                — one call, N complete questions
+                                         (with concept filtering, no
+                                         accidental repeats, deterministic)
+```
+
+---
+
+## 2. Where everything lives
+
+```
+src/geometry/
+  problemTypes/
+    geometryProblemTypeRegistry.js       — problem types (conceptId, answer format)
+    geometryProblemTypeResolver.js
+    geometryProblemTypeValidationContract.js
+    geometryProblemTypeBlueprintAdapter.js
+    geometryProblemTypeBlueprintResolutionPipeline.js
+  templates/
+    geometryTemplateRegistry.js          — THE source of truth: all 53 templates
+    geometryTemplateResolver.js          — resolves templateId -> template record
+    geometryTemplateValidationContract.js — validates the registry is internally consistent
+  generation/
+    geometryVariableGenerator.js         — generates variables for all 53 templates
+  knowledge/
+    geometryKnowledgeLibrary.js
+    geometryConceptLookupContract.js
+
+src/engine/
+  solver/geometrySolver.js               — computes the correct answer
+  distractors/geometryDistractorEngine.js — computes the 3 wrong answers
+  prompts/geometryPromptRenderer.js      — renders final question text + choices
+  figures/geometryFigureRenderer.js      — renders SVG diagrams (12 templates only)
+  geometryCertifiedQuestionFactory.js    — orchestrates all of the above, 1 question
+  geometryQuizComposer.js                — orchestrates the Factory, N questions
+
+tests/
+  geometry*Test.html                     — one browser-based certification test
+                                            per engine/chapter, run manually by
+                                            opening the file and clicking the button
+```
+
+Every file above (except the pre-existing `problemTypes/` supporting
+cast and `knowledge/`) was built and verified as part of this
+pipeline. `src/engine/generation/questions/questionFactory.js` and
+`src/engine/generation/geometryQuestionEngine.js` are an **older,
+separate architecture** (Question Blueprint based) that pre-dates
+this certified pipeline and is not connected to it. Do not confuse
+the two — `geometryCertifiedQuestionFactory.js` (this pipeline) vs.
+`questionFactory.js` (legacy, different data model entirely).
+
+---
+
+## 3. The 53 templates, by chapter
+
+| Chapter | Topic | Templates |
+|---|---|---|
+| 1 | Basics of Geometry | 23 |
+| 2 | Reasoning and Proofs (partial — MC-compatible sections only) | 3 |
+| 3 | Parallel and Perpendicular Lines (partial) | 3 |
+| 5–6 | Congruent Triangles / Relationships Within Triangles | 4 |
+| 7 | Quadrilaterals and Other Polygons (partial) | 4 |
+| 8 | Similarity | 4 |
+| 9 | Right Triangles and Trigonometry | 4 |
+| 10 | Circles | 4 |
+| 11–12 | Circumference, Area, Surface Area, Volume | 4 |
+
+**Deliberately out of scope:** the proof-writing sections of Chapter 2
+(2.3, 2.5, 2.6) — two-column and paragraph proofs don't reduce to a
+single defensible multiple-choice answer without losing the point of
+the exercise. Everything else fits the multiple-choice format the
+Distractor Engine and Prompt Renderer are built around.
+
+To see the exact list of templateIds at any time, don't trust this
+table — run:
+
+```js
+import { geometryVariableGenerator } from "./src/geometry/generation/geometryVariableGenerator.js";
+console.log(geometryVariableGenerator.getSupportedTemplateIds());
+```
+
+---
+
+## 4. Design decisions that matter (read before extending)
+
+**Every answer is exact, never a rounded decimal.** Integers,
+simplified radicals as strings (`"5√2"`), reduced fractions as
+strings (`"3/5"`), or π-coefficients as strings (`"16π"`). This was a
+deliberate choice from Chapter 9 onward, so correctness is always
+checkable via exact string/number equality — never a tolerance
+threshold. If you add a template with an irrational or repeating-
+decimal answer, follow this pattern: construct the generator's random
+ranges so the answer always reduces to something exact (see
+`PYTHAGOREAN_TRIPLES`, the `SLOPE_FRACTIONS` construction, or the
+`arc_length_or_sector_area` angle-fraction construction for examples
+of how to do this).
+
+**Distractors are never random noise.** Every one of the 3 wrong
+answers per question traces back to a named, real student error
+(confusing two formulas, forgetting a step, sign errors, swapped
+values). See the comment block at the top of
+`geometryDistractorEngine.js` for the full list of error families
+used. When you add a new distractor function, write down the error
+it represents in a comment — this is what lets a teacher diagnose a
+misconception from which wrong answer a student picked.
+
+**A single seed is never enough to certify a distractor function.**
+This is the single most important lesson from building this pipeline.
+Four real, confirmed bugs were found this way, not hypothetically:
+
+1. `identify_vertical_angle_pair` was missing required registry
+   fields entirely (found on first certification run).
+2. `distractSimilarPolygonScaleFactor`'s original fallback logic
+   failed on 3 of 160 stress-test runs.
+3. `distractCircleEquation` had TWO separate collision bugs: one
+   found by a 40-seed stress test (centerX===centerY or
+   centerX===-centerY), and a second, subtler one found only by
+   deliberately hand-constructing a circle centered at the origin
+   (JavaScript's `-0 === 0` silently collapses "sign-flip" error
+   variants into duplicates).
+4. `distractMidpoint` had FOUR of seven candidate formulas
+   simultaneously collapse when the midpoint was the origin with
+   fully symmetric endpoints (x1=-x2, y1=-y2) — found by the Quiz
+   Composer's own stress test, months after the original template had
+   already passed its own individual stress tests, because that exact
+   symmetric case hadn't come up in those particular random seeds.
+
+**The lesson, concretely:** before committing any new distractor
+function, stress-test it across at least 40 seeds (100+ if the
+template involves coordinates, ratios, or anything with symmetry),
+and if the template has an obvious "what if this value is 0 / equal /
+negative" edge case, construct that case by hand and test it
+explicitly — don't just trust that enough random seeds will find it.
+`buildNumericDistractors` and `buildFromPool` (both in
+`geometryDistractorEngine.js`) exist specifically to make this safe:
+they take a primary "grounded error" candidate pool and automatically
+retry with fallback candidates when the primary pool collides with
+the correct answer or with itself.
+
+---
+
+## 5. How to add a new certified template (the recipe)
+
+This exact sequence has now been followed 9 times (once per chapter
+batch) and works reliably. Each of the two commits below should be
+verified independently before moving to the next chapter.
+
+**Commit 1 — Registry + Generator:**
+1. Add a new problem type to `geometryProblemTypeRegistry.js` (bump
+   its version).
+2. Add a new template to `geometryTemplateRegistry.js` (bump its
+   version), matching `expectedAnswerFormat` exactly to the problem
+   type's.
+3. Run the Validation Contract
+   (`geometryTemplateValidationContract.validateRegistry()`) — it
+   must report `valid: true` with the new template count.
+4. Write the generator function in `geometryVariableGenerator.js`,
+   add its `templateId` to `CERTIFIED_TEMPLATE_IDS`, register it in
+   `TEMPLATE_GENERATORS`.
+5. Stress-test the generator alone: 40+ seeds, with independent
+   mathematical re-derivation of every claimed value (don't trust the
+   generator's own formula — recompute it a different way in the
+   test and compare).
+6. Commit.
+
+**Commit 2 — Solver + Distractor + Renderer:**
+1. Add the solve function (usually trivial — the generator already
+   computed the answer).
+2. Add the distractor function, grounded in real errors, using
+   `buildNumericDistractors`/`buildFromPool` for safety.
+3. Add the render function (fully-specified question text).
+4. Stress-test the full 5-stage pipeline together: 40+ seeds per new
+   template, then re-run at 100 for confidence.
+5. Re-run the FULL regression across every previously-certified
+   template (not just the new ones) — get this list from
+   `geometryVariableGenerator.getSupportedTemplateIds()`, not a
+   manually-maintained array, so it can't silently drift out of sync.
+6. Commit.
+
+If the template needs a figure, add it to `geometryFigureRenderer.js`
+separately — it only currently supports the original 12 Chapter-1
+templates that have `requiresFigure: true` in the registry.
+
+---
+
+## 6. Known gaps / possible next steps
+
+- **Chapter 2 proof-writing sections (2.3, 2.5, 2.6)** — genuinely
+  don't fit multiple choice; would need an entirely different
+  interaction model (e.g. drag-to-order proof steps) to cover.
+- **Figures only exist for 12 templates.** Every other template
+  answers fully as text. This was a deliberate simplicity choice, not
+  a limitation of the underlying variables — the data needed to draw
+  a figure for, say, a triangle-inequality question already exists in
+  `variables`, nobody has built the renderer for it yet.
+- **`questionQualityGate.js`** (legacy engine, pre-dates this
+  pipeline) has never been connected. It's unclear whether it's still
+  relevant given this pipeline's own certification chain already
+  performs similar checks at each stage.
+- **`src/engine/generation/geometryQuestionEngine.js`** is dead code
+  from an early prototype (hardcoded Lesson 1.1 only, 4 questions,
+  not using any of this certified pipeline). Nothing imports it. Safe
+  to delete, never done.
+- **No difficulty/standard tagging** on templates yet — the Quiz
+  Composer can filter by concept, but not by difficulty level or by
+  specific B.E.S.T. standard code.
+
+---
+
+## 7. Verification philosophy (why every commit in this project's
+history has an unusually long message)
+
+Every commit that touches this pipeline was verified the same way,
+and it's worth stating explicitly since it's easy to skip under time
+pressure:
+
+1. Build the change.
+2. Stress-test it locally — not one example, dozens to hundreds of
+   seeds, with independent re-derivation of expected values wherever
+   possible (never just "did it run without throwing").
+3. Re-run the full regression across every other certified template,
+   not just the new one.
+4. Commit with a message that states what was verified and how, not
+   just what changed.
+5. After the commit is applied to the real repository (not just this
+   working copy), **clone the repository fresh** and re-run the
+   verification against that clone — never trust that "it worked
+   locally" means it's actually live in the real, pushed repository.
+
+This is slower than trusting a single test run. It is also why this
+pipeline has zero known distractor collisions in its 53 templates
+despite having found and fixed four of them during development —
+they were found here, by this process, before ever reaching a
+student.
