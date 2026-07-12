@@ -14,7 +14,7 @@
 
 export class GeometryProblemTypeRegistry {
   constructor() {
-    this.version = "v1.0.12";
+    this.version = "v1.0.13";
 
     this.problemTypes = [
       {
@@ -463,6 +463,38 @@ export class GeometryProblemTypeRegistry {
         family: "special_parallelogram_properties",
         description: "Use the property that a rhombus's diagonals bisect its vertex angles to find a missing angle measure.",
         expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "circle_angle_two_chords",
+        conceptId: "circles",
+        family: "circle_angle_relationships",
+        description: "Find the angle formed by two chords intersecting inside a circle, using the average of the two intercepted arcs.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "circle_angle_exterior",
+        conceptId: "circles",
+        family: "circle_angle_relationships",
+        description: "Find the angle formed by two secants, a secant and a tangent, or two tangents meeting outside a circle, using half the difference of the two intercepted arcs.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "tangent_chord_angle",
+        conceptId: "circles",
+        family: "circle_angle_relationships",
+        description: "Find the angle formed by a tangent and a chord at the point of tangency, using half the intercepted arc.",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        problemTypeId: "right_triangle_altitude_geometric_mean",
+        conceptId: "right_triangles",
+        family: "similar_right_triangles",
+        description: "Use the geometric mean relationship (the altitude to the hypotenuse is the geometric mean of the two hypotenuse segments) to find a missing length.",
+        expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
     ];

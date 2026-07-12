@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.8.0";
+    this.version = "v1.9.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -833,6 +833,61 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "circle_angle_two_chords_calculation",
+        problemTypeId: "circle_angle_two_chords",
+        templateFamily: "circle_angle_relationships",
+        promptPattern:
+          "Two chords intersect inside a circle, intercepting two arcs with the given measures. What is the measure of the angle formed?",
+        requiredFields: [
+          "arcOne",
+          "arcTwo"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "circle_angle_exterior_calculation",
+        problemTypeId: "circle_angle_exterior",
+        templateFamily: "circle_angle_relationships",
+        promptPattern:
+          "Two secants (or a secant and a tangent, or two tangents) meet outside a circle, intercepting two arcs with the given measures. What is the measure of the angle formed?",
+        requiredFields: [
+          "nearArc",
+          "farArc"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "tangent_chord_angle_calculation",
+        problemTypeId: "tangent_chord_angle",
+        templateFamily: "circle_angle_relationships",
+        promptPattern:
+          "A tangent and a chord meet at the point of tangency, intercepting an arc with the given measure. What is the measure of the angle formed between the tangent and the chord?",
+        requiredFields: [
+          "interceptedArc"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_degrees",
+        requiresFigure: false
+      },
+      {
+        templateId: "right_triangle_altitude_geometric_mean_calculation",
+        problemTypeId: "right_triangle_altitude_geometric_mean",
+        templateFamily: "similar_right_triangles",
+        promptPattern:
+          "In a right triangle, the altitude to the hypotenuse divides it into two segments with the given lengths. What is the length of the altitude?",
+        requiredFields: [
+          "segmentOne",
+          "segmentTwo"
+        ],
+        outputType: "multiple_choice",
+        expectedAnswerFormat: "numeric_value",
         requiresFigure: false
       }
     ];

@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.10.0
+ * Geometry Variable Generator v1.11.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.10.0";
+const GENERATOR_VERSION = "v1.11.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -111,7 +111,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "pyramid_or_cone_volume_calculation",
   "cone_surface_area_calculation",
   "trapezoid_midsegment_calculation",
-  "rhombus_diagonal_angle_measure"
+  "rhombus_diagonal_angle_measure",
+  "circle_angle_two_chords_calculation",
+  "circle_angle_exterior_calculation",
+  "tangent_chord_angle_calculation",
+  "right_triangle_altitude_geometric_mean_calculation"
 ]);
 
 const POINT_LABELS = Object.freeze([
@@ -2913,6 +2917,84 @@ function generateRhombusDiagonalAngle(random) {
   };
 }
 
+// --- Advanced circle angle relationships and similar right triangles ---
+
+function generateCircleAngleTwoChords(random) {
+  // Two chords intersecting INSIDE a circle: the angle formed equals
+  // the AVERAGE of the two intercepted arcs. Constructed answer-first
+  // (the angle), then the two arcs are split around double that
+  // value, each capped under 180 for a realistic single-arc size.
+  const angleMeasure = randomInteger(random, 10, 170);
+  const arcSum = angleMeasure * 2;
+
+  const minArcOne = Math.max(1, arcSum - 179);
+  const maxArcOne = Math.min(179, arcSum - 1);
+
+  const arcOne = randomInteger(random, minArcOne, maxArcOne);
+  const arcTwo = arcSum - arcOne;
+
+  return {
+    arcOne,
+    arcTwo,
+    answerValue: angleMeasure
+  };
+}
+
+function generateCircleAngleExterior(random) {
+  // Two secants/tangents meeting OUTSIDE a circle: the angle formed
+  // equals HALF THE DIFFERENCE of the two intercepted arcs
+  // (far arc - near arc). Constructed answer-first for the same
+  // reason as above.
+  const angleMeasure = randomInteger(random, 5, 80);
+  const nearArc = randomInteger(random, 10, 100);
+  const farArc = nearArc + angleMeasure * 2;
+
+  return {
+    nearArc,
+    farArc,
+    answerValue: angleMeasure
+  };
+}
+
+function generateTangentChordAngle(random) {
+  // A tangent and a chord meeting at the point of tangency: the
+  // angle formed equals HALF the intercepted arc — mathematically
+  // the same halving relationship as the Inscribed Angle Theorem,
+  // applied here to a tangent-chord pair rather than two chords, a
+  // distinct named theorem in the curriculum despite sharing the
+  // same formula.
+  const angleMeasure = randomInteger(random, 10, 170);
+  const interceptedArc = angleMeasure * 2;
+
+  return {
+    interceptedArc,
+    answerValue: angleMeasure
+  };
+}
+
+function generateRightTriangleAltitudeGeometricMean(random) {
+  // The altitude to the hypotenuse of a right triangle is the
+  // geometric mean of the two hypotenuse segments it creates:
+  // altitude = sqrt(segmentOne * segmentTwo). Constructed
+  // answer-first (the altitude), then one segment is chosen as a
+  // divisor of altitude^2 (excluding the trivial 1 and altitude^2
+  // itself when other divisors exist), guaranteeing an exact integer
+  // altitude — the same divisor-search technique already certified
+  // for intersecting_chords_missing_segment.
+  const altitude = randomInteger(random, 2, 20);
+  const altitudeSquared = altitude * altitude;
+
+  const divisors = integerDivisorsExcludingTrivial(altitudeSquared);
+  const segmentOne = randomChoice(random, divisors);
+  const segmentTwo = altitudeSquared / segmentOne;
+
+  return {
+    segmentOne,
+    segmentTwo,
+    answerValue: altitude
+  };
+}
+
 const TEMPLATE_GENERATORS = Object.freeze({
   identify_point_from_description:
     generatePointDescriptionVariables,
@@ -3083,7 +3165,19 @@ const TEMPLATE_GENERATORS = Object.freeze({
     generateTrapezoidMidsegment,
 
   rhombus_diagonal_angle_measure:
-    generateRhombusDiagonalAngle
+    generateRhombusDiagonalAngle,
+
+  circle_angle_two_chords_calculation:
+    generateCircleAngleTwoChords,
+
+  circle_angle_exterior_calculation:
+    generateCircleAngleExterior,
+
+  tangent_chord_angle_calculation:
+    generateTangentChordAngle,
+
+  right_triangle_altitude_geometric_mean_calculation:
+    generateRightTriangleAltitudeGeometricMean
 });
 
 export class GeometryVariableGenerator {
