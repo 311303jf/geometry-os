@@ -14,14 +14,22 @@
  *
  * What this creates:
  * - A real Google Form, in Quiz mode (self-grading)
- * - One multiple-choice item per question, 4 choices each
+ * - One multiple-choice item per question, 4 choices each. Google
+ *   Forms doesn't number question items on its own the way a printed
+ *   test does, so each question's number (1, 2, 3, ...) is prefixed
+ *   directly into its title text.
  * - For any question with a diagram (imageBase64Png present), a
  *   standalone image item is inserted immediately before that
  *   question. Google Forms' MultipleChoiceItem has no documented
  *   setImage() method (checked against the official Apps Script
  *   reference before writing this — not assumed), so an adjacent
  *   ImageItem is the correct, documented way to show a figure next
- *   to a question.
+ *   to a question. The image item is just titled "Figure" — it does
+ *   NOT repeat the question number, since the number belongs to the
+ *   question immediately below it, not to the image itself (an
+ *   earlier version duplicated the number onto the image while
+ *   leaving the actual question with no number at all, reported
+ *   directly from a real generated Form).
  * - The correct choice marked and worth the configured point value
  * - Grade release timing (immediate vs. manual review) is NOT set by
  *   this script — confirmed by reviewing the official Apps Script
@@ -84,19 +92,27 @@ function createGeometryQuizForm() {
   var imageCount = 0;
 
   payload.questions.forEach(function (question, index) {
+    var questionNumber = index + 1;
+
     if (question.imageBase64Png) {
       try {
         var imageBytes = Utilities.base64Decode(question.imageBase64Png);
-        var imageBlob = Utilities.newBlob(imageBytes, "image/png", "figure-" + (index + 1) + ".png");
+        var imageBlob = Utilities.newBlob(imageBytes, "image/png", "figure-" + questionNumber + ".png");
 
+        // No number here — the number belongs to the question that
+        // follows immediately below, not to the image itself. Giving
+        // the image its own number ("Figure for question 5") when the
+        // actual question text has no visible number at all looked
+        // disconnected and duplicated the number in the wrong place
+        // (reported directly from a real generated Form).
         form.addImageItem()
-          .setTitle("Figure for question " + (index + 1))
+          .setTitle("Figure")
           .setImage(imageBlob);
 
         imageCount++;
       } catch (imageError) {
         Logger.log(
-          "Could not attach image for question " + (index + 1) +
+          "Could not attach image for question " + questionNumber +
           ": " + imageError.message +
           ". The question text and choices were still added below."
         );
@@ -104,7 +120,11 @@ function createGeometryQuizForm() {
     }
 
     var item = form.addMultipleChoiceItem();
-    item.setTitle(question.promptText);
+    // Google Forms doesn't automatically number question items the
+    // way a printed test does, so the number is prefixed directly
+    // into the question text itself — this is also the number that
+    // (correctly, now) does NOT get repeated on the image above.
+    item.setTitle(questionNumber + ". " + question.promptText);
     item.setRequired(true);
     item.setPoints(pointsPerQuestion);
 
