@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.12.0
+ * Geometry Variable Generator v1.13.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.12.0";
+const GENERATOR_VERSION = "v1.13.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -3009,7 +3009,29 @@ function generateRightTriangleAltitudeGeometricMean(random) {
   const altitudeSquared = altitude * altitude;
 
   const divisors = integerDivisorsExcludingTrivial(altitudeSquared);
-  const segmentOne = randomChoice(random, divisors);
+
+  // Filter to divisors within [altitude/2, altitude*2] — a real bug
+  // found by the same automated separation-sweep technique used on
+  // the circle figures: without this filter, altitude=20 (with many
+  // divisor options for 400) could pick segmentOne=2 and
+  // segmentTwo=200, an extremely lopsided ratio that places the
+  // altitude's foot point W only ~4px from vertex Y in the figure
+  // (2000-seed sweep worst case). Restricting to this range keeps
+  // the worst-case ratio at 0.2 (W at least 20% of the way between
+  // the two vertices, ~88px in the actual figure), verified
+  // algebraically in Python across the full altitude range 2-20
+  // before writing this code.
+  const minSegment = altitude / 2;
+  const maxSegment = altitude * 2;
+
+  const filteredDivisors = divisors.filter(
+    (d) => d >= minSegment && d <= maxSegment
+  );
+
+  const segmentOne = randomChoice(
+    random,
+    filteredDivisors.length > 0 ? filteredDivisors : divisors
+  );
   const segmentTwo = altitudeSquared / segmentOne;
 
   return {
