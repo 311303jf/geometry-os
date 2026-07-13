@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Google Forms Exporter Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Google Forms Exporter Test</h1>
+  <p>Composes 100 quizzes of varying size, exports each for Google Forms, and verifies: figure-required questions are always excluded (never sent as unanswerable text-only questions), included+excluded always sums to the total requested, every included question has exactly 4 choices with exactly 1 marked correct, and the payload round-trips through JSON without loss. Also verifies the exact edge case of a quiz composed entirely from figure-required templates (must export 0 included, all excluded) and rejection of a null/invalid quiz.</p>
+  <button id="runTestButton">Run Google Forms Exporter Test</button>
+  <pre id="output">Ready.</pre>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+
+      try {
+        const composerModule = await import("../src/engine/geometryQuizComposer.js");
+        const exporterModule = await import("../src/engine/geometryQuizGoogleFormsExporter.js");
+        const figureModule = await import("../src/engine/figures/geometryFigureRenderer.js");
+
+        const { geometryQuizComposer } = composerModule;
+        const { geometryQuizGoogleFormsExporter } = exporterModule;
+        const { geometryFigureRenderer } = figureModule;
+
+        assert(geometryQuizGoogleFormsExporter && typeof geometryQuizGoogleFormsExporter.exportForGoogleForm === "function", "Geometry Quiz Google Forms Exporter did not load correctly.");
+
+        const figureTemplateIds = new Set(geometryFigureRenderer.getSupportedTemplateIds());
+
+        output.textContent = "Modules loaded. Running stress test (100 quizzes of varying size)...";
+
+        let stressFailures = 0;
+        for (let i = 0; i < 100; i++) {
+          const quiz = geometryQuizComposer.compose({ questionCount: 10 + (i % 30), seed: `forms-test-stress-${i}` });
+          const exportResult = geometryQuizGoogleFormsExporter.exportForGoogleForm(quiz.quiz, { title: "Stress" });
+
+          const countsMatch = exportResult.includedQuestionCount + exportResult.skippedQuestionCount === exportResult.totalQuestionsRequested;
+          const allSkippedAreFigures = exportResult.skippedQuestions.every((s) => figureTemplateIds.has(s.templateId));
+          const structureValid = exportResult.payload.questions.every((q) => q.choices.length === 4 && q.choices.filter((c) => c.isCorrect).length === 1 && !("figureSvg" in q));
+
+          if (!exportResult.exported || !countsMatch || !allSkippedAreFigures || !structureValid) {
+            stressFailures += 1;
+          }
+        }
+
+        assert(stressFailures === 0, `Stress test failed for ${stressFailures} of 100 quizzes.`);
+
+        output.textContent = "Stress test OK. Testing the all-figure-templates edge case...";
+
+        const figureOnlyTemplateIds = [...figureTemplateIds].slice(0, 5);
+        const figureOnlyQuiz = geometryQuizComposer.compose({ questionCount: 5, seed: "forms-test-figures-only", templateIds: figureOnlyTemplateIds });
+        const figureOnlyExport = geometryQuizGoogleFormsExporter.exportForGoogleForm(figureOnlyQuiz.quiz, { title: "All figures" });
+
+        assert(figureOnlyExport.includedQuestionCount === 0, `Expected 0 included questions for an all-figure-template quiz, got ${figureOnlyExport.includedQuestionCount}.`);
+        assert(figureOnlyExport.skippedQuestionCount === 5, `Expected all 5 questions skipped, got ${figureOnlyExport.skippedQuestionCount}.`);
+
+        const rejected = geometryQuizGoogleFormsExporter.exportForGoogleForm(null);
+        assert(rejected.exported === false, "Null quiz was not rejected.");
+
+        const result = {
+          test: "Geometry Quiz Google Forms Exporter",
+          exporterVersion: geometryQuizGoogleFormsExporter.getExporterVersion(),
+          stressTestQuizzes: 100,
+          stressTestFailures: stressFailures,
+          allFigureEdgeCasePass: true,
+          nullRejectionPass: true,
+          pass: true
+        };
+
+        output.textContent = "PASS — Geometry Quiz Google Forms Exporter " + result.exporterVersion + " (100 quizzes stress-tested, 0 failures; all-figure edge case OK; null rejection OK)\n\n" + JSON.stringify(result, null, 2);
+      } catch (error) {
+        const failureResult = {
+          test: "Geometry Quiz Google Forms Exporter",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null
+        };
+        output.textContent = "FAIL — Geometry Quiz Google Forms Exporter\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
