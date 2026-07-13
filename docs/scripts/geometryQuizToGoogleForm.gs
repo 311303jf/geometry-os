@@ -15,6 +15,13 @@
  * What this creates:
  * - A real Google Form, in Quiz mode (self-grading)
  * - One multiple-choice item per question, 4 choices each
+ * - For any question with a diagram (imageBase64Png present), a
+ *   standalone image item is inserted immediately before that
+ *   question. Google Forms' MultipleChoiceItem has no documented
+ *   setImage() method (checked against the official Apps Script
+ *   reference before writing this — not assumed), so an adjacent
+ *   ImageItem is the correct, documented way to show a figure next
+ *   to a question.
  * - The correct choice marked and worth the configured point value
  * - Immediate score release after each submission (students see
  *   their score right away; change releaseMode below to withhold it)
@@ -29,12 +36,15 @@
  *   Import" if you'd rather do that step by hand than paste the
  *   published link)
  *
- * Known limitation (matches the exporter's own documented
- * limitation): questions from figure-required templates are already
- * excluded from the exported JSON before it ever reaches this
- * script, since Google Forms cannot render raw SVG figures. The
- * exported JSON's skippedQuestionCount tells you how many were left
- * out and which templateIds they came from.
+ * IMPORTANT — verify before trusting this with a graded assignment:
+ * the image-attachment code below (Utilities.base64Decode +
+ * Utilities.newBlob + addImageItem().setImage()) was written against
+ * the official documented Apps Script API but could not be run or
+ * tested outside of Apps Script itself. The very first time you use
+ * this, generate a small quiz (a handful of questions, including at
+ * least one you know has a figure) and open the resulting Form
+ * yourself to confirm every image appears correctly before assigning
+ * anything real to students.
  */
 
 function createGeometryQuizForm() {
@@ -63,8 +73,28 @@ function createGeometryQuizForm() {
   form.setRequireLogin(false);
 
   var pointsPerQuestion = payload.pointsPerQuestion || 1;
+  var imageCount = 0;
 
   payload.questions.forEach(function (question, index) {
+    if (question.imageBase64Png) {
+      try {
+        var imageBytes = Utilities.base64Decode(question.imageBase64Png);
+        var imageBlob = Utilities.newBlob(imageBytes, "image/png", "figure-" + (index + 1) + ".png");
+
+        form.addImageItem()
+          .setTitle("Figure for question " + (index + 1))
+          .setImage(imageBlob);
+
+        imageCount++;
+      } catch (imageError) {
+        Logger.log(
+          "Could not attach image for question " + (index + 1) +
+          ": " + imageError.message +
+          ". The question text and choices were still added below."
+        );
+      }
+    }
+
     var item = form.addMultipleChoiceItem();
     item.setTitle(question.promptText);
     item.setRequired(true);
@@ -82,13 +112,15 @@ function createGeometryQuizForm() {
 
   Logger.log("Form created: " + payload.title);
   Logger.log("Questions added: " + payload.questions.length);
+  Logger.log("Images attached: " + imageCount);
   Logger.log("Edit URL (review before assigning): " + editUrl);
   Logger.log("Published URL (attach this in Google Classroom): " + publishedUrl);
 
   return {
     editUrl: editUrl,
     publishedUrl: publishedUrl,
-    questionCount: payload.questions.length
+    questionCount: payload.questions.length,
+    imageCount: imageCount
   };
 }
 
@@ -97,7 +129,8 @@ function createGeometryQuizForm() {
  * geometryQuizGoogleFormsExporter.exportForGoogleForm(quiz, options).result.payload
  * — not the whole result object, just its `.payload` property.
  *
- * Example shape:
+ * Example shape (imageBase64Png is null for text-only questions,
+ * a base64 PNG string for questions with a diagram):
  * var PASTE_YOUR_EXPORTED_JSON_HERE = {
  *   "title": "Geometry Quiz",
  *   "description": "",
@@ -111,7 +144,8 @@ function createGeometryQuizForm() {
  *         { "text": "144", "isCorrect": false },
  *         { "text": "14", "isCorrect": false },
  *         { "text": "12", "isCorrect": true }
- *       ]
+ *       ],
+ *       "imageBase64Png": null
  *     }
  *   ]
  * };

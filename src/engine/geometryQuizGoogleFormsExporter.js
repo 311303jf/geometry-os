@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Quiz Google Forms Exporter v1.0.0
+ * Geometry Quiz Google Forms Exporter v2.0.0
  *
  * Responsibility:
  * Convert a quiz produced by the Geometry Quiz Composer into a plain
@@ -12,19 +12,29 @@
  * Support Practice docs), since Google Classroom is this platform's
  * primary real-world delivery surface, not printed paper.
  *
- * IMPORTANT LIMITATION, BY DESIGN:
- * Google Forms cannot render raw SVG markup. Any question whose
- * template requires a figure (identify_point_from_description,
- * identify_line_from_labels, and the other 10 figure-required
- * templates — see geometryFigureRenderer.getSupportedTemplateIds())
- * is EXCLUDED from the export rather than silently sent as
- * text-only-and-therefore-unanswerable. The exact count and template
- * IDs of every excluded question are reported back to the caller, so
- * nothing is silently dropped without the caller knowing. Composing
- * a quiz with explicit templateIds/conceptIds that avoid figure
- * templates avoids this exclusion entirely. Image support (rendering
- * each figure to PNG and attaching it to the Form question) is a
- * known, not-yet-built follow-up — see the architecture doc.
+ * FIGURE SUPPORT (v2.0.0):
+ * Google Forms cannot render raw SVG markup, so every question whose
+ * template requires a figure (21 of 61 certified templates — see
+ * geometryFigureRenderer.getSupportedTemplateIds()) is rendered to a
+ * PNG image (via @resvg/resvg-js) and base64-encoded directly into
+ * the exported JSON payload as `imageBase64Png`. The companion .gs
+ * script decodes this and attaches it as a standalone ImageItem
+ * immediately before the corresponding question — Google Forms'
+ * MultipleChoiceItem has no documented setImage() method (verified
+ * against the official Apps Script reference before writing this,
+ * not assumed), so an adjacent ImageItem is the correct, documented
+ * pattern instead of attaching the image to the question item
+ * itself.
+ *
+ * v1.0.0 EXCLUDED figure questions entirely from the export — a real
+ * content-loss problem this version fixes, since roughly a third of
+ * the certified template set requires a figure.
+ *
+ * If SVG-to-PNG conversion fails for a specific question (should not
+ * happen for any certified figure template, but handled defensively
+ * rather than silently swallowed), that single question is excluded
+ * and reported in skippedQuestions with the failure reason, rather
+ * than crashing the whole export or silently sending a broken image.
  *
  * This does NOT:
  * - call any Google API directly (no network access from this
@@ -36,12 +46,26 @@
  */
 
 import { geometryFigureRenderer } from "./figures/geometryFigureRenderer.js";
+import { Resvg } from "@resvg/resvg-js";
 
-const EXPORTER_VERSION = "v1.0.0";
+const EXPORTER_VERSION = "v2.0.0";
+
+// The generated SVGs use width="100%" (meant for a browser/HTML
+// context), which a standalone SVG renderer can't resolve — the
+// same fix applied throughout this session's visual-verification
+// work. A fixed pixel width is substituted before rendering.
+const PNG_RENDER_WIDTH = 520;
 
 function protectedCopy(value) {
   if (value === undefined) return undefined;
   return JSON.parse(JSON.stringify(value));
+}
+
+function svgToBase64Png(svg) {
+  const renderableSvg = svg.replace('width="100%"', `width="${PNG_RENDER_WIDTH}"`);
+  const resvg = new Resvg(renderableSvg, { background: "white" });
+  const pngBuffer = resvg.render().asPng();
+  return pngBuffer.toString("base64");
 }
 
 export class GeometryQuizGoogleFormsExporter {
@@ -73,18 +97,27 @@ export class GeometryQuizGoogleFormsExporter {
 
     const includedQuestions = [];
     const skippedQuestions = [];
+    let imageQuestionCount = 0;
 
     quiz.questions.forEach((question) => {
-      const requiresFigure =
-        figureTemplateIds.has(question.templateId) ||
+      const hasFigure =
+        figureTemplateIds.has(question.templateId) &&
         Boolean(question.figureSvg);
 
-      if (requiresFigure) {
-        skippedQuestions.push({
-          questionNumber: question.questionNumber,
-          templateId: question.templateId
-        });
-        return;
+      let imageBase64Png = null;
+
+      if (hasFigure) {
+        try {
+          imageBase64Png = svgToBase64Png(question.figureSvg);
+          imageQuestionCount += 1;
+        } catch (error) {
+          skippedQuestions.push({
+            questionNumber: question.questionNumber,
+            templateId: question.templateId,
+            reason: `SVG-to-PNG conversion failed: ${error.message}`
+          });
+          return;
+        }
       }
 
       includedQuestions.push({
@@ -92,7 +125,8 @@ export class GeometryQuizGoogleFormsExporter {
         choices: question.choices.map((choice) => ({
           text: String(choice.text),
           isCorrect: Boolean(choice.isCorrect)
-        }))
+        })),
+        imageBase64Png
       });
     });
 
@@ -114,6 +148,7 @@ export class GeometryQuizGoogleFormsExporter {
       payload: protectedCopy(payload),
       totalQuestionsRequested: quiz.questions.length,
       includedQuestionCount: includedQuestions.length,
+      imageQuestionCount,
       skippedQuestionCount: skippedQuestions.length,
       skippedQuestions: protectedCopy(skippedQuestions),
       errors: []
