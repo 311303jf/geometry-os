@@ -940,10 +940,21 @@ function renderIntersectingChordsMissingSegment(variables) {
   const cy = 170;
   const radius = 110;
 
-  const A = pointOnCircle(cx, cy, radius, -150);
-  const B = pointOnCircle(cx, cy, radius, -40);
-  const C = pointOnCircle(cx, cy, radius, 40);
-  const D = pointOnCircle(cx, cy, radius, 200);
+  // Four points spaced 90 degrees apart (a square inscribed in the
+  // circle), so the two "diagonal" chords always cross exactly at
+  // the center with clean, even separation between every point —
+  // regardless of the actual segment length values, which don't
+  // need to visually correspond to angular position for this
+  // theorem (only the products of lengths matter, not the arcs).
+  // The original angles (-150, -40, 40, 200) put two points only 10
+  // degrees apart, collapsing them together visually — a real bug
+  // reported directly from an opened exported quiz, where the
+  // figure looked like two lines radiating from nearly the same
+  // corner point instead of a proper X crossing near the center.
+  const A = pointOnCircle(cx, cy, radius, 135);
+  const B = pointOnCircle(cx, cy, radius, 45);
+  const C = pointOnCircle(cx, cy, radius, -45);
+  const D = pointOnCircle(cx, cy, radius, -135);
 
   const X = intersectLines(A, C, B, D);
 
