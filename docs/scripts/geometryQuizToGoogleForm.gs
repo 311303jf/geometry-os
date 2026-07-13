@@ -23,8 +23,16 @@
  *   ImageItem is the correct, documented way to show a figure next
  *   to a question.
  * - The correct choice marked and worth the configured point value
- * - Immediate score release after each submission (students see
- *   their score right away; change releaseMode below to withhold it)
+ * - Grade release timing (immediate vs. manual review) is NOT set by
+ *   this script — confirmed by reviewing the official Apps Script
+ *   Form class reference end to end before writing this: there is no
+ *   documented method to set this programmatically. It's a real,
+ *   teacher-facing choice, and it lives only in the Form's own UI:
+ *   after the script finishes, open the edit URL, click the gear
+ *   icon (Settings) > Quizzes tab, and choose "Release grade":
+ *   "Immediately after each submission" or "Later, after manual
+ *   review." The script prints a reminder to do this every time it
+ *   runs (see the log output).
  *
  * After running createGeometryQuizForm(), check the Apps Script
  * execution log (View > Logs, or Ctrl+Enter) for two URLs:
@@ -115,6 +123,17 @@ function createGeometryQuizForm() {
   Logger.log("Images attached: " + imageCount);
   Logger.log("Edit URL (review before assigning): " + editUrl);
   Logger.log("Published URL (attach this in Google Classroom): " + publishedUrl);
+  Logger.log(
+    "ACTION NEEDED: open the edit URL above, click the gear icon " +
+    "(Settings) > Quizzes tab, and choose 'Release grade': " +
+    "'Immediately after each submission' (students see their score " +
+    "right away) or 'Later, after manual review' (you control when " +
+    "grades are released). This is YOUR choice as the teacher for " +
+    "each quiz — Apps Script's Forms service has no method to set " +
+    "this programmatically (confirmed against the official Form " +
+    "class reference before writing this script), so it can't be " +
+    "defaulted or automated here. It takes one click per quiz."
+  );
 
   return {
     editUrl: editUrl,
