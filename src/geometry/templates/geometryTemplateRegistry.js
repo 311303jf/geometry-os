@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.9.0";
+    this.version = "v1.10.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -359,7 +359,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "classification_label",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "angle_measure_from_parallel_lines",
@@ -373,7 +373,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_degrees",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "classify_line_relationship_from_slopes",
@@ -847,7 +847,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_degrees",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "circle_angle_exterior_calculation",
@@ -861,7 +861,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_degrees",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "tangent_chord_angle_calculation",
@@ -888,7 +888,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",
-        requiresFigure: false
+        requiresFigure: true
       }
     ];
   }

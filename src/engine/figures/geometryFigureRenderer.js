@@ -27,7 +27,7 @@
  *   Geometry Template Registry — this renderer trusts that decision)
  */
 
-const RENDERER_VERSION = "v1.0.0";
+const RENDERER_VERSION = "v1.1.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_figure_rendered",
@@ -46,7 +46,12 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "identify_supplementary_angle_pair",
   "identify_vertical_angle_pair",
   "identify_adjacent_angle_pair",
-  "identify_polygon_from_attributes"
+  "identify_polygon_from_attributes",
+  "identify_angle_pair_type_from_transversal",
+  "angle_measure_from_parallel_lines",
+  "right_triangle_altitude_geometric_mean_calculation",
+  "circle_angle_two_chords_calculation",
+  "circle_angle_exterior_calculation"
 ]);
 
 const ARROW_MARKER_DEFS =
@@ -501,6 +506,308 @@ function renderPolygonFromAttributes(variables) {
   );
 }
 
+// --- Real-exam-fidelity figures: transversal, circle angles, altitude ---
+// Added after comparing against actual released Florida B.E.S.T.
+// Geometry EOC items, which showed these categories are typically
+// presented with a labeled diagram, not just prose.
+
+// Matches the exact 8 position phrases produced by
+// TRANSVERSAL_ANGLE_PAIRS in the Variable Generator. Standard
+// textbook/EOC numbering convention: 1-4 at the first intersection
+// (upper-left, upper-right, lower-left, lower-right), 5-8 at the
+// second, same quadrant order.
+const TRANSVERSAL_POSITION_TO_NUMBER = Object.freeze({
+  "the upper-left angle at the first intersection": 1,
+  "the upper-right angle at the first intersection": 2,
+  "the lower-left angle at the first intersection": 3,
+  "the lower-right angle at the first intersection": 4,
+  "the upper-left angle at the second intersection": 5,
+  "the upper-right angle at the second intersection": 6,
+  "the lower-left angle at the second intersection": 7,
+  "the lower-right angle at the second intersection": 8
+});
+
+function drawTransversalDiagram(highlightedNumbers = []) {
+  const line1Y = 110;
+  const line2Y = 270;
+  const transversalTop = [260, 30];
+  const transversalBottom = [420, 350];
+
+  const t1 =
+    (line1Y - transversalTop[1]) /
+    (transversalBottom[1] - transversalTop[1]);
+  const intersection1 = [
+    transversalTop[0] + t1 * (transversalBottom[0] - transversalTop[0]),
+    line1Y
+  ];
+
+  const t2 =
+    (line2Y - transversalTop[1]) /
+    (transversalBottom[1] - transversalTop[1]);
+  const intersection2 = [
+    transversalTop[0] + t2 * (transversalBottom[0] - transversalTop[0]),
+    line2Y
+  ];
+
+  const lines =
+    lineSvg(60, line1Y, 620, line1Y, { arrowStart: true, arrowEnd: true }) +
+    lineSvg(60, line2Y, 620, line2Y, { arrowStart: true, arrowEnd: true }) +
+    lineSvg(
+      transversalTop[0],
+      transversalTop[1],
+      transversalBottom[0],
+      transversalBottom[1],
+      { arrowStart: true, arrowEnd: true }
+    );
+
+  const offsets = {
+    1: [-38, -18],
+    2: [38, -18],
+    3: [-38, 22],
+    4: [38, 22],
+    5: [-38, -18],
+    6: [38, -18],
+    7: [-38, 22],
+    8: [38, 22]
+  };
+
+  const centers = {
+    1: intersection1,
+    2: intersection1,
+    3: intersection1,
+    4: intersection1,
+    5: intersection2,
+    6: intersection2,
+    7: intersection2,
+    8: intersection2
+  };
+
+  const highlightedSet = new Set(highlightedNumbers);
+
+  let numberLabels = "";
+
+  for (let number = 1; number <= 8; number += 1) {
+    const center = centers[number];
+    const offset = offsets[number];
+    const labelX = center[0] + offset[0];
+    const labelY = center[1] + offset[1];
+
+    if (highlightedSet.has(number)) {
+      numberLabels += `<circle cx="${labelX}" cy="${labelY - 5}" r="15" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="1.5"/>`;
+    }
+
+    numberLabels += labelSvg(labelX, labelY, String(number));
+  }
+
+  return {
+    body: lines + dotSvg(intersection1[0], intersection1[1], 4) +
+      dotSvg(intersection2[0], intersection2[1], 4) + numberLabels,
+    intersection1,
+    intersection2
+  };
+}
+
+function renderTransversalAnglePairType(variables) {
+  const numberA =
+    TRANSVERSAL_POSITION_TO_NUMBER[variables.angleDescriptionA];
+  const numberB =
+    TRANSVERSAL_POSITION_TO_NUMBER[variables.angleDescriptionB];
+
+  const diagram = drawTransversalDiagram([numberA, numberB]);
+
+  return svgWrap(
+    680,
+    380,
+    "Transversal crossing two parallel lines",
+    `Two parallel lines are cut by a transversal, forming eight numbered angles. Angles ${numberA} and ${numberB} are highlighted.`,
+    diagram.body
+  );
+}
+
+function renderParallelLinesAngleMeasure() {
+  const diagram = drawTransversalDiagram([]);
+
+  return svgWrap(
+    680,
+    380,
+    "Transversal crossing two parallel lines",
+    "Two parallel lines are cut by a transversal, forming eight numbered angles.",
+    diagram.body
+  );
+}
+
+function intersectLines(p1, p2, p3, p4) {
+  const [x1, y1] = p1;
+  const [x2, y2] = p2;
+  const [x3, y3] = p3;
+  const [x4, y4] = p4;
+
+  const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+  if (denom === 0) {
+    return null;
+  }
+
+  const t =
+    ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+
+  return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
+}
+
+function pointOnCircle(cx, cy, radius, degrees) {
+  const rad = (degrees * Math.PI) / 180;
+
+  return [cx + radius * Math.cos(rad), cy + radius * Math.sin(rad)];
+}
+
+function renderCircleAngleTwoChords(variables) {
+  const { arcOne, arcTwo } = variables;
+  const cx = 340;
+  const cy = 180;
+  const radius = 120;
+
+  const remainingArc = 360 - arcOne - arcTwo;
+  const gap = remainingArc / 2;
+
+  const thetaA = -90;
+  const thetaB = thetaA + arcOne;
+  const thetaC = thetaB + gap;
+  const thetaD = thetaC + arcTwo;
+
+  const A = pointOnCircle(cx, cy, radius, thetaA);
+  const B = pointOnCircle(cx, cy, radius, thetaB);
+  const C = pointOnCircle(cx, cy, radius, thetaC);
+  const D = pointOnCircle(cx, cy, radius, thetaD);
+
+  const midAB = pointOnCircle(cx, cy, radius + 24, (thetaA + thetaB) / 2);
+  const midCD = pointOnCircle(cx, cy, radius + 24, (thetaC + thetaD) / 2);
+
+  const vertex = intersectLines(A, C, B, D);
+
+  const circleSvg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+
+  const body =
+    circleSvg +
+    lineSvg(A[0], A[1], C[0], C[1]) +
+    lineSvg(B[0], B[1], D[0], D[1]) +
+    dotSvg(A[0], A[1], 3) +
+    dotSvg(B[0], B[1], 3) +
+    dotSvg(C[0], C[1], 3) +
+    dotSvg(D[0], D[1], 3) +
+    (vertex ? dotSvg(vertex[0], vertex[1], 3) : "") +
+    labelSvg(midAB[0], midAB[1], `${arcOne}\u00B0`, { size: "ts" }) +
+    labelSvg(midCD[0], midCD[1], `${arcTwo}\u00B0`, { size: "ts" });
+
+  return svgWrap(
+    680,
+    380,
+    "Two chords intersecting inside a circle",
+    `Two chords intersect inside a circle, intercepting arcs of ${arcOne} and ${arcTwo} degrees.`,
+    body
+  );
+}
+
+function renderCircleAngleExterior(variables) {
+  const { nearArc, farArc } = variables;
+  const cx = 340;
+  const cy = 170;
+  const radius = 95;
+
+  const N1 = pointOnCircle(cx, cy, radius, 90 - nearArc / 2);
+  const N2 = pointOnCircle(cx, cy, radius, 90 + nearArc / 2);
+  // Paired on the SAME side as their corresponding near point (N1 is
+  // on the right, so its far point F1 must also be on the right;
+  // pairing opposite sides was a real bug found by verification —
+  // it put the "external" point inside the circle in 200 of 200
+  // stress-test cases, since a secant's near and far intersection
+  // must lie on the same side of the axis of symmetry for the two
+  // secant lines to actually converge outside the circle.
+  const F1 = pointOnCircle(cx, cy, radius, -90 + farArc / 2);
+  const F2 = pointOnCircle(cx, cy, radius, -90 - farArc / 2);
+
+  const externalPoint = intersectLines(F1, N1, F2, N2);
+
+  const midNear = pointOnCircle(cx, cy, radius + 22, 90);
+  const midFar = pointOnCircle(cx, cy, radius + 22, -90);
+
+  const circleSvg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+
+  const secantLines = externalPoint
+    ? lineSvg(externalPoint[0], externalPoint[1], F1[0], F1[1]) +
+      lineSvg(externalPoint[0], externalPoint[1], F2[0], F2[1])
+    : lineSvg(N1[0], N1[1], F1[0], F1[1]) +
+      lineSvg(N2[0], N2[1], F2[0], F2[1]);
+
+  const body =
+    circleSvg +
+    secantLines +
+    dotSvg(N1[0], N1[1], 3) +
+    dotSvg(N2[0], N2[1], 3) +
+    dotSvg(F1[0], F1[1], 3) +
+    dotSvg(F2[0], F2[1], 3) +
+    (externalPoint
+      ? dotSvg(externalPoint[0], externalPoint[1], 3)
+      : "") +
+    labelSvg(midNear[0], midNear[1], `${nearArc}\u00B0`, { size: "ts" }) +
+    labelSvg(midFar[0], midFar[1], `${farArc}\u00B0`, { size: "ts" });
+
+  return svgWrap(
+    680,
+    380,
+    "Two secants meeting outside a circle",
+    `Two secants meet at a point outside a circle, intercepting a near arc of ${nearArc} degrees and a far arc of ${farArc} degrees.`,
+    body
+  );
+}
+
+function renderRightTriangleAltitudeGeometricMean(variables) {
+  const { segmentOne, segmentTwo } = variables;
+
+  const Y = [130, 260];
+  const Z = [570, 260];
+  const totalWidth = Z[0] - Y[0];
+  const ratio = segmentOne / (segmentOne + segmentTwo);
+
+  const W = [Y[0] + ratio * totalWidth, 260];
+  const X = [W[0], 260 - 150];
+
+  const rightAngleMarkerSize = 14;
+  const rightAngleMarker =
+    `<polyline points="${W[0] - rightAngleMarkerSize},${W[1]} ` +
+    `${W[0] - rightAngleMarkerSize},${W[1] - rightAngleMarkerSize} ` +
+    `${W[0]},${W[1] - rightAngleMarkerSize}" fill="none" ` +
+    `stroke="${FIGURE_INK_COLOR}" stroke-width="1.5"/>`;
+
+  const body =
+    lineSvg(Y[0], Y[1], Z[0], Z[1]) +
+    lineSvg(Y[0], Y[1], X[0], X[1]) +
+    lineSvg(X[0], X[1], Z[0], Z[1]) +
+    lineSvg(X[0], X[1], W[0], W[1]) +
+    rightAngleMarker +
+    dotSvg(Y[0], Y[1], 4) +
+    dotSvg(Z[0], Z[1], 4) +
+    dotSvg(X[0], X[1], 4) +
+    dotSvg(W[0], W[1], 3) +
+    labelSvg(Y[0] - 15, Y[1] + 5, "Y") +
+    labelSvg(Z[0] + 15, Z[1] + 5, "Z") +
+    labelSvg(X[0], X[1] - 15, "X") +
+    labelSvg(W[0], W[1] + 20, "W", { size: "ts" }) +
+    labelSvg((Y[0] + W[0]) / 2, Y[1] + 20, String(segmentOne), {
+      size: "ts"
+    }) +
+    labelSvg((W[0] + Z[0]) / 2, Z[1] + 20, String(segmentTwo), {
+      size: "ts"
+    });
+
+  return svgWrap(
+    680,
+    340,
+    "Right triangle with altitude to the hypotenuse",
+    `Right triangle XYZ with altitude XW drawn to the hypotenuse, dividing it into segments of ${segmentOne} and ${segmentTwo}.`,
+    body
+  );
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderPoint,
   identify_line_from_labels: renderLine,
@@ -513,7 +820,13 @@ const TEMPLATE_RENDERERS = Object.freeze({
   identify_supplementary_angle_pair: renderSupplementaryPair,
   identify_vertical_angle_pair: renderVerticalPair,
   identify_adjacent_angle_pair: renderAdjacentPair,
-  identify_polygon_from_attributes: renderPolygonFromAttributes
+  identify_polygon_from_attributes: renderPolygonFromAttributes,
+  identify_angle_pair_type_from_transversal: renderTransversalAnglePairType,
+  angle_measure_from_parallel_lines: renderParallelLinesAngleMeasure,
+  right_triangle_altitude_geometric_mean_calculation:
+    renderRightTriangleAltitudeGeometricMean,
+  circle_angle_two_chords_calculation: renderCircleAngleTwoChords,
+  circle_angle_exterior_calculation: renderCircleAngleExterior
 });
 
 function extractInput(input = {}) {
