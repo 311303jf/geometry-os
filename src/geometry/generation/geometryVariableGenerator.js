@@ -1,6 +1,6 @@
 /**
  * Geometry OS
- * Geometry Variable Generator v1.11.0
+ * Geometry Variable Generator v1.12.0
  *
  * Responsibility:
  * Generate valid variable sets for all certified Geometry templates.
@@ -47,7 +47,7 @@
  *   - identify_dilation_from_scale_factor: added dilationCenter
  */
 
-const GENERATOR_VERSION = "v1.11.0";
+const GENERATOR_VERSION = "v1.12.0";
 
 const GENERATION_STATUS = Object.freeze({
   GENERATED: "geometry_variables_generated",
@@ -2433,8 +2433,18 @@ function generateInscribedAngleArcMeasure(random) {
     "find_inscribed_angle"
   ]);
 
+  // Bounded to keep the resulting arc between 40 and 320 degrees in
+  // both scenarios (never below the theorem's original 10-170 range
+  // for the inscribed angle) — a real bug found by an automated
+  // minimum-separation sweep, not just eyeballing: the original
+  // range allowed an arc as small as 10 degrees, and separately,
+  // allowed an arc as large as 340 degrees, which squeezes the
+  // complementary arc (where the vertex point V sits) down to only
+  // 20 degrees, putting V uncomfortably close to both A and B. Both
+  // ends are now kept at least 40 degrees away from a full circle's
+  // worth of separation.
   if (scenario === "find_arc") {
-    const inscribedAngleMeasure = randomInteger(random, 10, 170);
+    const inscribedAngleMeasure = randomInteger(random, 20, 160);
     const arcMeasure = inscribedAngleMeasure * 2;
 
     return {
@@ -2446,7 +2456,7 @@ function generateInscribedAngleArcMeasure(random) {
 
   // find_inscribed_angle: the arc must be an even number so the
   // resulting inscribed angle is always a whole number.
-  const arcMeasure = randomInteger(random, 5, 170) * 2;
+  const arcMeasure = randomInteger(random, 20, 160) * 2;
   const inscribedAngleMeasure = arcMeasure / 2;
 
   return {
@@ -2923,12 +2933,21 @@ function generateCircleAngleTwoChords(random) {
   // Two chords intersecting INSIDE a circle: the angle formed equals
   // the AVERAGE of the two intercepted arcs. Constructed answer-first
   // (the angle), then the two arcs are split around double that
-  // value, each capped under 180 for a realistic single-arc size.
-  const angleMeasure = randomInteger(random, 10, 170);
+  // value. Both arcOne and arcTwo (and the two unlabeled "gap" arcs
+  // between them) are kept at least MIN_ARC degrees — a real bug
+  // found by an automated minimum-point-separation sweep across 1000
+  // seeds, not caught by eye: the original construction allowed
+  // arcOne or arcTwo to be as small as 1 degree, collapsing two of
+  // the four circle points to within ~2px of each other (and a
+  // 1-degree arc would never appear in a real exam question anyway,
+  // so this was a content-quality issue as much as a rendering one).
+  const MIN_ARC = 20;
+
+  const angleMeasure = randomInteger(random, MIN_ARC, 160);
   const arcSum = angleMeasure * 2;
 
-  const minArcOne = Math.max(1, arcSum - 179);
-  const maxArcOne = Math.min(179, arcSum - 1);
+  const minArcOne = MIN_ARC;
+  const maxArcOne = arcSum - MIN_ARC;
 
   const arcOne = randomInteger(random, minArcOne, maxArcOne);
   const arcTwo = arcSum - arcOne;
@@ -2944,9 +2963,14 @@ function generateCircleAngleExterior(random) {
   // Two secants/tangents meeting OUTSIDE a circle: the angle formed
   // equals HALF THE DIFFERENCE of the two intercepted arcs
   // (far arc - near arc). Constructed answer-first for the same
-  // reason as above.
+  // reason as above. nearArc's minimum was raised from 10 to 20
+  // degrees for the same reason as the two-chords fix above — found
+  // by the same automated separation sweep (a nearArc of 10 degrees
+  // put the two near points only ~17px apart).
+  const MIN_ARC = 20;
+
   const angleMeasure = randomInteger(random, 5, 80);
-  const nearArc = randomInteger(random, 10, 100);
+  const nearArc = randomInteger(random, MIN_ARC, 100);
   const farArc = nearArc + angleMeasure * 2;
 
   return {
