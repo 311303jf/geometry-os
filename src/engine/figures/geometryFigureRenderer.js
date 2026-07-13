@@ -27,7 +27,7 @@
  *   Geometry Template Registry — this renderer trusts that decision)
  */
 
-const RENDERER_VERSION = "v1.1.0";
+const RENDERER_VERSION = "v1.2.0";
 
 const RENDER_STATUS = Object.freeze({
   RENDERED: "geometry_figure_rendered",
@@ -51,7 +51,11 @@ const CERTIFIED_TEMPLATE_IDS = Object.freeze([
   "angle_measure_from_parallel_lines",
   "right_triangle_altitude_geometric_mean_calculation",
   "circle_angle_two_chords_calculation",
-  "circle_angle_exterior_calculation"
+  "circle_angle_exterior_calculation",
+  "tangent_chord_angle_calculation",
+  "tangent_segment_length",
+  "inscribed_angle_arc_measure",
+  "intersecting_chords_missing_segment"
 ]);
 
 const ARROW_MARKER_DEFS =
@@ -808,6 +812,177 @@ function renderRightTriangleAltitudeGeometricMean(variables) {
   );
 }
 
+function renderTangentChordAngle(variables) {
+  const { interceptedArc } = variables;
+  const cx = 340;
+  const cy = 160;
+  const radius = 100;
+
+  const T = pointOnCircle(cx, cy, radius, 90);
+  const C = pointOnCircle(cx, cy, radius, 90 - interceptedArc);
+  const midArc = pointOnCircle(cx, cy, radius + 22, 90 - interceptedArc / 2);
+
+  const tangentLeft = [T[0] - 140, T[1]];
+  const tangentRight = [T[0] + 140, T[1]];
+
+  const circleSvg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+
+  const body =
+    circleSvg +
+    lineSvg(tangentLeft[0], tangentLeft[1], tangentRight[0], tangentRight[1]) +
+    lineSvg(T[0], T[1], C[0], C[1]) +
+    dotSvg(T[0], T[1], 4) +
+    dotSvg(C[0], C[1], 3) +
+    labelSvg(T[0], T[1] + 22, "T", { size: "ts" }) +
+    labelSvg(C[0] - 15, C[1] - 8, "C", { size: "ts" }) +
+    labelSvg(midArc[0], midArc[1], `${interceptedArc}\u00B0`, {
+      size: "ts"
+    });
+
+  return svgWrap(
+    680,
+    380,
+    "Tangent and chord meeting at the point of tangency",
+    `A tangent line and a chord meet at point T on a circle, intercepting an arc of ${interceptedArc} degrees.`,
+    body
+  );
+}
+
+function renderTangentSegmentLength(variables) {
+  const { givenTangentLength } = variables;
+  const cx = 340;
+  const cy = 130;
+  const radius = 85;
+  const distanceToExternalPoint = 200;
+
+  const P = [cx, cy + distanceToExternalPoint];
+
+  // Thales' theorem construction: the point of tangency lies where
+  // the radius is perpendicular to the tangent segment, i.e. on the
+  // circle with diameter OP. The half-angle at the center between
+  // the line to P and each tangent point is arccos(radius/distance).
+  const alphaDegrees =
+    (Math.acos(radius / distanceToExternalPoint) * 180) / Math.PI;
+
+  const T1 = pointOnCircle(cx, cy, radius, 90 - alphaDegrees);
+  const T2 = pointOnCircle(cx, cy, radius, 90 + alphaDegrees);
+
+  const midPT1 = [(P[0] + T1[0]) / 2, (P[1] + T1[1]) / 2];
+  const midPT2 = [(P[0] + T2[0]) / 2, (P[1] + T2[1]) / 2];
+
+  const circleSvg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+
+  const body =
+    circleSvg +
+    lineSvg(P[0], P[1], T1[0], T1[1]) +
+    lineSvg(P[0], P[1], T2[0], T2[1]) +
+    dotSvg(P[0], P[1], 4) +
+    dotSvg(T1[0], T1[1], 3) +
+    dotSvg(T2[0], T2[1], 3) +
+    labelSvg(P[0], P[1] + 20, "P", { size: "ts" }) +
+    labelSvg(midPT1[0] - 28, midPT1[1], String(givenTangentLength), {
+      size: "ts"
+    }) +
+    labelSvg(midPT2[0] + 20, midPT2[1], "?", { size: "ts" });
+
+  return svgWrap(
+    680,
+    400,
+    "Two tangent segments from an external point",
+    `Two tangent segments are drawn from external point P to a circle. One tangent segment measures ${givenTangentLength}.`,
+    body
+  );
+}
+
+function renderInscribedAngleArcMeasure(variables) {
+  const { scenario, knownMeasure, answerValue } = variables;
+  const arcMeasure = scenario === "find_arc" ? answerValue : knownMeasure;
+  const inscribedAngleDisplay =
+    scenario === "find_arc" ? String(knownMeasure) : "?";
+  const arcDisplay = scenario === "find_arc" ? "?" : String(knownMeasure);
+
+  const cx = 340;
+  const cy = 170;
+  const radius = 110;
+
+  const V = pointOnCircle(cx, cy, radius, 90);
+  const A = pointOnCircle(cx, cy, radius, -90 - arcMeasure / 2);
+  const B = pointOnCircle(cx, cy, radius, -90 + arcMeasure / 2);
+  const midArc = pointOnCircle(cx, cy, radius + 22, -90);
+
+  const circleSvg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+
+  const body =
+    circleSvg +
+    lineSvg(V[0], V[1], A[0], A[1]) +
+    lineSvg(V[0], V[1], B[0], B[1]) +
+    dotSvg(V[0], V[1], 4) +
+    dotSvg(A[0], A[1], 3) +
+    dotSvg(B[0], B[1], 3) +
+    labelSvg(V[0], V[1] + 20, "V", { size: "ts" }) +
+    labelSvg(A[0] - 15, A[1] - 8, "A", { size: "ts" }) +
+    labelSvg(B[0] + 15, B[1] - 8, "B", { size: "ts" }) +
+    labelSvg(V[0], V[1] - 28, inscribedAngleDisplay, { size: "ts" }) +
+    labelSvg(midArc[0], midArc[1], arcDisplay, { size: "ts" });
+
+  return svgWrap(
+    680,
+    400,
+    "Inscribed angle and its intercepted arc",
+    "Inscribed angle V intercepts arc AB.",
+    body
+  );
+}
+
+function renderIntersectingChordsMissingSegment(variables) {
+  const { segmentP, segmentQ, segmentR, segmentS } = variables;
+  const cx = 340;
+  const cy = 170;
+  const radius = 110;
+
+  const A = pointOnCircle(cx, cy, radius, -150);
+  const B = pointOnCircle(cx, cy, radius, -40);
+  const C = pointOnCircle(cx, cy, radius, 40);
+  const D = pointOnCircle(cx, cy, radius, 200);
+
+  const X = intersectLines(A, C, B, D);
+
+  const midAX = X ? [(A[0] + X[0]) / 2, (A[1] + X[1]) / 2] : A;
+  const midXC = X ? [(X[0] + C[0]) / 2, (X[1] + C[1]) / 2] : C;
+  const midBX = X ? [(B[0] + X[0]) / 2, (B[1] + X[1]) / 2] : B;
+  const midXD = X ? [(X[0] + D[0]) / 2, (X[1] + D[1]) / 2] : D;
+
+  const circleSvg = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${FIGURE_INK_COLOR}" stroke-width="2"/>`;
+
+  const body =
+    circleSvg +
+    lineSvg(A[0], A[1], C[0], C[1]) +
+    lineSvg(B[0], B[1], D[0], D[1]) +
+    dotSvg(A[0], A[1], 3) +
+    dotSvg(B[0], B[1], 3) +
+    dotSvg(C[0], C[1], 3) +
+    dotSvg(D[0], D[1], 3) +
+    (X ? dotSvg(X[0], X[1], 3) : "") +
+    labelSvg(midAX[0] - 12, midAX[1] - 8, String(segmentP), {
+      size: "ts"
+    }) +
+    labelSvg(midXC[0] + 12, midXC[1] - 8, String(segmentQ), {
+      size: "ts"
+    }) +
+    labelSvg(midBX[0] - 12, midBX[1] + 14, String(segmentR), {
+      size: "ts"
+    }) +
+    labelSvg(midXD[0] + 12, midXD[1] + 14, "?", { size: "ts" });
+
+  return svgWrap(
+    680,
+    400,
+    "Two chords intersecting inside a circle",
+    `Two chords intersect inside a circle, dividing each other into segments of ${segmentP}, ${segmentQ}, ${segmentR}, and an unknown length.`,
+    body
+  );
+}
+
 const TEMPLATE_RENDERERS = Object.freeze({
   identify_point_from_description: renderPoint,
   identify_line_from_labels: renderLine,
@@ -826,7 +1001,12 @@ const TEMPLATE_RENDERERS = Object.freeze({
   right_triangle_altitude_geometric_mean_calculation:
     renderRightTriangleAltitudeGeometricMean,
   circle_angle_two_chords_calculation: renderCircleAngleTwoChords,
-  circle_angle_exterior_calculation: renderCircleAngleExterior
+  circle_angle_exterior_calculation: renderCircleAngleExterior,
+  tangent_chord_angle_calculation: renderTangentChordAngle,
+  tangent_segment_length: renderTangentSegmentLength,
+  inscribed_angle_arc_measure: renderInscribedAngleArcMeasure,
+  intersecting_chords_missing_segment:
+    renderIntersectingChordsMissingSegment
 });
 
 function extractInput(input = {}) {

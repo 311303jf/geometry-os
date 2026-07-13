@@ -21,7 +21,7 @@ export class GeometryTemplateRegistry {
   constructor({
     problemTypeRegistry = geometryProblemTypeRegistry
   } = {}) {
-    this.version = "v1.10.0";
+    this.version = "v1.11.0";
     this.problemTypeRegistry = problemTypeRegistry;
 
     this.templates = [
@@ -630,7 +630,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_degrees",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "circle_equation_from_center_radius",
@@ -658,7 +658,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "intersecting_chords_missing_segment",
@@ -673,7 +673,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_value",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "circle_circumference_and_area_calculation",
@@ -874,7 +874,7 @@ export class GeometryTemplateRegistry {
         ],
         outputType: "multiple_choice",
         expectedAnswerFormat: "numeric_degrees",
-        requiresFigure: false
+        requiresFigure: true
       },
       {
         templateId: "right_triangle_altitude_geometric_mean_calculation",

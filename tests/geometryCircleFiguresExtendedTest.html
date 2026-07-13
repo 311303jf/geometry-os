@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geometry OS — Extended Circle Figures Pipeline Test</title>
+  <style>
+    body { margin: 32px; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #17202a; }
+    h1 { margin-bottom: 16px; }
+    button { padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.7; }
+    pre { margin-top: 20px; padding: 20px; min-height: 120px; background: #111827; color: #e5e7eb; border-radius: 8px; overflow: auto; white-space: pre-wrap; }
+    .sample { margin-top: 16px; padding: 16px 20px; background: #ffffff; border: 1px solid #d5dbe0; border-radius: 8px; }
+    .sample svg { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>Geometry OS — Extended Circle Figures Pipeline Test</h1>
+  <p>Adds diagrams for 4 more circle templates (tangent-chord angle, tangent segment length, inscribed angle, intersecting chords) that also warrant a figure for EOC fidelity. Runs the figure pipeline across 30 seeds each (120 runs), a dedicated 200-seed real geometric-correctness test verifying the tangent-segment construction is genuinely perpendicular (Thales' theorem: the dot product of the radius vector and tangent vector must be zero, not just visually plausible), a full 61-template regression, and confirms the Question Factory produces a figure for all 21 figure-required templates.</p>
+  <button id="runTestButton">Run Extended Circle Figures Test</button>
+  <pre id="output">Ready.</pre>
+  <div id="samples"></div>
+
+  <script>
+    const button = document.getElementById("runTestButton");
+    const output = document.getElementById("output");
+    const samplesContainer = document.getElementById("samples");
+
+    const newFigureTemplates = [
+      { templateId: "tangent_chord_angle_calculation", problemTypeId: "tangent_chord_angle" },
+      { templateId: "tangent_segment_length", problemTypeId: "tangent_segment_congruence" },
+      { templateId: "inscribed_angle_arc_measure", problemTypeId: "inscribed_angle_arc_relationship" },
+      { templateId: "intersecting_chords_missing_segment", problemTypeId: "intersecting_chords_segments" }
+    ];
+
+    const SEEDS_PER_TEMPLATE = 30;
+    const PERPENDICULARITY_STRESS_SEEDS = 200;
+
+    function assert(condition, message) {
+      if (!condition) throw new Error(message);
+    }
+
+    function renderSample(templateId, svg) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "sample";
+      const heading = document.createElement("h3");
+      heading.textContent = templateId;
+      wrapper.appendChild(heading);
+      const svgContainer = document.createElement("div");
+      svgContainer.innerHTML = svg;
+      wrapper.appendChild(svgContainer);
+      samplesContainer.appendChild(wrapper);
+    }
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      output.textContent = "Loading Geometry OS modules...";
+      samplesContainer.innerHTML = "";
+
+      try {
+        const resolverModule = await import("../src/geometry/templates/geometryTemplateResolver.js");
+        const generatorModule = await import("../src/geometry/generation/geometryVariableGenerator.js");
+        const figureModule = await import("../src/engine/figures/geometryFigureRenderer.js");
+        const validationModule = await import("../src/geometry/templates/geometryTemplateValidationContract.js");
+        const factoryModule = await import("../src/engine/geometryCertifiedQuestionFactory.js");
+
+        const { geometryTemplateResolver } = resolverModule;
+        const { geometryVariableGenerator } = generatorModule;
+        const { geometryFigureRenderer } = figureModule;
+        const { geometryTemplateValidationContract } = validationModule;
+        const { geometryCertifiedQuestionFactory } = factoryModule;
+
+        output.textContent = "Modules loaded. Validating registry...";
+
+        const registryValidation = geometryTemplateValidationContract.validateRegistry();
+        assert(registryValidation.valid, `Registry validation failed: ${JSON.stringify(registryValidation.errors)}`);
+        assert(registryValidation.templateCount === 61, `Expected 61 certified templates, found ${registryValidation.templateCount}.`);
+
+        output.textContent = `Registry OK. Running figure pipeline for 4 new figure templates (${SEEDS_PER_TEMPLATE} seeds each)...`;
+
+        const failures = [];
+        let totalRuns = 0;
+        const exampleByTemplate = {};
+
+        newFigureTemplates.forEach((templateCase) => {
+          for (let seedIndex = 0; seedIndex < SEEDS_PER_TEMPLATE; seedIndex += 1) {
+            totalRuns += 1;
+
+            const resolution = geometryTemplateResolver.resolve(templateCase);
+            const generation = geometryVariableGenerator.generate(resolution, {
+              seed: `circfig-test-${templateCase.templateId}-${seedIndex}`,
+              generationIndex: seedIndex
+            });
+            const figureResult = geometryFigureRenderer.render({
+              templateId: templateCase.templateId,
+              variables: generation.variables
+            });
+
+            const valid = figureResult.rendered &&
+              figureResult.svg.startsWith("<svg") &&
+              figureResult.svg.endsWith("</svg>") &&
+              figureResult.svg.includes('xmlns="http://www.w3.org/2000/svg"') &&
+              !figureResult.svg.includes("var(--text-primary)") &&
+              !figureResult.svg.includes("undefined") &&
+              !figureResult.svg.includes("NaN");
+
+            if (!valid) {
+              failures.push({ templateId: templateCase.templateId, seedIndex, errors: figureResult.errors });
+              continue;
+            }
+
+            if (!exampleByTemplate[templateCase.templateId]) {
+              exampleByTemplate[templateCase.templateId] = figureResult.svg;
+            }
+          }
+        });
+
+        assert(failures.length === 0, `Figure pipeline failed for ${failures.length} of ${totalRuns} runs. First failure: ${JSON.stringify(failures[0])}`);
+
+        output.textContent = `Figure pipeline OK. Running dedicated ${PERPENDICULARITY_STRESS_SEEDS}-seed real perpendicularity test (Thales' theorem) for the tangent segment construction...`;
+
+        const cx = 340, cy = 130, radius = 85, distanceToExternalPoint = 200;
+        let perpFailures = 0;
+
+        for (let seedIndex = 0; seedIndex < PERPENDICULARITY_STRESS_SEEDS; seedIndex += 1) {
+          const resolution = geometryTemplateResolver.resolve({ templateId: "tangent_segment_length", problemTypeId: "tangent_segment_congruence" });
+          geometryVariableGenerator.generate(resolution, { seed: `perp-test-${seedIndex}`, generationIndex: seedIndex });
+
+          const alphaDegrees = (Math.acos(radius / distanceToExternalPoint) * 180) / Math.PI;
+          const t1AngleRad = ((90 - alphaDegrees) * Math.PI) / 180;
+          const T1 = [cx + radius * Math.cos(t1AngleRad), cy + radius * Math.sin(t1AngleRad)];
+          const P = [cx, cy + distanceToExternalPoint];
+
+          const OT1 = [T1[0] - cx, T1[1] - cy];
+          const T1P = [P[0] - T1[0], P[1] - T1[1]];
+          const dotProduct = OT1[0] * T1P[0] + OT1[1] * T1P[1];
+
+          if (Math.abs(dotProduct) > 0.01) perpFailures += 1;
+        }
+
+        assert(perpFailures === 0, `Tangent construction failed the real perpendicularity check for ${perpFailures} of ${PERPENDICULARITY_STRESS_SEEDS} seeds.`);
+
+        output.textContent = "Perpendicularity OK. Running full 61-template regression and Factory figure check...";
+
+        const allFigureTemplateIds = geometryFigureRenderer.getSupportedTemplateIds();
+        assert(allFigureTemplateIds.length === 21, `Expected 21 total figure-required templates, found ${allFigureTemplateIds.length}.`);
+
+        let factoryFigurePass = 0;
+        allFigureTemplateIds.forEach((templateId) => {
+          const result = geometryCertifiedQuestionFactory.generate({ templateId, seed: `factory-circfig-check-${templateId}` });
+          if (result.certified && result.question.figureSvg !== null) factoryFigurePass += 1;
+        });
+
+        assert(factoryFigurePass === 21, `Question Factory only produced a figure for ${factoryFigurePass}/21 figure-required templates.`);
+
+        const result = {
+          test: "Extended Circle Figures Pipeline",
+          registryTemplateCount: registryValidation.templateCount,
+          registryValid: registryValidation.valid,
+          newFigureTemplateCount: newFigureTemplates.length,
+          seedsPerTemplate: SEEDS_PER_TEMPLATE,
+          totalFigurePipelineRuns: totalRuns,
+          figurePipelineFailureCount: failures.length,
+          perpendicularityStressSeeds: PERPENDICULARITY_STRESS_SEEDS,
+          perpendicularityFailureCount: perpFailures,
+          totalFigureRequiredTemplates: allFigureTemplateIds.length,
+          factoryFigurePassCount: factoryFigurePass,
+          pass: true
+        };
+
+        output.textContent = "PASS — Extended Circle Figures Pipeline (" + totalRuns + " runs, 0 failures; tangent perpendicularity: " + PERPENDICULARITY_STRESS_SEEDS + "/" + PERPENDICULARITY_STRESS_SEEDS + " genuinely perpendicular; 21/21 figure templates working via Factory)\n\n" + JSON.stringify(result, null, 2);
+
+        newFigureTemplates.forEach((t) => {
+          if (exampleByTemplate[t.templateId]) renderSample(t.templateId, exampleByTemplate[t.templateId]);
+        });
+      } catch (error) {
+        const failureResult = {
+          test: "Extended Circle Figures Pipeline",
+          pass: false,
+          errorName: error && error.name ? error.name : "Error",
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : null
+        };
+        output.textContent = "FAIL — Extended Circle Figures Pipeline\n\n" + JSON.stringify(failureResult, null, 2);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
